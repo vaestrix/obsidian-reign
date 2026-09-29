@@ -36,7 +36,13 @@ function renderPublic(data){
 
   const rl=document.querySelector("#raid-list");
   if(rl){
-    rl.innerHTML=(data.raids||[]).map(x=>`<div class="raid-row"><div class="raid-date">${esc(formatDate(x.date))}</div><div><strong>${esc(x.name)}</strong></div><div>${esc(x.time)}</div><div class="raid-status">${esc(x.status)}</div></div>`).join("");
+    rl.innerHTML=(data.raids||[]).map(x=>`<div class="raid-row">
+      <div class="raid-date">${esc(formatDate(x.date))}</div>
+      <div><strong>${esc(x.name)}</strong><small class="raid-signup-count">${x.allowSignups ? esc(x.signupCount||0)+" signed up" : "Roster signup closed"}</small></div>
+      <div>${esc(x.time)}</div>
+      <div class="raid-status">${esc(x.status)}</div>
+      <div class="raid-action">${x.allowSignups ? `<button class="btn btn-purple raid-signup-btn" data-raid-signup="${esc(x.id)}" data-raid-name="${esc(x.name)}">Sign Up</button>` : '<span class="raid-closed">Closed</span>'}</div>
+    </div>`).join("");
   }
 
   const rg=document.querySelector("#roster-grid");
