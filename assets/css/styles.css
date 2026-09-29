@@ -1995,3 +1995,20 @@ body:before{
   }
   .site-mute-label{display:none}
 }
+
+/* Transparent crest cleanup */
+.brand,
+.brand-logo-only,
+.brand-crest,
+.premium-logo-img{
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.brand{
+  padding:0!important;
+  border:0!important;
+}
+.brand-crest.premium-logo-img{
+  object-fit:contain!important;
+  mix-blend-mode:normal!important;
+}
