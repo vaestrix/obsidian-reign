@@ -3038,3 +3038,44 @@ input,textarea,select{
 @media(max-width:860px){
   .guide-feature{grid-template-columns:1fr}
 }
+
+/* ===== MAIN NAV FIT / GUIDES VISIBILITY ===== */
+.site-header{
+  padding-left:20px!important;
+  padding-right:20px!important;
+}
+.main-nav{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  flex-wrap:nowrap!important;
+  gap:17px!important;
+  min-width:0!important;
+}
+.main-nav a{
+  flex:0 0 auto!important;
+  white-space:nowrap!important;
+  font-size:10px!important;
+  letter-spacing:.09em!important;
+}
+.main-nav a[href="guides.html"]{
+  color:#e9dcaa!important;
+}
+.main-nav a[href="guides.html"]:hover,
+.main-nav a[href="guides.html"].active{
+  color:#fff1b8!important;
+  text-shadow:0 0 14px rgba(184,151,79,.28),0 0 16px rgba(111,56,217,.20)!important;
+}
+.brand-crest.premium-logo-img{
+  width:56px!important;
+  height:56px!important;
+}
+@media(max-width:1120px){
+  .main-nav{gap:12px!important}
+  .main-nav a{font-size:9px!important;letter-spacing:.06em!important}
+}
+@media(max-width:920px){
+  .main-nav{
+    flex-wrap:wrap!important;
+  }
+}
