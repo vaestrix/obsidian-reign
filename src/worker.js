@@ -16,7 +16,7 @@ const DEFAULT_STATE = {
   applications: [],
   settings: {
     discord:"https://discord.gg/docgotgame",
-    server:"To Be Announced",
+    server:"Zikel • NA East",
     recruitment:"Open"
   }
 };
