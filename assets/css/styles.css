@@ -355,3 +355,53 @@ body{
   .premium-hero-grid{grid-template-columns:1fr!important}
   .premium-card{max-width:none;justify-self:stretch}
 }
+
+
+/* Retry: cinematic art applied across every major page */
+.cinematic-page-hero{
+  min-height:430px;
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  align-items:end;
+  padding:130px 0 72px;
+  background:
+    linear-gradient(90deg,rgba(3,3,5,.96),rgba(5,4,9,.62) 46%,rgba(6,3,13,.42)),
+    url('../img/hero-asmodian-warfront.svg') center 42%/cover no-repeat!important;
+}
+.cinematic-page-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,#050507 100%);pointer-events:none}
+.cinematic-page-hero .shell{position:relative;z-index:3}
+.cinematic-page-hero h1{font-size:clamp(56px,7vw,108px)!important;letter-spacing:-.035em;text-shadow:0 18px 40px #000}
+.cinematic-page-hero p{font-size:17px}
+.page-hero-crest{position:absolute;right:8%;top:112px;width:140px;z-index:2;opacity:.82;filter:drop-shadow(0 0 34px rgba(109,52,255,.32))}
+.page-hero-crest img{width:100%}
+.page-hero-banner{position:absolute;right:22%;bottom:-150px;width:150px;z-index:1;opacity:.32;transform:rotate(2deg)}
+.page-hero-banner img{width:100%}
+.cinematic-content{position:relative}
+.cinematic-content:before{content:"";position:absolute;left:-180px;top:80px;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(109,52,255,.07),transparent 68%);pointer-events:none}
+.roster-leadership{margin-bottom:52px}
+.leader-card{border:1px solid rgba(215,169,59,.24);background:linear-gradient(110deg,rgba(13,11,18,.98),rgba(5,5,8,.98));padding:34px;display:grid;grid-template-columns:180px 1fr;gap:34px;align-items:center;box-shadow:0 28px 80px rgba(0,0,0,.45)}
+.leader-art img{width:160px;filter:drop-shadow(0 0 35px rgba(109,52,255,.3))}
+.leader-card h2{font:600 46px Georgia,serif;color:#f0e1b5;margin:8px 0}
+.leader-card p{color:#a39ba8;line-height:1.7}.subhead{margin-top:20px}
+.raid-hero-card,.news-feature,.join-art-panel,.identity-banner-wide{border:1px solid rgba(215,169,59,.22);background:#08080c;box-shadow:0 28px 85px rgba(0,0,0,.42);overflow:hidden;margin-bottom:34px}
+.raid-hero-card{display:grid;grid-template-columns:1.1fr .9fr;min-height:340px}
+.raid-hero-art img{width:100%;height:100%;object-fit:cover;display:block}
+.raid-hero-copy{padding:42px;display:flex;flex-direction:column;justify-content:center}
+.raid-hero-copy h2,.news-feature-copy h2,.join-art-panel h2,.identity-banner-wide h2{font:600 40px Georgia,serif;color:#f0e2bb;margin:10px 0 14px}
+.raid-hero-copy p,.news-feature-copy p,.join-art-panel p{color:#9d96a2;line-height:1.75}
+.news-feature{display:grid;grid-template-columns:.9fr 1.1fr;min-height:300px}
+.news-feature-art img{width:100%;height:100%;object-fit:cover}
+.news-feature-copy{padding:38px;display:flex;flex-direction:column;justify-content:center}
+.identity-banner-wide{height:360px;position:relative}
+.identity-banner-wide img{width:100%;height:100%;object-fit:cover;opacity:.72}
+.identity-banner-wide:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,3,5,.96),rgba(3,3,5,.3),rgba(3,3,5,.74))}
+.identity-banner-wide>div{position:absolute;left:40px;bottom:38px;z-index:2;max-width:650px}
+.join-art-panel{display:grid;grid-template-columns:180px 1fr;gap:32px;padding:34px;align-items:center;background:radial-gradient(circle at 0 50%,rgba(109,52,255,.12),transparent 30%),#08080c}
+.join-art-panel img{width:150px;max-height:280px;object-fit:contain}
+@media(max-width:780px){
+ .page-hero-crest{width:95px;right:6%;top:105px;opacity:.48}.page-hero-banner{display:none}
+ .leader-card,.raid-hero-card,.news-feature,.join-art-panel{grid-template-columns:1fr}
+ .leader-art{text-align:center}.raid-hero-art{height:240px}.join-art-panel img{margin:auto}
+ .identity-banner-wide{height:420px}.identity-banner-wide>div{left:24px;right:24px}
+}
