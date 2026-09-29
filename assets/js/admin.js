@@ -3,6 +3,8 @@ const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=x=>String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
 let state={news:[],raids:[],roster:[],applications:[],settings:{}};
 let tab="overview";
+let lastRefresh=null;
+let refreshMessage="";
 
 async function api(path,opts={}){
   const r=await fetch(path,{headers:{"Content-Type":"application/json",...(opts.headers||{})},...opts});
@@ -13,9 +15,28 @@ async function api(path,opts={}){
   return r.json();
 }
 
-async function load(){
-  state=await api("/api/admin/state");
-  render();
+async function load(showFeedback=false){
+  const btn=document.querySelector("[data-refresh]");
+  if(showFeedback && btn){
+    btn.disabled=true;
+    btn.textContent="Refreshing…";
+  }
+  try{
+    state=await api("/api/admin/state");
+    lastRefresh=new Date();
+    refreshMessage="Data refreshed successfully";
+    render();
+  }catch(err){
+    refreshMessage="Refresh failed: "+err.message;
+    render();
+    throw err;
+  }finally{
+    const newBtn=document.querySelector("[data-refresh]");
+    if(newBtn){
+      newBtn.disabled=false;
+      newBtn.textContent="Refresh Data";
+    }
+  }
 }
 
 async function action(payload){
@@ -33,7 +54,10 @@ function renderOverview(){
   return `
     <div class="admin-toolbar">
       <div><p class="eyebrow">LEGION COMMAND</p><h2>Command Overview</h2></div>
-      <button class="btn btn-gold" data-refresh>Refresh Data</button>
+      <div class="admin-refresh-wrap">
+        <button class="btn btn-gold" data-refresh>Refresh Data</button>
+        <small class="admin-refresh-status">${esc(refreshMessage || "Ready")} ${lastRefresh ? "• "+lastRefresh.toLocaleTimeString([], {hour:"numeric",minute:"2-digit",second:"2-digit"}) : ""}</small>
+      </div>
     </div>
     <div class="stat-grid">
       <div class="stat"><strong>${state.news.length}</strong><small>News Posts</small></div>
@@ -157,7 +181,7 @@ function render(){
 }
 
 function bind(){
-  $("[data-refresh]")?.addEventListener("click",load);
+  $("[data-refresh]")?.addEventListener("click",()=>load(true).catch(()=>{}));
 
   $$("#applications-list [data-app-action], #admin-main [data-app-action]").forEach(btn=>btn.addEventListener("click",async()=>{
     const id=btn.dataset.id;
