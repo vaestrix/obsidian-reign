@@ -600,3 +600,37 @@ body{
   .hero-bg{background-position:64% center!important;opacity:.48}
   .hero-copy{max-width:100%!important}
 }
+
+/* Final Asmodian hero art: black hair, blood-red eyes, tattoos, darker armor */
+.hero-bg{
+  background-image:
+    linear-gradient(90deg,#030305 0%,rgba(3,3,5,.98) 18%,rgba(3,3,5,.80) 34%,rgba(3,3,5,.28) 50%,rgba(3,3,5,.04) 66%,transparent 78%),
+    linear-gradient(180deg,rgba(0,0,0,.03) 0%,rgba(0,0,0,.02) 64%,#030305 100%),
+    url("https://d2jqrm6oza8nb6.cloudfront.net/datasets/099ee7be-d889-49cb-9b5b-f85d41d438a3.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiNTE4OGUxZmM4YmU2ODk0NCIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDc2Njg0NH0.OnJ_tsnRTp4vsYZXe59pHaj79Wm1rgPgKaDiaSBT2YQ") !important;
+  background-size:auto 100%!important;
+  background-repeat:no-repeat!important;
+  background-position:right center!important;
+  transform:none!important;
+  filter:none!important;
+}
+.hero-bg:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(90deg,#030305 0%,rgba(3,3,5,.95) 20%,rgba(3,3,5,.64) 37%,rgba(3,3,5,.14) 56%,transparent 72%),
+    radial-gradient(circle at 78% 26%,rgba(109,52,255,.08),transparent 34%);
+  pointer-events:none;
+}
+.hero-copy{max-width:min(650px,46vw)!important}
+.hero-title{font-size:clamp(58px,5.1vw,96px)!important}
+.hero-deck{max-width:570px!important}
+.hero-metrics,.launch-count{max-width:590px!important}
+@media(max-width:1100px){
+  .hero-bg{background-position:74% center!important}
+  .hero-copy{max-width:58vw!important}
+}
+@media(max-width:760px){
+  .hero-bg{background-position:68% center!important;opacity:.46}
+  .hero-copy{max-width:100%!important}
+}
