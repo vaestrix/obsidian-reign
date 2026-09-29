@@ -1910,3 +1910,26 @@ body:before{
 @media(max-width:760px){
   .hero-logo-only.premium-logo{height:7.6%!important;left:2.2%!important}
 }
+
+/* Final purple-black-gold logo treatment */
+.brand-crest.premium-logo-img,
+.brand .premium-logo-img{
+  width:62px!important;
+  height:62px!important;
+  object-fit:contain!important;
+  filter:
+    drop-shadow(0 0 10px rgba(111,56,217,.34))
+    drop-shadow(0 0 18px rgba(184,151,79,.20))
+    drop-shadow(0 0 26px rgba(184,151,79,.08))!important;
+  transition:transform .28s ease,filter .28s ease!important;
+}
+.brand:hover .premium-logo-img{
+  transform:scale(1.04);
+  filter:
+    drop-shadow(0 0 14px rgba(111,56,217,.46))
+    drop-shadow(0 0 22px rgba(184,151,79,.26))
+    drop-shadow(0 0 34px rgba(184,151,79,.10))!important;
+}
+.video-count-wrap>span{
+  color:#cbb87b!important;
+}
