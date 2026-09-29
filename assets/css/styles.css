@@ -1511,3 +1511,145 @@ body:before{
   .live-intel>div{border-right:0;border-bottom:1px solid rgba(184,151,79,.12)}
   .live-intel>div:last-child{border-bottom:0}
 }
+
+/* ===== DUPLICATE-UI CLEANUP + HERO PRECISION ===== */
+.hero-header-mask{
+  left:0!important;
+  top:0!important;
+  width:10.8%!important;
+  height:10.4%!important;
+  background:linear-gradient(180deg,#020204 0%,#030305 100%)!important;
+  border-bottom:1px solid rgba(184,151,79,.14)!important;
+  box-shadow:10px 0 26px rgba(0,0,0,.28)!important;
+  z-index:8!important;
+}
+.hero-logo-only{
+  left:.75%!important;
+  top:.25%!important;
+  height:9.5%!important;
+  aspect-ratio:1/1!important;
+  z-index:10!important;
+}
+.hero-logo-only img{
+  height:96%!important;
+  width:auto!important;
+  filter:
+    drop-shadow(0 0 18px rgba(111,56,217,.24))
+    drop-shadow(0 0 10px rgba(184,151,79,.12))!important;
+}
+
+/* Cover the frozen countdown that is baked into the artwork */
+.hero-countdown-mask{
+  position:absolute;
+  z-index:8;
+  left:12.8%;
+  top:66.0%;
+  width:27.5%;
+  height:13.8%;
+  background:
+    radial-gradient(circle at 50% 100%,rgba(111,56,217,.06),transparent 60%),
+    linear-gradient(180deg,rgba(3,3,5,.985),rgba(3,3,6,.97));
+  border-top:1px solid rgba(184,151,79,.20);
+  border-bottom:1px solid rgba(111,56,217,.14);
+  box-shadow:0 16px 38px rgba(0,0,0,.24);
+}
+
+/* Live countdown sits exactly over the masked artwork timer */
+.hero-live-countdown{
+  left:12.8%!important;
+  top:66.0%!important;
+  width:27.5%!important;
+  min-height:13.8%!important;
+  padding:1.05% 1.1% .9%!important;
+  z-index:10!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.hero-count-label{
+  color:#d0b66e!important;
+  font-size:clamp(7px,.62vw,10px)!important;
+  margin-bottom:.9em!important;
+}
+.hero-countdown{
+  gap:.35em!important;
+}
+.count-unit b{
+  color:#eee2bd!important;
+  font-size:clamp(17px,1.7vw,28px)!important;
+}
+.count-unit small{
+  color:#7a737d!important;
+  font-size:clamp(5px,.39vw,7px)!important;
+}
+
+/* Cover the frozen music box baked into the image */
+.hero-media-mask{
+  position:absolute;
+  z-index:8;
+  right:.8%;
+  bottom:1.0%;
+  width:18.9%;
+  height:10.6%;
+  background:
+    radial-gradient(circle at 16% 50%,rgba(111,56,217,.06),transparent 42%),
+    linear-gradient(180deg,rgba(3,3,5,.985),rgba(3,3,6,.98));
+  border:1px solid rgba(184,151,79,.16);
+  box-shadow:0 12px 34px rgba(0,0,0,.28);
+}
+
+/* Working player lives in the hero, not duplicated at viewport bottom */
+.hero-music-dock{
+  position:absolute!important;
+  right:1.1%!important;
+  bottom:1.35%!important;
+  z-index:10!important;
+  width:18.3%!important;
+  min-width:250px;
+  padding:.65% .8%!important;
+  background:rgba(3,3,6,.92)!important;
+  border:1px solid rgba(184,151,79,.28)!important;
+  box-shadow:0 16px 40px rgba(0,0,0,.38),0 0 24px rgba(111,56,217,.08)!important;
+  backdrop-filter:blur(12px)!important;
+}
+.hero-music-dock .music-toggle{min-width:0;flex:1}
+.hero-music-dock .music-toggle b{
+  font-size:clamp(6px,.52vw,9px)!important;
+  color:#e8ddbd!important;
+}
+.hero-music-dock .music-toggle small{
+  font-size:clamp(5px,.44vw,8px)!important;
+}
+.hero-music-dock .music-icon{
+  width:30px!important;height:30px!important;
+}
+.hero-music-dock .music-volume{
+  width:31%!important;
+}
+
+/* Tone down any residual repeating armor micro-texture without blurring the full image */
+.hero-approved-art{
+  filter:saturate(.94) contrast(1.025) brightness(.965)!important;
+}
+
+/* Keep the real crest feeling substantial rather than tiny */
+@media(max-width:900px){
+  .hero-header-mask{width:13.5%!important}
+  .hero-logo-only{height:10.5%!important}
+  .hero-countdown-mask,.hero-live-countdown{left:10.5%!important;width:34%!important}
+  .hero-media-mask{width:24%!important}
+  .hero-music-dock{width:23.4%!important;min-width:220px}
+}
+@media(max-width:700px){
+  .hero-header-mask{width:18%!important;height:11.2%!important}
+  .hero-logo-only{height:10.7%!important;left:1.5%!important}
+  .hero-countdown-mask,.hero-live-countdown{left:5%!important;top:65%!important;width:53%!important}
+  .hero-media-mask{display:none!important}
+  .hero-music-dock{
+    position:fixed!important;
+    right:12px!important;
+    bottom:12px!important;
+    width:auto!important;
+    min-width:0!important;
+  }
+}
