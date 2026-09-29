@@ -1,6 +1,8 @@
 const ADMIN_USER = "admin";
 const ADMIN_PASSWORD_SHA256 = "d5489258ff6090d90c49c9816b75d46240541b2a8c653daa33439364e672743f";
 
+const VALID_CLASSES = ["Templar","Gladiator","Assassin","Ranger","Sorcerer","Spiritmaster","Cleric","Chanter"];
+
 const DEFAULT_STATE = {
   news: [
     { id:"news-recruiting", title:"Obsidian Reign Is Recruiting", date:"2026-09-28", category:"Guild", excerpt:"We’re building a serious core for Aion 2 Global. Organized, social, and here for the long run." }
@@ -110,8 +112,8 @@ export class CommandStore {
       const interest=safeString(body.interest,20);
       const discord=safeString(body.discord,100);
       const notes=safeString(body.notes,1000);
-      if(!name || !className || !["PvE","PvP","Both"].includes(interest)){
-        return json({error:"Name, class, and play interest are required."},400);
+      if(!name || !VALID_CLASSES.includes(className) || !["PvE","PvP","Both"].includes(interest)){
+        return json({error:"Choose a valid main class and play interest."},400);
       }
       const app={
         id:uid("app"),name,className,interest,discord,notes,
@@ -138,7 +140,7 @@ export class CommandStore {
         if(type==="roster"){
           item.name=safeString(item.name,80);
           item.role=safeString(item.role,80)||"Member";
-          item.className=safeString(item.className,80)||"Unspecified";
+          item.className=VALID_CLASSES.includes(item.className)?item.className:"Templar";
           item.interest=["PvE","PvP","Both"].includes(item.interest)?item.interest:"Both";
           item.status=item.status==="Inactive"?"Inactive":"Active";
         }
