@@ -2012,3 +2012,126 @@ body:before{
   object-fit:contain!important;
   mix-blend-mode:normal!important;
 }
+
+/* ===== LEGION COMMAND MANAGEMENT ===== */
+.admin-toolbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:end;
+  gap:18px;
+  margin-bottom:22px;
+}
+.admin-toolbar h2{margin:4px 0 0}
+.admin-section{margin-top:36px}
+.admin-filter-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:18px;
+}
+.filter-chip{
+  border:1px solid rgba(184,151,79,.22);
+  background:#08080c;
+  color:#a49dab;
+  padding:9px 13px;
+  cursor:pointer;
+  font:600 9px/1 Inter,Arial,sans-serif;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.filter-chip.active,.filter-chip:hover{
+  color:#eee7d6;
+  border-color:rgba(155,103,255,.46);
+  box-shadow:0 0 18px rgba(111,56,217,.10);
+}
+.application-card{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:20px;
+  padding:20px;
+  margin-bottom:12px;
+  border:1px solid rgba(184,151,79,.18);
+  background:
+    radial-gradient(circle at 92% 10%,rgba(111,56,217,.08),transparent 24%),
+    linear-gradient(145deg,rgba(12,11,17,.98),rgba(5,5,8,.99));
+}
+.application-title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font:600 18px Georgia,serif;
+  color:#eee5cf;
+}
+.application-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 18px;
+  margin:10px 0;
+  color:#9c95a1;
+  font-size:12px;
+}
+.application-main p{color:#aaa3ae;line-height:1.6}
+.application-main small{color:#68626c}
+.application-actions{
+  min-width:190px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  justify-content:center;
+}
+.application-actions label{
+  color:#a79eaa;
+  font-size:9px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.application-actions select{margin-top:7px}
+.admin-badge{
+  display:inline-block;
+  padding:5px 8px;
+  border:1px solid rgba(184,151,79,.2);
+  font:700 8px/1 Inter,Arial,sans-serif;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.admin-badge-pending{color:#e9d48e;border-color:rgba(184,151,79,.42)}
+.admin-badge-accepted{color:#b99aff;border-color:rgba(111,56,217,.46)}
+.admin-badge-denied{color:#a88185;border-color:rgba(145,74,81,.38)}
+.admin-editor{
+  padding:22px;
+  margin-bottom:24px;
+  border:1px solid rgba(184,151,79,.16);
+  background:#08080c;
+}
+.admin-form-actions,.admin-item-actions,.application-submit-row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+.admin-item-actions button,.admin-item button{
+  border:1px solid rgba(184,151,79,.22);
+  background:#08080c;
+  color:#c8b984;
+  padding:8px 10px;
+  cursor:pointer;
+  font-size:9px;
+  letter-spacing:.1em;
+}
+.roster-admin-item{align-items:center}
+.member-meta{
+  margin-top:8px;
+  color:#7e7684;
+  font-size:10px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.application-success{color:#b99aff}
+.application-error{color:#d3868c}
+.application-form-card select{background:#08080c;color:#fff;border:1px solid rgba(184,151,79,.28);padding:12px}
+@media(max-width:760px){
+  .application-card{grid-template-columns:1fr}
+  .application-actions{min-width:0}
+  .admin-toolbar{align-items:flex-start;flex-direction:column}
+}
