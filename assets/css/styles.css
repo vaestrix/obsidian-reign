@@ -2324,3 +2324,169 @@ input,textarea,select{
     gap:14px!important;
   }
 }
+
+/* ===== RAID SIGNUPS ===== */
+.raid-row{
+  grid-template-columns:120px minmax(220px,1fr) 135px 120px 130px!important;
+  gap:18px!important;
+}
+.raid-row>div{min-width:0}
+.raid-signup-count{
+  display:block;
+  margin-top:7px;
+  color:#7f7785;
+  font-size:9px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.raid-action{
+  display:flex;
+  justify-content:flex-end;
+}
+.raid-signup-btn{
+  min-height:38px!important;
+  padding:0 14px!important;
+  font-size:9px!important;
+}
+.raid-closed{
+  color:#6e6872;
+  font-size:9px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.raid-signup-dialog{
+  width:min(560px,calc(100% - 28px));
+  padding:0;
+  border:1px solid rgba(184,151,79,.28);
+  background:#050508;
+  color:#eeeae4;
+  box-shadow:0 40px 120px rgba(0,0,0,.72),0 0 50px rgba(111,56,217,.10);
+}
+.raid-signup-dialog::backdrop{
+  background:rgba(0,0,0,.76);
+  backdrop-filter:blur(7px);
+}
+.raid-signup-dialog-inner{
+  position:relative;
+  padding:30px;
+  background:
+    radial-gradient(circle at 88% 4%,rgba(111,56,217,.13),transparent 28%),
+    linear-gradient(145deg,rgba(12,10,17,.99),rgba(4,4,7,.99));
+}
+.raid-signup-dialog h2{
+  margin:5px 0 12px!important;
+  font:600 34px/1.1 Georgia,serif;
+  color:#eee4c6;
+}
+.raid-signup-dialog p{
+  color:#aaa3ae;
+  line-height:1.65!important;
+}
+.raid-dialog-close{
+  position:absolute;
+  top:12px;
+  right:14px;
+  width:36px;
+  height:36px;
+  border:1px solid rgba(184,151,79,.20);
+  background:#08080c;
+  color:#c6b98e;
+  cursor:pointer;
+  font-size:22px;
+}
+.raid-dialog-actions{
+  display:flex;
+  gap:10px;
+  margin-top:18px;
+  flex-wrap:wrap;
+}
+.raid-signup-message{
+  margin-top:16px;
+  min-height:20px;
+  color:#99919f;
+  line-height:1.55;
+}
+.raid-signup-error{color:#d6949b}
+.raid-signup-success{color:#b99aff}
+.raid-signup-message a{
+  color:#e4cc88;
+  text-decoration:underline;
+}
+.raid-signup-option{
+  display:flex!important;
+  align-items:center;
+  gap:10px;
+  padding:12px 0;
+  color:#c0b6c4;
+}
+.raid-signup-option input{
+  width:18px!important;
+  height:18px;
+  margin:0!important;
+  accent-color:#6f38d9;
+}
+.admin-raid-list{
+  display:grid;
+  gap:14px;
+}
+.admin-raid-card{
+  border:1px solid rgba(184,151,79,.18);
+  background:linear-gradient(145deg,rgba(12,11,17,.98),rgba(5,5,8,.99));
+  padding:20px;
+}
+.admin-raid-head{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  align-items:flex-start;
+}
+.admin-raid-head>div:first-child strong{
+  display:block;
+  color:#eee5cf;
+  font:600 18px Georgia,serif;
+  margin-bottom:7px;
+}
+.raid-signup-admin{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid rgba(184,151,79,.12);
+}
+.raid-signup-admin-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  color:#d9c996;
+  font-size:10px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+.raid-signup-admin-row{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  align-items:center;
+  padding:10px 0;
+  border-top:1px solid rgba(255,255,255,.04);
+}
+.raid-signup-admin-row strong{display:block;color:#ddd6cb}
+.raid-signup-admin-row span{display:block;margin-top:4px;color:#77717d;font-size:10px}
+.raid-signup-admin-row button{
+  border:1px solid rgba(184,151,79,.20);
+  background:#08080c;
+  color:#c8b984;
+  padding:7px 9px;
+  cursor:pointer;
+  font-size:8px;
+}
+@media(max-width:920px){
+  .raid-row{grid-template-columns:100px 1fr 115px!important}
+  .raid-row .raid-status{display:none}
+  .raid-action{grid-column:2/-1;justify-content:flex-start}
+  .admin-raid-head{flex-direction:column}
+}
+@media(max-width:620px){
+  .raid-row{grid-template-columns:90px 1fr!important}
+  .raid-row>div:nth-child(3){display:none}
+  .raid-action{grid-column:1/-1}
+}
