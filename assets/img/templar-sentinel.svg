@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 1050">
+<defs>
+  <linearGradient id="armor" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff8e6"/><stop offset=".18" stop-color="#d7d2c6"/><stop offset=".45" stop-color="#8f8677"/><stop offset=".68" stop-color="#f0d9a0"/><stop offset="1" stop-color="#47321b"/></linearGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0b4"/><stop offset=".36" stop-color="#d7a93b"/><stop offset=".72" stop-color="#744710"/><stop offset="1" stop-color="#f0cf72"/></linearGradient>
+  <linearGradient id="cloak" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#421b78"/><stop offset=".5" stop-color="#160b26"/><stop offset="1" stop-color="#050408"/></linearGradient>
+  <radialGradient id="skin"><stop stop-color="#f3d7c5"/><stop offset=".7" stop-color="#c89c8b"/><stop offset="1" stop-color="#8f645c"/></radialGradient>
+  <radialGradient id="eye"><stop stop-color="#e9ffff"/><stop offset=".18" stop-color="#68dfff"/><stop offset=".55" stop-color="#1372b5"/><stop offset="1" stop-color="#082b4a"/></radialGradient>
+  <filter id="violetGlow"><feGaussianBlur stdDeviation="12"/></filter>
+  <filter id="soft"><feGaussianBlur stdDeviation="4"/></filter>
+</defs>
+<ellipse cx="380" cy="560" rx="250" ry="440" fill="#6d34ff" opacity=".14" filter="url(#violetGlow)"/>
+<!-- cloak -->
+<path d="M295 310C210 430 145 650 152 1005L390 940 635 1010C620 760 560 480 470 320Z" fill="url(#cloak)" stroke="#6d34ff" stroke-width="4"/>
+<!-- hair -->
+<path d="M265 112C300 40 462 38 505 118C555 210 520 390 485 460C505 260 462 190 365 170C290 185 252 260 255 455C215 350 215 205 265 112Z" fill="#eee8dc" stroke="#cabca7" stroke-width="5"/>
+<path d="M270 160C255 265 248 420 265 560" stroke="#f6f2ea" stroke-width="22" opacity=".75"/>
+<path d="M486 158C505 260 508 420 480 560" stroke="#d9d2c8" stroke-width="22" opacity=".7"/>
+<!-- face -->
+<path d="M292 132C320 98 430 95 470 136C498 170 492 265 466 320C440 375 326 374 296 316C267 260 263 169 292 132Z" fill="url(#skin)" stroke="#d9b7a5" stroke-width="4"/>
+<!-- ears -->
+<path d="M286 182 238 166 270 235Z" fill="#c99687"/><path d="M477 182 529 164 491 238Z" fill="#c99687"/>
+<!-- eyes -->
+<path d="M310 211Q344 191 378 211Q344 232 310 211Z" fill="#11121b"/><ellipse cx="344" cy="211" rx="11" ry="14" fill="url(#eye)"/>
+<path d="M393 211Q427 190 461 211Q427 232 393 211Z" fill="#11121b"/><ellipse cx="427" cy="211" rx="11" ry="14" fill="url(#eye)"/>
+<path d="M342 271Q382 290 427 271" fill="none" stroke="#8a5f5f" stroke-width="5" stroke-linecap="round"/>
+<!-- neck -->
+<path d="M337 328 325 405 440 405 425 328Z" fill="url(#skin)"/>
+<!-- armored torso -->
+<path d="M275 382C320 342 444 342 500 390L548 670 214 670Z" fill="url(#armor)" stroke="url(#gold)" stroke-width="8"/>
+<path d="M386 370 432 470 386 602 340 470Z" fill="#130b1e" stroke="url(#gold)" stroke-width="6"/>
+<path d="M386 405 413 470 386 544 359 470Z" fill="#6d34ff" stroke="#f0cf72" stroke-width="4"/>
+<!-- shoulders -->
+<path d="M272 390 160 432 120 540 250 514Z" fill="url(#armor)" stroke="url(#gold)" stroke-width="8"/>
+<path d="M500 390 606 430 664 530 525 510Z" fill="url(#armor)" stroke="url(#gold)" stroke-width="8"/>
+<!-- arms -->
+<path d="M210 490 154 740 212 760 290 510Z" fill="url(#armor)" stroke="url(#gold)" stroke-width="7"/>
+<path d="M548 488 585 720 530 748 480 512Z" fill="url(#armor)" stroke="url(#gold)" stroke-width="7"/>
+<!-- legs/waist -->
+<path d="M232 650 540 650 575 900 410 920 385 740 360 920 195 900Z" fill="url(#armor)" stroke="url(#gold)" stroke-width="8"/>
+<!-- shield -->
+<path d="M495 550 672 610 642 905 520 995 437 858 456 620Z" fill="#09080d" stroke="url(#gold)" stroke-width="9"/>
+<path d="M553 626 604 705 552 842 500 705Z" fill="#6d34ff" stroke="#f0cf72" stroke-width="6"/>
+<path d="M552 650 575 706 552 780 529 706Z" fill="#100917" stroke="#fff0b4" stroke-width="4"/>
+<!-- sword -->
+<path d="M190 550 105 945" stroke="url(#gold)" stroke-width="14"/>
+<path d="M105 945 78 1004 124 965Z" fill="#f0cf72"/>
+<path d="M155 700 205 720" stroke="#d7a93b" stroke-width="12"/>
+<!-- purple energy -->
+<path d="M75 730C175 690 260 695 346 730S520 786 640 720" fill="none" stroke="#8f53ff" stroke-width="6" opacity=".65" filter="url(#violetGlow)"/>
+</svg>
