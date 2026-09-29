@@ -329,3 +329,29 @@ body{
 @media(max-width:1150px){.hero-templar{right:180px;width:34vw;opacity:.82}}
 @media(max-width:920px){.hero-templar{right:-55px;width:52vw;opacity:.25}.premium-card{position:relative;z-index:4}}
 @media(max-width:620px){.hero-templar{right:-70px;width:72vw;bottom:60px;opacity:.18}.countdown{grid-template-columns:repeat(4,auto);gap:7px}.countdown span{margin-right:12px}}
+
+/* Hero correction: remove placeholder art, restore premium balance */
+.hero-templar,.asmodian-eyes{display:none!important}
+.premium-hero-grid{
+  grid-template-columns:minmax(0,1.5fr) minmax(300px,.5fr)!important;
+  gap:64px!important;
+}
+.hero-copy{max-width:820px!important}
+.hero-title{
+  font-size:clamp(64px,6.4vw,118px)!important;
+  line-height:.84!important;
+  letter-spacing:-.035em!important;
+}
+.hero-title em{-webkit-text-stroke:1px rgba(255,232,169,.72)!important}
+.hero-subtitle{font-size:clamp(15px,1.35vw,22px)!important;max-width:760px}
+.premium-card{max-width:380px;justify-self:end}
+.hero-bg{background-position:center 42%!important}
+.hero-vignette{
+  background:
+    linear-gradient(90deg,rgba(2,2,4,.96) 0%,rgba(4,4,8,.72) 38%,rgba(8,4,16,.30) 72%,rgba(2,2,4,.55) 100%),
+    linear-gradient(180deg,rgba(2,2,4,.02) 0%,rgba(2,2,4,.12) 54%,#040406 100%)!important
+}
+@media(max-width:920px){
+  .premium-hero-grid{grid-template-columns:1fr!important}
+  .premium-card{max-width:none;justify-self:stretch}
+}
