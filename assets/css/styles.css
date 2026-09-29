@@ -1372,3 +1372,142 @@ body:before{
   .count-unit b{font-size:clamp(15px,4.8vw,24px)}
   .count-unit small{font-size:6px}
 }
+
+/* ===== CONTINUED PREMIUM POLISH ===== */
+
+/* Global logo-only header treatment on public subpages */
+.brand-logo-only{
+  min-width:64px;
+  width:64px;
+  justify-content:flex-start!important;
+}
+.brand-logo-only .brand-crest{
+  width:54px!important;
+  height:58px!important;
+  filter:
+    drop-shadow(0 0 13px rgba(111,56,217,.18))
+    drop-shadow(0 0 8px rgba(184,151,79,.08));
+  transition:transform .28s ease,filter .28s ease;
+}
+.brand-logo-only:hover .brand-crest{
+  transform:translateY(-1px) scale(1.04);
+  filter:
+    drop-shadow(0 0 20px rgba(111,56,217,.28))
+    drop-shadow(0 0 12px rgba(184,151,79,.12));
+}
+
+/* Replaces redundant quicklinks below the baked premium hero */
+.live-intel{
+  margin-top:0!important;
+  margin-bottom:34px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  border:1px solid rgba(184,151,79,.16);
+  border-top:0;
+  background:linear-gradient(180deg,rgba(7,7,11,.97),rgba(4,4,7,.99));
+  box-shadow:0 24px 70px rgba(0,0,0,.34);
+  overflow:hidden;
+}
+.live-intel>div{
+  position:relative;
+  min-height:82px;
+  padding:20px 26px 18px 46px;
+  border-right:1px solid rgba(184,151,79,.12);
+  transition:background .3s ease,box-shadow .3s ease,transform .3s ease;
+}
+.live-intel>div:last-child{border-right:0}
+.live-intel>div:hover{
+  background:
+    radial-gradient(circle at 50% 100%,rgba(111,56,217,.10),transparent 70%),
+    rgba(8,8,12,.95);
+  box-shadow:inset 0 -1px 0 rgba(184,151,79,.18);
+  transform:translateY(-1px);
+}
+.live-intel b{
+  display:block;
+  color:#eadcaf;
+  font:600 11px/1.2 Inter,Arial,sans-serif;
+  letter-spacing:.16em;
+}
+.live-intel small{
+  display:block;
+  color:#77717b;
+  margin-top:6px;
+  font-size:10px;
+}
+.intel-dot{
+  position:absolute;
+  left:24px;
+  top:24px;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#8a58ff;
+  box-shadow:0 0 0 4px rgba(111,56,217,.08),0 0 16px rgba(111,56,217,.48);
+  animation:intelPulse 2.2s ease-in-out infinite;
+}
+@keyframes intelPulse{
+  0%,100%{transform:scale(.88);opacity:.65}
+  50%{transform:scale(1.08);opacity:1}
+}
+
+/* Cursor-responsive expensive glass lighting */
+.card,.panel,.raid-hero-card,.news-feature,.leader-card,.join-art-panel,.identity-banner-wide,.recruitment-board,.war-room{
+  --px:82%;
+  --py:10%;
+}
+.card:before,.panel:before,.raid-hero-card:before,.news-feature:before,.leader-card:before,.join-art-panel:before,.identity-banner-wide:before,.recruitment-board:before,.war-room:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:0;
+  background:radial-gradient(circle at var(--px) var(--py),rgba(155,103,255,.10),transparent 28%);
+  transition:opacity .28s ease;
+}
+.card:hover:before,.panel:hover:before,.raid-hero-card:hover:before,.news-feature:hover:before,.leader-card:hover:before,.join-art-panel:hover:before,.identity-banner-wide:hover:before,.recruitment-board:hover:before,.war-room:hover:before{
+  opacity:1;
+}
+
+/* Active nav gets a premium violet/gold signal instead of flat text */
+.main-nav a.active{
+  color:#f4efe7!important;
+  text-shadow:0 0 14px rgba(155,103,255,.32)!important;
+}
+.main-nav a.active:after{
+  left:0!important;
+  right:0!important;
+  background:linear-gradient(90deg,#6f38d9,#b8974f)!important;
+  box-shadow:0 0 12px rgba(111,56,217,.42)!important;
+}
+
+/* Hero approved image gets a restrained living shimmer, without altering the artwork itself */
+.hero-approved-art{
+  will-change:transform,filter;
+}
+.hero-approved:hover .hero-approved-art{
+  filter:saturate(.96) contrast(1.04) brightness(.975)!important;
+}
+
+/* Subpage hero ornamental sweep */
+.cinematic-page-hero:after{
+  content:"";
+  position:absolute;
+  left:-30%;
+  top:0;
+  width:28%;
+  height:100%;
+  pointer-events:none;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.022),transparent);
+  animation:pageSweep 9s ease-in-out infinite;
+}
+@keyframes pageSweep{
+  0%,58%{left:-30%}
+  82%,100%{left:120%}
+}
+
+@media(max-width:760px){
+  .live-intel{grid-template-columns:1fr}
+  .live-intel>div{border-right:0;border-bottom:1px solid rgba(184,151,79,.12)}
+  .live-intel>div:last-child{border-bottom:0}
+}
