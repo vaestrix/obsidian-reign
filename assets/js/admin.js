@@ -74,7 +74,7 @@ function renderOverview(){
 function applicationCard(a){
   return `<article class="application-card">
     <div class="application-main">
-      <div class="application-title"><strong>${esc(a.name)}</strong>${badge(a.status)}</div>
+      <div class="application-title"><strong>${esc(a.name)}</strong>${badge(a.status)}</div><small class="application-name-label">Character or Community Name</small>
       <div class="application-meta">
         <span><b>Class:</b> ${esc(a.className)}</span>
         <span><b>Interest:</b> ${esc(a.interest)}</span>
