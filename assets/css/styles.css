@@ -2135,3 +2135,8 @@ body:before{
   .application-actions{min-width:0}
   .admin-toolbar{align-items:flex-start;flex-direction:column}
 }
+
+.admin-refresh-wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.admin-refresh-status{color:#8f8796;font-size:10px;letter-spacing:.04em}
+.admin-refresh-status::before{content:"●";color:#8a58ff;margin-right:6px;text-shadow:0 0 10px rgba(111,56,217,.55)}
+[data-refresh]:disabled{opacity:.65;cursor:wait}
