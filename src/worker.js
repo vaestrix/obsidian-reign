@@ -324,31 +324,6 @@ export default {
       if (!(await authorized(request))) return unauthorized();
     }
 
-    // Friendly extensionless public routes.
-    const pageRoutes = {
-      "/news": "/news.html",
-      "/raids": "/raids.html",
-      "/guides": "/guides.html",
-      "/roster": "/roster.html",
-      "/who-we-are": "/who-we-are.html",
-      "/join": "/join.html"
-    };
-    if(request.method==="GET" && pageRoutes[url.pathname]){
-      const target=new URL(request.url);
-      target.pathname=pageRoutes[url.pathname];
-      return env.ASSETS.fetch(new Request(target.toString(),request));
-    }
-
-    const response=await env.ASSETS.fetch(request);
-
-    // Use the branded 404 for missing browser pages instead of a generic response.
-    if(response.status===404 && request.method==="GET" && (request.headers.get("Accept")||"").includes("text/html")){
-      const fallback=new URL(request.url);
-      fallback.pathname="/404.html";
-      const page=await env.ASSETS.fetch(new Request(fallback.toString(),request));
-      return new Response(page.body,{status:404,headers:page.headers});
-    }
-
-    return response;
+    return env.ASSETS.fetch(request);
   }
 };
