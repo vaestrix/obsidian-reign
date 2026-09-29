@@ -281,3 +281,26 @@ body{
 .hero-title em:after{content:"";position:absolute;left:3%;right:20%;bottom:-8px;height:10px;background:linear-gradient(90deg,transparent,rgba(109,52,255,.28),rgba(215,169,59,.18),transparent);filter:blur(10px)}
 .premium-card:hover{border-color:rgba(243,212,122,.58);box-shadow:inset 0 0 0 1px rgba(255,255,255,.02),0 45px 110px rgba(0,0,0,.62),0 0 70px rgba(109,52,255,.12)}
 @media(max-width:920px){.hero-rune{display:none}.hero-bg,.hero-copy,.premium-card{transform:none!important}}
+
+/* Custom Asmodian guild art system */
+.asmodian-eyes{position:absolute;z-index:1;width:min(1550px,90vw);left:50%;top:24%;transform:translateX(-50%);opacity:.12;mix-blend-mode:screen;filter:blur(.2px);pointer-events:none}
+.hero-battlemark{position:absolute;left:-145px;top:44px;width:110px;opacity:.58;filter:drop-shadow(0 0 26px rgba(109,52,255,.25))}
+.hero-battlemark img{width:100%;height:auto}
+.operations-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(270px,.55fr);gap:20px}
+.operation-art{display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:center;padding:34px}
+.operation-art img{width:130px;filter:drop-shadow(0 0 32px rgba(109,52,255,.28));margin-bottom:10px}
+.operation-art h3{font-size:28px;color:#efe0b7}.operation-art p{color:#9e97a4;line-height:1.65}
+.identity-art-card{padding:0;min-height:430px;display:grid;overflow:hidden;position:relative}
+.identity-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.7;filter:saturate(1.12)}
+.identity-art-card:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,4,7,.2),rgba(4,4,7,.88) 74%,#060609)}
+.identity-art-copy{position:relative;z-index:2;align-self:end;padding:30px}
+.recruitment-board{margin-top:40px;margin-bottom:86px;border:1px solid rgba(215,169,59,.22);background:linear-gradient(120deg,rgba(13,10,18,.98),rgba(5,5,8,.98));display:grid;grid-template-columns:.95fr 1.05fr;gap:26px;padding:38px;box-shadow:0 30px 90px rgba(0,0,0,.45);position:relative;overflow:hidden}
+.recruitment-board:before{content:"";position:absolute;left:-120px;top:-180px;width:430px;height:430px;border-radius:50%;background:radial-gradient(circle,rgba(109,52,255,.15),transparent 67%)}
+.recruitment-copy{position:relative;z-index:2}.recruitment-copy h2{font:500 38px Georgia,serif;color:#efe2bd;margin:10px 0 14px}.recruitment-copy p{color:#9d96a2;line-height:1.75}
+.recruitment-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative;z-index:2}
+.recruit-card{padding:22px;border:1px solid rgba(215,169,59,.18);background:#08080c;position:relative}
+.recruit-card b{font:600 18px Georgia,serif;color:#efe3be;letter-spacing:.08em}.recruit-card span{position:absolute;right:14px;top:14px;font-size:9px;letter-spacing:.14em;color:#b99aff;border:1px solid rgba(109,52,255,.4);padding:5px 7px}.recruit-card small{display:block;margin-top:10px;color:#706a75}
+.war-room{margin-bottom:90px;padding:42px;border:1px solid rgba(109,52,255,.28);background:radial-gradient(circle at 78% 50%,rgba(109,52,255,.12),transparent 32%),#07070a;display:flex;align-items:center;justify-content:space-between;gap:30px;box-shadow:0 28px 80px rgba(0,0,0,.4)}
+.war-room h2{font:500 40px Georgia,serif;color:#f0e2bb;margin:8px 0}.war-room p{max-width:700px;color:#99929f;line-height:1.7}.war-room-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:920px){.hero-battlemark{display:none}.operations-grid,.recruitment-board{grid-template-columns:1fr}.war-room{align-items:flex-start;flex-direction:column}.war-room-actions{justify-content:flex-start}}
+@media(max-width:620px){.recruitment-grid{grid-template-columns:1fr}.asmodian-eyes{top:18%;width:1200px;max-width:none;opacity:.09}}
