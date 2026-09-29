@@ -1,1 +1,7 @@
-{"site":"obsidianreign.gg","marker":"OR-2026-09-28-1910-premium","expectedBranch":"main","note":"If this marker is visible on the live domain, the latest GitHub auto-deploy is active."}
+{
+  "site": "obsidianreign.gg",
+  "marker": "OR-2026-09-28-2023-CINEMATIC-HERO",
+  "expectedBranch": "main",
+  "expectedCommit": "3830ff176da71ea3d6ba09157fad3662887d49fc",
+  "note": "Cinematic raster hero embedded directly into production CSS."
+}
