@@ -1,6 +1,32 @@
 const ADMIN_USER = "admin";
 const ADMIN_PASSWORD_SHA256 = "d5489258ff6090d90c49c9816b75d46240541b2a8c653daa33439364e672743f";
 
+const DEFAULT_STATE = {
+  news: [
+    { id:"news-recruiting", title:"Obsidian Reign Is Recruiting", date:"2026-09-28", category:"Guild", excerpt:"We’re building a serious core for Aion 2 Global. Organized, social, and here for the long run." }
+  ],
+  raids: [
+    { id:"raid-early-access", name:"Early Access Launch Night", date:"2026-09-30", time:"7:00 PM CT", status:"Main Event" }
+  ],
+  roster: [
+    { id:"member-vaestrix", name:"Vaestrix", role:"Guild Leader", className:"Templar", interest:"Both", status:"Active" }
+  ],
+  applications: [],
+  settings: {
+    discord:"https://discord.gg/docgotgame",
+    server:"To Be Announced",
+    recruitment:"Open"
+  }
+};
+
+function uid(prefix="id"){
+  return prefix+"-"+Date.now().toString(36)+"-"+crypto.randomUUID().slice(0,8);
+}
+
+function safeString(v,max=500){
+  return String(v??"").trim().slice(0,max);
+}
+
 async function sha256Hex(value) {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -10,58 +36,208 @@ async function sha256Hex(value) {
 async function authorized(request) {
   const header = request.headers.get("Authorization") || "";
   if (!header.startsWith("Basic ")) return false;
-
   try {
     const decoded = atob(header.slice(6));
     const splitAt = decoded.indexOf(":");
     if (splitAt < 0) return false;
-
     const username = decoded.slice(0, splitAt);
     const password = decoded.slice(splitAt + 1);
-    if (username !== ADMIN_USER) return false;
-
-    return (await sha256Hex(password)) === ADMIN_PASSWORD_SHA256;
-  } catch {
-    return false;
-  }
+    return username === ADMIN_USER && (await sha256Hex(password)) === ADMIN_PASSWORD_SHA256;
+  } catch { return false; }
 }
 
 function unauthorized() {
-  return new Response(
-    `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Legion Command Locked | Obsidian Reign</title>
-<style>
-html,body{height:100%;margin:0;background:#020204;color:#eeeae4;font-family:Arial,sans-serif}
-main{height:100%;display:grid;place-items:center;padding:24px;box-sizing:border-box;background:
-radial-gradient(circle at 50% 30%,rgba(111,56,217,.16),transparent 35%),#020204}
-section{max-width:560px;text-align:center;border:1px solid rgba(184,151,79,.28);padding:38px;background:rgba(7,7,11,.94);box-shadow:0 30px 90px rgba(0,0,0,.55)}
-h1{font-family:Georgia,serif;letter-spacing:.08em;color:#ead59a;margin:0 0 12px}
-p{color:#9d969f;line-height:1.7}
-small{color:#766f79}
-</style>
-</head>
-<body>
-<main><section><h1>LEGION COMMAND LOCKED</h1><p>Authentication is required to enter the Obsidian Reign command console.</p><small>Your browser will ask for command credentials.</small></section></main>
-</body>
-</html>`,
-    {
-      status: 401,
-      headers: {
-        "Content-Type": "text/html; charset=UTF-8",
-        "WWW-Authenticate": 'Basic realm="Obsidian Reign Legion Command", charset="UTF-8"',
-        "Cache-Control": "no-store"
-      }
+  return new Response("Authentication required", {
+    status: 401,
+    headers: {
+      "WWW-Authenticate": 'Basic realm="Obsidian Reign Legion Command", charset="UTF-8"',
+      "Cache-Control":"no-store"
     }
-  );
+  });
+}
+
+function json(data,status=200){
+  return new Response(JSON.stringify(data),{
+    status,
+    headers:{
+      "Content-Type":"application/json; charset=UTF-8",
+      "Cache-Control":"no-store"
+    }
+  });
+}
+
+export class CommandStore {
+  constructor(ctx, env){
+    this.ctx=ctx;
+  }
+
+  async state(){
+    let s=await this.ctx.storage.get("state");
+    if(!s){
+      s=structuredClone(DEFAULT_STATE);
+      await this.ctx.storage.put("state",s);
+    }
+    s.news ||= [];
+    s.raids ||= [];
+    s.roster ||= [];
+    s.applications ||= [];
+    s.settings = {...DEFAULT_STATE.settings,...(s.settings||{})};
+    return s;
+  }
+
+  async save(s){
+    await this.ctx.storage.put("state",s);
+    return s;
+  }
+
+  async fetch(request){
+    const url=new URL(request.url);
+    const s=await this.state();
+
+    if(request.method==="GET" && url.pathname==="/state"){
+      return json(s);
+    }
+
+    if(request.method==="GET" && url.pathname==="/public"){
+      return json({news:s.news,raids:s.raids,roster:s.roster.filter(x=>x.status!=="Inactive"),settings:s.settings});
+    }
+
+    if(request.method==="POST" && url.pathname==="/apply"){
+      let body;
+      try{ body=await request.json(); }catch{ return json({error:"Invalid application"},400); }
+      const name=safeString(body.name,80);
+      const className=safeString(body.className,80);
+      const interest=safeString(body.interest,20);
+      const discord=safeString(body.discord,100);
+      const notes=safeString(body.notes,1000);
+      if(!name || !className || !["PvE","PvP","Both"].includes(interest)){
+        return json({error:"Name, class, and play interest are required."},400);
+      }
+      const app={
+        id:uid("app"),name,className,interest,discord,notes,
+        status:"Pending",submittedAt:new Date().toISOString()
+      };
+      s.applications.unshift(app);
+      await this.save(s);
+      return json({ok:true,id:app.id},201);
+    }
+
+    if(request.method!=="POST" || url.pathname!=="/action") return json({error:"Not found"},404);
+
+    let body;
+    try{ body=await request.json(); }catch{ return json({error:"Invalid request"},400); }
+    const type=safeString(body.type,30);
+    const action=safeString(body.action,30);
+
+    const collections=["news","raids","roster"];
+    if(collections.includes(type)){
+      const list=s[type];
+
+      if(action==="add"){
+        const item={...body.item,id:uid(type.slice(0,-1)||type)};
+        if(type==="roster"){
+          item.name=safeString(item.name,80);
+          item.role=safeString(item.role,80)||"Member";
+          item.className=safeString(item.className,80)||"Unspecified";
+          item.interest=["PvE","PvP","Both"].includes(item.interest)?item.interest:"Both";
+          item.status=item.status==="Inactive"?"Inactive":"Active";
+        }
+        if(type==="news"){
+          item.title=safeString(item.title,120);
+          item.date=safeString(item.date,20);
+          item.category=safeString(item.category,50);
+          item.excerpt=safeString(item.excerpt,500);
+        }
+        if(type==="raids"){
+          item.name=safeString(item.name,120);
+          item.date=safeString(item.date,20);
+          item.time=safeString(item.time,30);
+          item.status=safeString(item.status,40);
+        }
+        list.push(item);
+      } else {
+        const i=list.findIndex(x=>x.id===body.id);
+        if(i<0) return json({error:"Item not found"},404);
+        if(action==="update"){
+          list[i]={...list[i],...body.item,id:list[i].id};
+        } else if(action==="delete"){
+          list.splice(i,1);
+        } else return json({error:"Unknown action"},400);
+      }
+      await this.save(s);
+      return json({ok:true,state:s});
+    }
+
+    if(type==="settings" && action==="update"){
+      s.settings={...s.settings,...body.item};
+      await this.save(s);
+      return json({ok:true,state:s});
+    }
+
+    if(type==="application"){
+      const i=s.applications.findIndex(x=>x.id===body.id);
+      if(i<0) return json({error:"Application not found"},404);
+      const app=s.applications[i];
+
+      if(action==="accept"){
+        app.status="Accepted";
+        app.reviewedAt=new Date().toISOString();
+        const role=safeString(body.role,80)||"Member";
+        const existing=s.roster.find(x=>x.name.toLowerCase()===app.name.toLowerCase());
+        if(existing){
+          Object.assign(existing,{role,className:app.className,interest:app.interest,status:"Active"});
+        }else{
+          s.roster.push({
+            id:uid("member"),
+            name:app.name,
+            role,
+            className:app.className,
+            interest:app.interest,
+            status:"Active"
+          });
+        }
+      } else if(action==="deny"){
+        app.status="Denied";
+        app.reviewedAt=new Date().toISOString();
+      } else if(action==="delete"){
+        s.applications.splice(i,1);
+      } else {
+        return json({error:"Unknown application action"},400);
+      }
+      await this.save(s);
+      return json({ok:true,state:s});
+    }
+
+    return json({error:"Unknown operation"},400);
+  }
+}
+
+function store(env){
+  const id=env.COMMAND_STORE.idFromName("obsidian-reign-global");
+  return env.COMMAND_STORE.get(id);
 }
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if(url.pathname==="/api/public-data"){
+      return store(env).fetch(new Request(new URL("/public",url),request));
+    }
+
+    if(url.pathname==="/api/applications" && request.method==="POST"){
+      return store(env).fetch(new Request(new URL("/apply",url),request));
+    }
+
+    if(url.pathname==="/api/admin/state"){
+      if(!(await authorized(request))) return unauthorized();
+      return store(env).fetch(new Request(new URL("/state",url),request));
+    }
+
+    if(url.pathname==="/api/admin/action"){
+      if(!(await authorized(request))) return unauthorized();
+      return store(env).fetch(new Request(new URL("/action",url),request));
+    }
 
     if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) {
       if (!(await authorized(request))) return unauthorized();
