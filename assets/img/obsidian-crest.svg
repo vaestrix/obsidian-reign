@@ -1,59 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360">
 <defs>
-  <linearGradient id="obs" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#27232d"/>
-    <stop offset=".34" stop-color="#08080b"/>
-    <stop offset=".7" stop-color="#16121a"/>
-    <stop offset="1" stop-color="#020203"/>
-  </linearGradient>
-  <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#f4f0e8"/>
-    <stop offset=".28" stop-color="#8b8791"/>
-    <stop offset=".62" stop-color="#2c2a31"/>
-    <stop offset="1" stop-color="#c8c1b5"/>
-  </linearGradient>
-  <radialGradient id="red" cx="50%" cy="50%" r="50%">
-    <stop offset="0" stop-color="#fff0e8"/>
-    <stop offset=".14" stop-color="#ff5b4f"/>
-    <stop offset=".42" stop-color="#d9151f"/>
-    <stop offset="1" stop-color="#5a0007" stop-opacity="0"/>
-  </radialGradient>
-  <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
-    <feGaussianBlur stdDeviation="9" result="b"/>
-    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-  </filter>
+ <linearGradient id="obs" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#18181e"/><stop offset=".45" stop-color="#040406"/><stop offset="1" stop-color="#141116"/></linearGradient>
+ <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f5f1e9"/><stop offset=".22" stop-color="#8b8b92"/><stop offset=".55" stop-color="#2a2a30"/><stop offset=".8" stop-color="#c9c5bb"/><stop offset="1" stop-color="#4d4a4f"/></linearGradient>
+ <radialGradient id="red"><stop stop-color="#fff0e8"/><stop offset=".15" stop-color="#ff6b61"/><stop offset=".42" stop-color="#e20d1c"/><stop offset="1" stop-color="#5d0008"/></radialGradient>
+ <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 </defs>
-
+<!-- throne -->
+<path d="M96 78 122 40 146 80 180 22 214 80 238 40 264 78 252 300H108Z" fill="url(#obs)" stroke="#5d5d64" stroke-width="5"/>
+<path d="M120 112 147 84 180 122 213 84 240 112 230 268H130Z" fill="#07070a" stroke="#2f2d32" stroke-width="4"/>
+<path d="M180 102 205 150 180 238 155 150Z" fill="url(#red)" stroke="#ff6b61" stroke-width="4" filter="url(#glow)"/>
 <!-- crossed swords -->
-<g stroke-linecap="round" stroke-linejoin="round">
-  <g transform="rotate(-38 180 180)">
-    <path d="M172 34h16l9 176-17 49-17-49z" fill="url(#steel)" stroke="#141218" stroke-width="5"/>
-    <path d="M148 212h64v15h-64z" fill="#09090c" stroke="#c8c1b5" stroke-width="4"/>
-    <path d="M173 227h14v68h-14z" fill="#151218" stroke="#6f6672" stroke-width="4"/>
-    <path d="M180 20 194 42 166 42z" fill="#f0ece5" stroke="#16141a" stroke-width="4"/>
-  </g>
-  <g transform="rotate(38 180 180)">
-    <path d="M172 34h16l9 176-17 49-17-49z" fill="url(#steel)" stroke="#141218" stroke-width="5"/>
-    <path d="M148 212h64v15h-64z" fill="#09090c" stroke="#c8c1b5" stroke-width="4"/>
-    <path d="M173 227h14v68h-14z" fill="#151218" stroke="#6f6672" stroke-width="4"/>
-    <path d="M180 20 194 42 166 42z" fill="#f0ece5" stroke="#16141a" stroke-width="4"/>
-  </g>
+<g stroke="url(#steel)" stroke-width="10" stroke-linecap="round">
+ <path d="M54 292 298 66"/>
+ <path d="M306 292 62 66"/>
 </g>
-
-<!-- red aura -->
-<ellipse cx="180" cy="185" rx="132" ry="128" fill="url(#red)" opacity=".38" filter="url(#glow)"/>
-
-<!-- throne silhouette -->
-<path d="M116 92 142 54 161 88 180 34 199 88 218 54 244 92 231 127 246 158 230 174 236 314 198 314 193 220 167 220 162 314 124 314 130 174 114 158 129 127Z"
-      fill="url(#obs)" stroke="#5c5762" stroke-width="5"/>
-<path d="M143 124h74l13 53-18 29h-64l-18-29z" fill="#050507" stroke="#2f2b34" stroke-width="4"/>
-<path d="M151 214h58l-7 100h-44z" fill="#08070a" stroke="#2a262d" stroke-width="4"/>
-
-<!-- glowing red throne core -->
-<path d="M180 90 204 135 180 180 156 135Z" fill="#150307" stroke="#ff3131" stroke-width="5" filter="url(#glow)"/>
-<path d="M180 105 193 135 180 165 167 135Z" fill="#ff1f2d"/>
-<circle cx="180" cy="135" r="7" fill="#fff0e6"/>
-
-<!-- lower obsidian spikes -->
-<path d="M124 314 98 334 132 328 180 345 228 328 262 334 236 314Z" fill="#060608" stroke="#4c4651" stroke-width="4"/>
+<g fill="#c9c5bb">
+ <path d="M44 304 78 290 64 276Z"/><path d="M316 304 282 290 296 276Z"/>
+</g>
+<g stroke="#c9c5bb" stroke-width="9"><path d="M79 272 102 297"/><path d="M281 272 258 297"/></g>
+<!-- red crown spikes -->
+<path d="M98 90 122 56 146 94M214 94 238 56 262 90" fill="none" stroke="#d81120" stroke-width="5" filter="url(#glow)"/>
 </svg>
