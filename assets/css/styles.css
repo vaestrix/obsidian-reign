@@ -304,3 +304,28 @@ body{
 .war-room h2{font:500 40px Georgia,serif;color:#f0e2bb;margin:8px 0}.war-room p{max-width:700px;color:#99929f;line-height:1.7}.war-room-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:920px){.hero-battlemark{display:none}.operations-grid,.recruitment-board{grid-template-columns:1fr}.war-room{align-items:flex-start;flex-direction:column}.war-room-actions{justify-content:flex-start}}
 @media(max-width:620px){.recruitment-grid{grid-template-columns:1fr}.asmodian-eyes{top:18%;width:1200px;max-width:none;opacity:.09}}
+
+/* Signature Templar hero */
+.hero-templar{
+  position:absolute;
+  right:250px;
+  bottom:-26px;
+  width:min(430px,31vw);
+  z-index:2;
+  pointer-events:none;
+  filter:drop-shadow(0 28px 35px rgba(0,0,0,.7)) drop-shadow(0 0 30px rgba(109,52,255,.12));
+  opacity:.96
+}
+.hero-templar:before{
+  content:"";position:absolute;inset:25% 8% 5%;
+  background:radial-gradient(circle at 50% 40%,rgba(109,52,255,.19),transparent 62%);
+  filter:blur(16px);z-index:-1
+}
+.hero-templar img{width:100%;height:auto;display:block}
+.launch-count{margin-top:34px;max-width:740px;padding-top:18px;border-top:1px solid rgba(215,169,59,.14)}
+.countdown{display:grid;grid-template-columns:auto auto auto auto auto auto auto auto;align-items:end;gap:9px;margin-top:10px;max-width:520px}
+.countdown b{font:600 26px Georgia,serif;color:#f1e3bc;letter-spacing:.08em}
+.countdown span{font-size:7px;letter-spacing:.14em;color:#6f6874;margin:0 7px 5px -4px}
+@media(max-width:1150px){.hero-templar{right:180px;width:34vw;opacity:.82}}
+@media(max-width:920px){.hero-templar{right:-55px;width:52vw;opacity:.25}.premium-card{position:relative;z-index:4}}
+@media(max-width:620px){.hero-templar{right:-70px;width:72vw;bottom:60px;opacity:.18}.countdown{grid-template-columns:repeat(4,auto);gap:7px}.countdown span{margin-right:12px}}
