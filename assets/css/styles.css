@@ -12,3 +12,239 @@
 @keyframes cardIn{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
 @keyframes sweep{0%,60%{left:-35%}85%,100%{left:125%}}
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;scroll-behavior:auto!important}}
+
+/* 202x premium visual overhaul */
+:root{
+  --obsidian:#040406;
+  --ink:#08070b;
+  --violet:#6d34ff;
+  --violet-hot:#9b66ff;
+  --violet-soft:#c7a8ff;
+  --gold:#d7a93b;
+  --gold-hot:#f3d47a;
+  --champagne:#f7e8bd;
+}
+body{
+  background:
+    radial-gradient(circle at 50% -10%,rgba(109,52,255,.08),transparent 30%),
+    linear-gradient(180deg,#050507 0%,#030304 100%);
+}
+.site-header{
+  height:92px;
+  background:linear-gradient(180deg,rgba(4,4,6,.97),rgba(4,4,6,.78));
+  border-bottom:1px solid rgba(215,169,59,.16);
+  box-shadow:0 18px 60px rgba(0,0,0,.55);
+}
+.site-header:after{
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(215,169,59,.7),rgba(109,52,255,.65),rgba(215,169,59,.7),transparent);
+  opacity:.55;
+}
+.brand-crest{width:52px;height:60px;filter:drop-shadow(0 0 18px rgba(109,52,255,.35))}
+.brand-wordmark{width:300px}
+.main-nav{gap:28px;font-size:10px;letter-spacing:.18em}
+.main-nav a{position:relative;padding:9px 0}
+.main-nav a:after{content:"";position:absolute;left:50%;right:50%;bottom:-6px;height:1px;background:linear-gradient(90deg,var(--violet),var(--gold));transition:.25s}
+.main-nav a:hover:after{left:0;right:0}
+.nav-admin{padding:12px 18px!important;border:1px solid rgba(215,169,59,.45);background:linear-gradient(180deg,rgba(215,169,59,.08),rgba(215,169,59,.02))}
+.hero{
+  min-height:calc(100vh - 92px);
+  isolation:isolate;
+  border-bottom:0;
+}
+.hero-bg{
+  background:url('../img/hero-asmodian-warfront.svg') center 46%/cover no-repeat;
+  transform:scale(1.02);
+  filter:saturate(1.1) contrast(1.08);
+}
+.hero-bg:after{
+  content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 50% 40%,transparent 0 32%,rgba(0,0,0,.24) 66%,rgba(0,0,0,.72) 100%),
+    linear-gradient(90deg,rgba(2,2,4,.92) 0%,rgba(5,4,8,.62) 36%,rgba(8,4,16,.20) 67%,rgba(2,2,4,.66) 100%);
+}
+.hero-vignette{
+  background:
+    linear-gradient(180deg,rgba(2,2,4,.02) 0%,rgba(2,2,4,.08) 48%,#040406 100%),
+    radial-gradient(circle at 64% 28%,rgba(109,52,255,.05),transparent 28%);
+}
+.premium-hero-grid{
+  grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr);
+  gap:86px;
+  padding:110px 0 145px;
+}
+.hero-copy{max-width:900px;position:relative}
+.hero-faction-line{
+  display:flex;align-items:center;gap:18px;
+  font-size:11px;letter-spacing:.36em;text-transform:uppercase;
+  color:#9d95a3;margin-bottom:26px;
+}
+.hero-faction-line i{width:70px;height:1px;background:linear-gradient(90deg,var(--gold),transparent)}
+.hero-faction-line strong{color:var(--gold-hot);font-weight:600}
+.hero-title-wrap{position:relative;margin-bottom:26px}
+.hero-overline{
+  display:block;color:var(--violet-soft);font-size:12px;letter-spacing:.44em;
+  text-transform:uppercase;margin-bottom:14px;text-shadow:0 0 24px rgba(109,52,255,.35)
+}
+.hero-title{
+  margin:0;
+  font:700 clamp(72px,8.4vw,152px)/.78 Georgia,serif;
+  letter-spacing:-.04em;
+  color:#f4ecd8;
+  text-shadow:0 3px 0 #25170a,0 15px 40px rgba(0,0,0,.85);
+}
+.hero-title em{
+  display:block;
+  font-style:normal;
+  color:transparent;
+  -webkit-text-stroke:1px rgba(255,232,169,.9);
+  background:linear-gradient(180deg,#fff0b8 0%,#d9a53c 36%,#7d5216 72%,#e9bf5b 100%);
+  -webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 0 18px rgba(215,169,59,.14));
+}
+.hero-title-rule{
+  width:min(620px,74%);height:1px;margin:28px 0 16px;
+  background:linear-gradient(90deg,var(--gold),rgba(109,52,255,.9),transparent);
+  position:relative
+}
+.hero-title-rule:before{content:"";position:absolute;left:37%;top:-5px;width:11px;height:11px;transform:rotate(45deg);background:#0a0710;border:1px solid var(--gold)}
+.hero-subtitle{
+  margin:0;
+  font:500 clamp(17px,1.7vw,26px)/1.35 Georgia,serif;
+  letter-spacing:.16em;text-transform:uppercase;color:#d8d0c6;
+}
+.hero-subtitle span{color:#9f87c8}
+.hero-deck{
+  max-width:760px;
+  font-size:19px;
+  color:#b0a9b5;
+  line-height:1.8;
+  text-shadow:0 2px 16px #000;
+}
+.hero-actions{gap:16px;margin-top:34px}
+.btn{
+  min-height:54px;
+  padding:0 28px;
+  font-size:10px;
+  letter-spacing:.19em;
+  border-radius:2px;
+}
+.btn-purple{
+  border-color:rgba(155,102,255,.8);
+  background:linear-gradient(180deg,rgba(109,52,255,.35),rgba(39,12,87,.22));
+  box-shadow:0 0 0 1px rgba(155,102,255,.08) inset,0 0 30px rgba(109,52,255,.24),0 14px 35px rgba(0,0,0,.35);
+}
+.btn-gold{
+  border-color:rgba(215,169,59,.75);
+  color:#f4df9e;
+  background:linear-gradient(180deg,rgba(215,169,59,.10),rgba(215,169,59,.03));
+  box-shadow:0 0 0 1px rgba(215,169,59,.06) inset,0 14px 35px rgba(0,0,0,.35);
+}
+.hero-metrics{
+  display:grid;grid-template-columns:repeat(4,minmax(110px,1fr));
+  gap:1px;max-width:740px;margin-top:44px;
+  border:1px solid rgba(215,169,59,.16);
+  background:rgba(215,169,59,.16);
+  box-shadow:0 16px 50px rgba(0,0,0,.34);
+}
+.hero-metrics>div{
+  padding:15px 18px;background:rgba(6,6,9,.82);backdrop-filter:blur(10px)
+}
+.hero-metrics b{
+  display:block;font:600 13px Georgia,serif;letter-spacing:.16em;color:#efe1b7
+}
+.hero-metrics span{
+  display:block;margin-top:5px;font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#77707c
+}
+.premium-card{
+  padding:38px 32px;
+  background:
+    linear-gradient(180deg,rgba(13,11,17,.82),rgba(5,5,8,.94)),
+    radial-gradient(circle at 50% 0%,rgba(109,52,255,.13),transparent 46%);
+  border:1px solid rgba(215,169,59,.34);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.015),
+    0 40px 100px rgba(0,0,0,.58),
+    0 0 60px rgba(109,52,255,.08);
+  position:relative;overflow:hidden;
+}
+.premium-card:before,.premium-card:after{
+  content:"";position:absolute;width:54px;height:54px;border-color:var(--gold);opacity:.45
+}
+.premium-card:before{left:10px;top:10px;border-left:1px solid;border-top:1px solid}
+.premium-card:after{right:10px;bottom:10px;border-right:1px solid;border-bottom:1px solid}
+.crest-halo{
+  width:190px;height:210px;margin:0 auto 10px;
+  display:grid;place-items:center;position:relative
+}
+.crest-halo:before{
+  content:"";position:absolute;width:150px;height:150px;border-radius:50%;
+  border:1px solid rgba(215,169,59,.28);
+  box-shadow:0 0 60px rgba(109,52,255,.22),inset 0 0 45px rgba(109,52,255,.14)
+}
+.crest-halo img{width:150px;position:relative;z-index:2;filter:drop-shadow(0 0 28px rgba(109,52,255,.46))}
+.premium-card h2{
+  font:600 29px/1.28 Georgia,serif;text-align:center;letter-spacing:.04em;color:#eee2c3
+}
+.premium-card h2 span{color:#a478ff}
+.command-note{
+  color:#918996;line-height:1.65;text-align:center;font-size:13px;margin:14px 0 25px
+}
+.quicklinks{
+  margin-top:-72px;
+  background:rgba(7,7,10,.88);
+  backdrop-filter:blur(18px);
+  border-color:rgba(215,169,59,.24);
+  box-shadow:0 32px 90px rgba(0,0,0,.58);
+}
+.quicklinks a{
+  position:relative;overflow:hidden;padding:28px 26px;transition:.3s
+}
+.quicklinks a:before{
+  content:"";position:absolute;left:0;right:100%;bottom:0;height:2px;background:linear-gradient(90deg,var(--violet),var(--gold));transition:.3s
+}
+.quicklinks a:hover{background:linear-gradient(180deg,rgba(109,52,255,.08),transparent)}
+.quicklinks a:hover:before{right:0}
+.section{
+  position:relative;
+}
+.section:before{
+  content:"";position:absolute;left:50%;top:0;width:min(1180px,75%);height:1px;transform:translateX(-50%);
+  background:linear-gradient(90deg,transparent,rgba(215,169,59,.12),transparent)
+}
+.section h2{font-size:48px}
+.card,.panel{
+  border-color:rgba(215,169,59,.20);
+  background:
+    linear-gradient(180deg,rgba(14,12,18,.96),rgba(6,6,9,.99)),
+    radial-gradient(circle at top right,rgba(109,52,255,.07),transparent 32%);
+  box-shadow:0 24px 70px rgba(0,0,0,.42);
+}
+.card{transition:transform .25s,border-color .25s,box-shadow .25s}
+.card:hover{transform:translateY(-4px);border-color:rgba(155,102,255,.34);box-shadow:0 34px 86px rgba(0,0,0,.5),0 0 40px rgba(109,52,255,.06)}
+.join-banner{
+  position:relative;
+  background:
+    linear-gradient(180deg,rgba(4,4,6,.3),#030304),
+    radial-gradient(circle at 50% 10%,rgba(109,52,255,.28),transparent 32%),
+    url('../img/hero-asmodian-warfront.svg') center 70%/cover;
+  border-top:1px solid rgba(215,169,59,.18);
+}
+.join-banner:before{content:"";position:absolute;inset:0;background:rgba(2,2,4,.62)}
+.join-banner .shell{position:relative;z-index:2}
+.footer{border-top:1px solid rgba(215,169,59,.18);background:linear-gradient(180deg,#040405,#020203)}
+@media(max-width:920px){
+  .premium-hero-grid{grid-template-columns:1fr;padding-top:100px}
+  .hero-title{font-size:clamp(64px,15vw,112px)}
+  .hero-metrics{grid-template-columns:1fr 1fr}
+}
+@media(max-width:620px){
+  .site-header{height:76px}
+  .hero{min-height:880px}
+  .hero-faction-line{letter-spacing:.24em;font-size:9px}
+  .hero-title{font-size:clamp(56px,18vw,88px)}
+  .hero-subtitle{font-size:14px;letter-spacing:.11em}
+  .hero-deck{font-size:16px}
+  .hero-metrics{grid-template-columns:1fr 1fr;margin-top:30px}
+  .quicklinks{margin-top:-42px}
+}
