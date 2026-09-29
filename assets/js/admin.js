@@ -125,7 +125,7 @@ function renderRoster(){
       <label>Role<select name="role">
         <option>Guild Leader</option><option>Officer</option><option>Raid Lead</option><option>Veteran</option><option>Raider</option><option>PvP Team</option><option>Member</option>
       </select></label>
-      <label>Class<input name="className" required placeholder="Templar, Sorcerer, Spiritmaster..."></label>
+      <label>Class<select name="className" required><option value="" disabled>Select your main class</option><option value="Templar">Templar</option><option value="Gladiator">Gladiator</option><option value="Assassin">Assassin</option><option value="Ranger">Ranger</option><option value="Sorcerer">Sorcerer</option><option value="Spiritmaster">Spiritmaster</option><option value="Cleric">Cleric</option><option value="Chanter">Chanter</option></select></label>
       <label>Interest<select name="interest"><option>PvE</option><option>PvP</option><option>Both</option></select></label>
       <label>Status<select name="status"><option>Active</option><option>Inactive</option></select></label>
     </div>
