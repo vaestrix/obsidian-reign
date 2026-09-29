@@ -3079,3 +3079,32 @@ input,textarea,select{
     flex-wrap:wrap!important;
   }
 }
+
+.guide-category-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:22px;
+}
+.guide-category-card{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  padding:18px!important;
+}
+.guide-category-card .guide-video-wrap{
+  margin:2px 0 4px;
+}
+.guide-category-card h3{
+  margin:4px 0 0!important;
+}
+.guide-category-card p{
+  color:#aaa3b0;
+  margin:0 0 4px!important;
+}
+.guide-category-card .btn{
+  margin-top:auto;
+  align-self:flex-start;
+}
+@media(max-width:980px){
+  .guide-category-grid{grid-template-columns:1fr}
+}
