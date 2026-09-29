@@ -148,6 +148,29 @@ function renderNews(){
   <div class="admin-list">${state.news.map(x=>`<div class="admin-item"><div><strong>${esc(x.title)}</strong><div class="muted">${esc(x.date)} • ${esc(x.category)}</div></div><button data-delete="news" data-id="${esc(x.id)}">REMOVE</button></div>`).join("")}</div>`;
 }
 
+function raidItem(x){
+  const signups=Array.isArray(x.signups)?x.signups:[];
+  return `<article class="admin-raid-card">
+    <div class="admin-raid-head">
+      <div>
+        <strong>${esc(x.name)}</strong>
+        <div class="muted">${esc(x.date)} • ${esc(x.time)} • ${esc(x.status)} • ${x.allowSignups?"Signups Open":"Signups Closed"}</div>
+      </div>
+      <div class="admin-item-actions">
+        <button data-toggle-raid-signups="${esc(x.id)}">${x.allowSignups?"CLOSE SIGNUPS":"OPEN SIGNUPS"}</button>
+        <button data-delete="raids" data-id="${esc(x.id)}">REMOVE EVENT</button>
+      </div>
+    </div>
+    <div class="raid-signup-admin">
+      <div class="raid-signup-admin-title"><span>Members Signed Up</span><b>${signups.length}</b></div>
+      ${signups.length ? signups.map(s=>`<div class="raid-signup-admin-row">
+        <div><strong>${esc(s.name)}</strong><span>${esc(s.className||"Unspecified")} • ${esc(s.role||"Member")}</span></div>
+        <button data-remove-raid-signup="${esc(s.id)}" data-raid-id="${esc(x.id)}">REMOVE</button>
+      </div>`).join("") : '<p class="muted">No members signed up yet.</p>'}
+    </div>
+  </article>`;
+}
+
 function renderRaids(){
   return `<div class="admin-toolbar"><div><p class="eyebrow">OPERATIONS</p><h2>Raid & Event Control</h2></div></div>
   <form id="raid-form" class="admin-editor"><div class="form-grid">
@@ -155,8 +178,9 @@ function renderRaids(){
     <label>Date<input name="date" type="date" required></label>
     <label>Time<input name="time" value="8:00 PM CT"></label>
     <label>Status<input name="status" value="Signups Open"></label>
+    <label class="raid-signup-option full"><input name="allowSignups" type="checkbox" value="true"> <span>Allow roster members to sign up for this raid</span></label>
   </div><button class="btn btn-gold">Add Operation</button></form>
-  <div class="admin-list">${state.raids.map(x=>`<div class="admin-item"><div><strong>${esc(x.name)}</strong><div class="muted">${esc(x.date)} • ${esc(x.time)} • ${esc(x.status)}</div></div><button data-delete="raids" data-id="${esc(x.id)}">REMOVE</button></div>`).join("")}</div>`;
+  <div class="admin-raid-list">${state.raids.map(raidItem).join("") || '<p class="muted">No raid events created yet.</p>'}</div>`;
 }
 
 function renderSettings(){
@@ -216,9 +240,21 @@ function bind(){
     e.preventDefault(); await action({type:"news",action:"add",item:Object.fromEntries(new FormData(e.currentTarget))});
   });
   $("#raid-form")?.addEventListener("submit",async e=>{
-    e.preventDefault(); await action({type:"raids",action:"add",item:Object.fromEntries(new FormData(e.currentTarget))});
+    e.preventDefault();
+    const form=e.currentTarget;
+    const item=Object.fromEntries(new FormData(form));
+    item.allowSignups=form.allowSignups.checked;
+    await action({type:"raids",action:"add",item});
   });
-  $$("[data-delete]").forEach(btn=>btn.addEventListener("click",()=>action({type:btn.dataset.delete,action:"delete",id:btn.dataset.id})));
+  $("[data-toggle-raid-signups]").forEach(btn=>btn.addEventListener("click",async()=>{
+    const raid=state.raids.find(r=>r.id===btn.dataset.toggleRaidSignups);
+    if(!raid)return;
+    await action({type:"raids",action:"update",id:raid.id,item:{allowSignups:!raid.allowSignups}});
+  }));
+  $("[data-remove-raid-signup]").forEach(btn=>btn.addEventListener("click",()=>action({
+    type:"raidSignup",action:"delete",raidId:btn.dataset.raidId,id:btn.dataset.removeRaidSignup
+  })));
+  $("[data-delete]").forEach(btn=>btn.addEventListener("click",()=>action({type:btn.dataset.delete,action:"delete",id:btn.dataset.id})));
 
   $("#settings-form")?.addEventListener("submit",async e=>{
     e.preventDefault(); await action({type:"settings",action:"update",item:Object.fromEntries(new FormData(e.currentTarget))});
