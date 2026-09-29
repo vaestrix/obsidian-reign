@@ -3,7 +3,7 @@
   <form id="guild-application-form">
     <div class="form-grid">
       <label>Character Name<input name="name" required maxlength="80"></label>
-      <label>Class<input name="className" required maxlength="80" placeholder="Templar, Sorcerer, Spiritmaster..."></label>
+      <label>Main Class<select name="className" required><option value="" selected disabled>Select your main class</option><option value="Templar">Templar</option><option value="Gladiator">Gladiator</option><option value="Assassin">Assassin</option><option value="Ranger">Ranger</option><option value="Sorcerer">Sorcerer</option><option value="Spiritmaster">Spiritmaster</option><option value="Cleric">Cleric</option><option value="Chanter">Chanter</option></select></label>
       <label>Primary Interest<select name="interest" required><option value="Both">Both PvE & PvP</option><option value="PvE">PvE</option><option value="PvP">PvP</option></select></label>
       <label>Discord Name<input name="discord" maxlength="100" placeholder="Optional"></label>
       <label class="full">Why do you want to join?<textarea name="notes" maxlength="1000" placeholder="Playstyle, goals, raid/PvP interest, experience, schedule, etc."></textarea></label>
