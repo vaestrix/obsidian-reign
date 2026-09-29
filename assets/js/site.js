@@ -12,7 +12,7 @@ const FALLBACK={
   roster:[
     {name:"Vaestrix",role:"Guild Leader",className:"Templar",interest:"Both"}
   ],
-  settings:{discord:"https://discord.gg/docgotgame",server:"To Be Announced",recruitment:"Open"}
+  settings:{discord:"https://discord.gg/docgotgame",server:"Zikel • NA East",recruitment:"Open"}
 };
 
 const esc=x=>String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
