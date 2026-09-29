@@ -81,6 +81,11 @@ export class CommandStore {
     }
     s.news ||= [];
     s.raids ||= [];
+    s.raids = s.raids.map(r=>({
+      ...r,
+      allowSignups:Boolean(r.allowSignups),
+      signups:Array.isArray(r.signups)?r.signups:[]
+    }));
     s.roster ||= [];
     s.applications ||= [];
     s.settings = {...DEFAULT_STATE.settings,...(s.settings||{})};
@@ -101,7 +106,16 @@ export class CommandStore {
     }
 
     if(request.method==="GET" && url.pathname==="/public"){
-      return json({news:s.news,raids:s.raids,roster:s.roster.filter(x=>x.status!=="Inactive"),settings:s.settings});
+      return json({
+        news:s.news,
+        raids:s.raids.map(r=>({
+          id:r.id,name:r.name,date:r.date,time:r.time,status:r.status,
+          allowSignups:Boolean(r.allowSignups),
+          signupCount:Array.isArray(r.signups)?r.signups.length:0
+        })),
+        roster:s.roster.filter(x=>x.status!=="Inactive"),
+        settings:s.settings
+      });
     }
 
     if(request.method==="POST" && url.pathname==="/apply"){
@@ -122,6 +136,46 @@ export class CommandStore {
       s.applications.unshift(app);
       await this.save(s);
       return json({ok:true,id:app.id},201);
+    }
+
+    if(request.method==="POST" && url.pathname==="/raid-signup"){
+      let body;
+      try{ body=await request.json(); }catch{ return json({error:"Invalid signup request."},400); }
+
+      const raidId=safeString(body.raidId,120);
+      const characterName=safeString(body.characterName,80);
+      if(!raidId || !characterName) return json({error:"Character name is required."},400);
+
+      const raid=s.raids.find(r=>r.id===raidId);
+      if(!raid) return json({error:"Raid event not found."},404);
+      if(!raid.allowSignups) return json({error:"Signups are not open for this raid."},400);
+
+      const member=s.roster.find(r =>
+        r.status!=="Inactive" &&
+        safeString(r.name,80).toLowerCase()===characterName.toLowerCase()
+      );
+
+      if(!member){
+        return json({error:"Please apply to Obsidian Reign before requesting to attend a Raid.",code:"NOT_ON_ROSTER"},403);
+      }
+
+      raid.signups ||= [];
+      if(raid.signups.some(x=>x.memberId===member.id || safeString(x.name,80).toLowerCase()===characterName.toLowerCase())){
+        return json({error:"You are already signed up for this raid.",code:"ALREADY_SIGNED"},409);
+      }
+
+      const signup={
+        id:uid("signup"),
+        memberId:member.id,
+        name:member.name,
+        role:member.role||"Member",
+        className:member.className||"Unspecified",
+        interest:member.interest||"Both",
+        signedUpAt:new Date().toISOString()
+      };
+      raid.signups.push(signup);
+      await this.save(s);
+      return json({ok:true,message:"Raid signup confirmed.",signup},201);
     }
 
     if(request.method!=="POST" || url.pathname!=="/action") return json({error:"Not found"},404);
@@ -155,19 +209,40 @@ export class CommandStore {
           item.date=safeString(item.date,20);
           item.time=safeString(item.time,30);
           item.status=safeString(item.status,40);
+          item.allowSignups=Boolean(item.allowSignups);
+          item.signups=[];
         }
         list.push(item);
       } else {
         const i=list.findIndex(x=>x.id===body.id);
         if(i<0) return json({error:"Item not found"},404);
         if(action==="update"){
-          list[i]={...list[i],...body.item,id:list[i].id};
+          const prior=list[i];
+          list[i]={...prior,...body.item,id:prior.id};
+          if(type==="raids"){
+            list[i].allowSignups=Boolean(body.item?.allowSignups);
+            list[i].signups=Array.isArray(prior.signups)?prior.signups:[];
+          }
         } else if(action==="delete"){
           list.splice(i,1);
         } else return json({error:"Unknown action"},400);
       }
       await this.save(s);
       return json({ok:true,state:s});
+    }
+
+    if(type==="raidSignup"){
+      const raid=s.raids.find(r=>r.id===body.raidId);
+      if(!raid) return json({error:"Raid not found"},404);
+      raid.signups ||= [];
+      const i=raid.signups.findIndex(x=>x.id===body.id);
+      if(i<0) return json({error:"Signup not found"},404);
+      if(action==="delete"){
+        raid.signups.splice(i,1);
+        await this.save(s);
+        return json({ok:true,state:s});
+      }
+      return json({error:"Unknown signup action"},400);
     }
 
     if(type==="settings" && action==="update"){
@@ -229,6 +304,10 @@ export default {
 
     if(url.pathname==="/api/applications" && request.method==="POST"){
       return store(env).fetch(new Request(new URL("/apply",url),request));
+    }
+
+    if(url.pathname==="/api/raid-signup" && request.method==="POST"){
+      return store(env).fetch(new Request(new URL("/raid-signup",url),request));
     }
 
     if(url.pathname==="/api/admin/state"){
