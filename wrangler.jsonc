@@ -6,14 +6,24 @@
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
-    "run_worker_first": true
+    "run_worker_first": true,
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
   },
   "durable_objects": {
     "bindings": [
-      { "name": "COMMAND_STORE", "class_name": "CommandStore" }
+      {
+        "name": "COMMAND_STORE",
+        "class_name": "CommandStore"
+      }
     ]
   },
   "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["CommandStore"] }
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "CommandStore"
+      ]
+    }
   ]
 }
