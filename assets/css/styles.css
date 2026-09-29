@@ -2805,3 +2805,90 @@ input,textarea,select{
     filter:none!important;
   }
 }
+
+/* ===== TEXT GROUP SPACING CORRECTION =====
+   Keep adjacent labels from visually running together. */
+.hero-faction-line{
+  display:flex!important;
+  align-items:center!important;
+  flex-wrap:wrap!important;
+  gap:14px 22px!important;
+  margin-bottom:18px!important;
+  line-height:1.35!important;
+}
+.hero-faction-line span,
+.hero-faction-line strong{
+  display:inline-block!important;
+  white-space:nowrap;
+  margin:0!important;
+}
+.hero-faction-line i{
+  display:block!important;
+  flex:0 0 58px;
+  width:58px!important;
+  height:1px!important;
+  margin:0 2px!important;
+}
+.hero-faction-line span{
+  padding-right:2px;
+}
+.hero-faction-line strong{
+  padding-left:2px;
+}
+
+/* Give small all-caps label groups more breathing room sitewide. */
+.eyebrow,
+.hero-overline,
+.video-count-wrap>span,
+.meta,
+.role{
+  letter-spacing:.18em;
+  word-spacing:.12em;
+}
+.video-count-wrap>span{
+  line-height:1.55!important;
+}
+.footer small,
+.video-hero-links small,
+.recruit-card small,
+.member-meta,
+.raid-signup-count{
+  word-spacing:.18em;
+}
+
+/* Prevent inline labels and values from colliding in dense UI. */
+.application-meta{
+  column-gap:24px!important;
+  row-gap:10px!important;
+}
+.application-meta span{
+  display:inline-flex;
+  gap:5px;
+  align-items:baseline;
+}
+.raid-row strong{
+  display:block;
+  margin-bottom:5px;
+}
+.video-hero-links span{
+  margin-bottom:7px;
+}
+.recruit-card b{
+  display:block;
+  margin-bottom:8px;
+}
+.recruit-card span{
+  display:block;
+  margin-bottom:7px;
+}
+
+@media(max-width:620px){
+  .hero-faction-line{
+    gap:10px 14px!important;
+    letter-spacing:.22em!important;
+  }
+  .hero-faction-line i{
+    flex-basis:34px;
+    width:34px!important;
+  }
+}
