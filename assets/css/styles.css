@@ -1864,3 +1864,49 @@ body:before{
   .video-hero-links a{min-height:70px}
   .video-hero-links a:nth-child(5){grid-column:1/-1}
 }
+
+/* Premium rendered Obsidian Reign crest */
+.premium-logo,
+.brand-logo-only,
+.brand{
+  overflow:visible!important;
+}
+.premium-logo img,
+.premium-logo-img,
+.brand-crest{
+  object-fit:contain!important;
+  image-rendering:auto!important;
+}
+.hero-logo-only.premium-logo{
+  left:1.65%!important;
+  top:.15%!important;
+  height:8.2%!important;
+  width:auto!important;
+  aspect-ratio:1/1!important;
+}
+.hero-logo-only.premium-logo img{
+  height:100%!important;
+  width:auto!important;
+  max-width:none!important;
+  filter:
+    drop-shadow(0 0 10px rgba(120,30,40,.22))
+    drop-shadow(0 0 20px rgba(111,56,217,.12))!important;
+  transition:transform .28s ease,filter .28s ease!important;
+}
+.hero-logo-only.premium-logo:hover img{
+  transform:scale(1.035)!important;
+  filter:
+    drop-shadow(0 0 16px rgba(184,20,32,.30))
+    drop-shadow(0 0 26px rgba(111,56,217,.18))!important;
+}
+.brand-crest.premium-logo-img,
+.brand .premium-logo-img{
+  width:58px!important;
+  height:58px!important;
+  filter:
+    drop-shadow(0 0 9px rgba(184,20,32,.20))
+    drop-shadow(0 0 14px rgba(111,56,217,.10))!important;
+}
+@media(max-width:760px){
+  .hero-logo-only.premium-logo{height:7.6%!important;left:2.2%!important}
+}
