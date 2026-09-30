@@ -1,6 +1,6 @@
-# Obsidian Reign
+# Onyx Reign
 
-Official website for **Obsidian Reign**, an Aion 2 Global Asmodian guild.
+Official website for **Onyx Reign**, an Aion 2 Global Asmodian guild.
 
 ## Brand
 - Primary: Black
