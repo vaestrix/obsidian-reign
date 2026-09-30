@@ -59,7 +59,27 @@ function renderPublic(data){
       return roleRank(ga)-roleRank(gb)||String(a.name||"").localeCompare(String(b.name||""));
     });
     const groups=["Guild Leader","Officers","Members"];
-    rg.innerHTML=groups.map(group=>{
+    const classOrder=["Templar","Gladiator","Assassin","Ranger","Sorcerer","Spiritmaster","Cleric","Chanter"];
+    const activeWithClass=roster.filter(x=>classOrder.includes(x.className));
+    const totalClassed=activeWithClass.length;
+    const classStats=classOrder.map(className=>{
+      const count=activeWithClass.filter(x=>x.className===className).length;
+      const pct=totalClassed?count/totalClassed*100:0;
+      return {className,count,pct};
+    });
+    const distribution=`<section class="class-distribution">
+      <div class="class-distribution-head">
+        <div><p class="eyebrow">ROSTER COMPOSITION</p><h3>Class Distribution</h3></div>
+        <span>${totalClassed} active ${totalClassed===1?"character":"characters"}</span>
+      </div>
+      <div class="class-distribution-grid">
+        ${classStats.map(x=>`<div class="class-stat">
+          <div class="class-stat-top"><strong>${esc(x.className)}</strong><span>${x.count} • ${x.pct.toFixed(x.pct%1?1:0)}%</span></div>
+          <div class="class-stat-track"><i style="width:${x.pct.toFixed(2)}%"></i></div>
+        </div>`).join("")}
+      </div>
+    </section>`;
+    rg.innerHTML=distribution+groups.map(group=>{
       const members=roster.filter(x=>roleGroup(x.role)===group);
       if(!members.length)return "";
       return `<section class="roster-group">
