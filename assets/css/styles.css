@@ -3162,3 +3162,14 @@ input,textarea,select{
   .roster-group-head{align-items:flex-start;flex-direction:column;gap:6px}
   .roster-group-grid{grid-template-columns:1fr}
 }
+
+/* Guild Leader is a single-person tier */
+.roster-group:first-child .roster-group-grid{
+  grid-template-columns:minmax(280px,420px)!important;
+}
+.roster-group:first-child .roster-group-head span{
+  display:none!important;
+}
+.roster-group:first-child .member{
+  max-width:420px;
+}
