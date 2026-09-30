@@ -47,7 +47,7 @@
       if(!r.ok){
         status.className="raid-signup-message raid-signup-error";
         if(data.code==="NOT_ON_ROSTER"){
-          status.innerHTML='Please apply to Onyx Reign before requesting to attend a Raid. <a href="join.html">Apply to Onyx Reign</a>.';
+          status.innerHTML='Please apply to Nox Reign before requesting to attend a Raid. <a href="join.html">Apply to Nox Reign</a>.';
         }else{
           status.textContent=data.error||"Could not complete raid signup.";
         }
