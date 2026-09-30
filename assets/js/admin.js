@@ -123,7 +123,7 @@ function renderRoster(){
     <div class="form-grid">
       <label>Name<input name="name" required></label>
       <label>Role<select name="role">
-        <option>Guild Leader</option><option>Officer</option><option>Raid Lead</option><option>Veteran</option><option>Raider</option><option>PvP Team</option><option>Member</option>
+        <option>Guild Leader</option><option>Officer</option><option>Member</option>
       </select></label>
       <label>Class<select name="className" required><option value="" disabled>Select your main class</option><option value="Templar">Templar</option><option value="Gladiator">Gladiator</option><option value="Assassin">Assassin</option><option value="Ranger">Ranger</option><option value="Sorcerer">Sorcerer</option><option value="Spiritmaster">Spiritmaster</option><option value="Cleric">Cleric</option><option value="Chanter">Chanter</option></select></label>
       <label>Interest<select name="interest"><option>PvE</option><option>PvP</option><option>Both</option></select></label>
@@ -134,7 +134,7 @@ function renderRoster(){
       <button class="btn btn-purple" type="button" data-clear-roster>Clear</button>
     </div>
   </form>
-  <div class="admin-list">${state.roster.map(rosterItem).join("")}</div>`;
+  <div class="admin-list">${state.roster.slice().sort((a,b)=>{const rank=r=>{const v=String(r||"").toLowerCase();if(v==="guild leader"||v==="gl")return 0;if(v==="officer")return 1;return 2};return rank(a.role)-rank(b.role)||String(a.name||"").localeCompare(String(b.name||""))}).map(rosterItem).join("")}</div>`;
 }
 
 function renderNews(){
