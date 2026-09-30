@@ -47,7 +47,9 @@ function renderPublic(data){
 
   const rg=document.querySelector("#roster-grid");
   if(rg){
-    rg.innerHTML=(data.roster||[]).map(x=>`<article class="card member"><div class="avatar">${esc((x.name||"?").slice(0,1))}</div><h3>${esc(x.name)}</h3><div class="role">${esc(x.role||"Member")}</div><div class="member-meta">${esc(x.className||"Unspecified")} • ${esc(x.interest||"Both")}</div></article>`).join("");
+    const roleRank=r=>{const v=String(r||"").toLowerCase();if(v==="guild leader"||v==="gl")return 0;if(v==="officer")return 1;return 2;};
+    const roster=(data.roster||[]).slice().sort((a,b)=>roleRank(a.role)-roleRank(b.role)||String(a.name||"").localeCompare(String(b.name||"")));
+    rg.innerHTML=roster.map(x=>`<article class="card member"><div class="avatar">${esc((x.name||"?").slice(0,1))}</div><h3>${esc(x.name)}</h3><div class="role">${esc(x.role||"Member")}</div><div class="member-meta">${esc(x.className||"Unspecified")} • ${esc(x.interest||"Both")}</div></article>`).join("");
   }
 }
 
