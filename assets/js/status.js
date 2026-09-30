@@ -1,5 +1,5 @@
 (()=> {
-  const target=new Date("2026-09-30T08:00:00-05:00").getTime();
+  const target=new Date("2026-09-30T08:30:00-05:00").getTime();
   let liveTriggered=false;
 
   function tick(){
