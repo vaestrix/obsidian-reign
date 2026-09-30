@@ -3561,3 +3561,7 @@ input,textarea,select{
     animation:none!important;
   }
 }
+
+.docgotgame-stopwatch.is-hidden-until-start{
+  display:none!important;
+}
