@@ -1,7 +1,7 @@
 const FALLBACK={
   discord:"https://discord.gg/docgotgame",
   news:[
-    {title:"Obsidian Reign Is Recruiting",date:"SEP 28, 2026",cat:"GUILD",excerpt:"We’re building a serious core for Aion 2 Global. Organized, social, and here for the long run."},
+    {title:"Onyx Reign Is Recruiting",date:"SEP 28, 2026",cat:"GUILD",excerpt:"We’re building a serious core for Aion 2 Global. Organized, social, and here for the long run."},
     {title:"Global Launch Approaching",date:"SEP 27, 2026",cat:"AION 2",excerpt:"Prepare your packs, launch groups, and voice comms. The first push begins soon."},
     {title:"Raid Command Forming",date:"SEP 25, 2026",cat:"OPERATIONS",excerpt:"Progression teams and launch-week objectives are being organized now."}
   ],
