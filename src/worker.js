@@ -5,7 +5,7 @@ const VALID_CLASSES = ["Templar","Gladiator","Assassin","Ranger","Sorcerer","Spi
 
 const DEFAULT_STATE = {
   news: [
-    { id:"news-recruiting", title:"Onyx Reign Is Recruiting", date:"2026-09-28", category:"Guild", excerpt:"We’re building a serious core for Aion 2 Global. Organized, social, and here for the long run." }
+    { id:"news-recruiting", title:"Nox Reign Is Recruiting", date:"2026-09-28", category:"Guild", excerpt:"We’re building a serious core for Aion 2 Global. Organized, social, and here for the long run." }
   ],
   raids: [
     { id:"raid-early-access", name:"Early Access Launch Night", date:"2026-09-30", time:"7:00 PM CT", status:"Main Event" }
@@ -52,7 +52,7 @@ function unauthorized() {
   return new Response("Authentication required", {
     status: 401,
     headers: {
-      "WWW-Authenticate": 'Basic realm="Onyx Reign Legion Command", charset="UTF-8"',
+      "WWW-Authenticate": 'Basic realm="Nox Reign Legion Command", charset="UTF-8"',
       "Cache-Control":"no-store"
     }
   });
@@ -156,7 +156,7 @@ export class CommandStore {
       );
 
       if(!member){
-        return json({error:"Please apply to Onyx Reign before requesting to attend a Raid.",code:"NOT_ON_ROSTER"},403);
+        return json({error:"Please apply to Nox Reign before requesting to attend a Raid.",code:"NOT_ON_ROSTER"},403);
       }
 
       raid.signups ||= [];
