@@ -42,11 +42,24 @@
       io.observe(el);
     });
 
-  document.querySelectorAll('.btn,.text-link,.recruit-card,.video-hero-links a').forEach(el=>{
-    el.addEventListener('pointermove',e=>{
-      const r=el.getBoundingClientRect();
-      el.style.setProperty('--mx',((e.clientX-r.left)/r.width*100).toFixed(1)+'%');
-      el.style.setProperty('--my',((e.clientY-r.top)/r.height*100).toFixed(1)+'%');
+  if(matchMedia('(hover:hover) and (pointer:fine)').matches){
+    document.querySelectorAll('.btn,.text-link,.recruit-card,.video-hero-links a').forEach(el=>{
+      el.addEventListener('pointermove',e=>{
+        const r=el.getBoundingClientRect();
+        el.style.setProperty('--mx',((e.clientX-r.left)/r.width*100).toFixed(1)+'%');
+        el.style.setProperty('--my',((e.clientY-r.top)/r.height*100).toFixed(1)+'%');
+      },{passive:true});
     });
-  });
+  }
+
+  const video=document.querySelector('.video-hero-bg');
+  if(video){
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden){
+        video.pause();
+      }else{
+        video.play().catch(()=>{});
+      }
+    });
+  }
 })();
