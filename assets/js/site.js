@@ -49,22 +49,22 @@ function renderPublic(data){
   if(rg){
     const roleGroup=r=>{
       const v=String(r||"").toLowerCase();
-      if(v==="guild leader"||v==="gl")return "Guild Leadership";
+      if(v==="guild leader"||v==="gl")return "Guild Leader";
       if(v==="officer")return "Officers";
       return "Members";
     };
-    const roleRank=g=>g==="Guild Leadership"?0:g==="Officers"?1:2;
+    const roleRank=g=>g==="Guild Leader"?0:g==="Officers"?1:2;
     const roster=(data.roster||[]).slice().sort((a,b)=>{
       const ga=roleGroup(a.role), gb=roleGroup(b.role);
       return roleRank(ga)-roleRank(gb)||String(a.name||"").localeCompare(String(b.name||""));
     });
-    const groups=["Guild Leadership","Officers","Members"];
+    const groups=["Guild Leader","Officers","Members"];
     rg.innerHTML=groups.map(group=>{
       const members=roster.filter(x=>roleGroup(x.role)===group);
       if(!members.length)return "";
       return `<section class="roster-group">
         <div class="roster-group-head">
-          <p class="eyebrow">${group==="Guild Leadership"?"COMMAND":group.toUpperCase()}</p>
+          <p class="eyebrow">${group==="Guild Leader"?"COMMAND":group.toUpperCase()}</p>
           <h3>${esc(group)}</h3>
           <span>${members.length} ${members.length===1?"member":"members"}</span>
         </div>
