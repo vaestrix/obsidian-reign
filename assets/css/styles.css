@@ -3108,3 +3108,57 @@ input,textarea,select{
 @media(max-width:980px){
   .guide-category-grid{grid-template-columns:1fr}
 }
+
+/* ===== ROSTER HIERARCHY ===== */
+#roster-grid.roster{
+  display:block!important;
+}
+.roster-group{
+  margin:0 0 42px;
+}
+.roster-group:last-child{
+  margin-bottom:0;
+}
+.roster-group-head{
+  display:flex;
+  align-items:end;
+  justify-content:space-between;
+  gap:18px;
+  padding:0 0 15px;
+  margin-bottom:18px;
+  border-bottom:1px solid rgba(184,151,79,.18);
+}
+.roster-group-head .eyebrow{
+  margin:0 0 5px!important;
+}
+.roster-group-head h3{
+  margin:0!important;
+  color:#eee5cf;
+  font:600 26px/1.1 Georgia,serif;
+}
+.roster-group-head span{
+  color:#766f7d;
+  font:600 9px/1 Inter,Arial,sans-serif;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.roster-group-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:18px;
+}
+.roster-group:first-child .member{
+  border-color:rgba(184,151,79,.34)!important;
+  box-shadow:0 24px 70px rgba(0,0,0,.45),0 0 30px rgba(184,151,79,.06)!important;
+}
+.roster-group:nth-child(2) .member{
+  border-color:rgba(111,56,217,.28)!important;
+}
+@media(max-width:900px){
+  .roster-group-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .roster-group-head{align-items:flex-start;flex-direction:column;gap:6px}
+  .roster-group-grid{grid-template-columns:1fr}
+}
