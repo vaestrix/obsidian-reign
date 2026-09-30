@@ -1,11 +1,9 @@
 (()=> {
+  const section=document.querySelector(".docgotgame-stopwatch");
   const root=document.querySelector("[data-docgotgame-stopwatch]");
-  if(!root)return;
+  if(!section||!root)return;
 
   const parts=root.querySelectorAll("span b");
-
-  // Starts exactly September 30, 2026 at 8:00 AM U.S. Central Time.
-  // On this date Central Time is CDT (UTC-5).
   const startAt=new Date("2026-09-30T08:00:00-05:00").getTime();
 
   function render(ms){
@@ -21,14 +19,19 @@
 
   function tick(){
     const now=Date.now();
+
     if(now<startAt){
+      section.classList.add("is-hidden-until-start");
       render(0);
-    }else{
-      render(now-startAt);
+      requestAnimationFrame(tick);
+      return;
     }
+
+    section.classList.remove("is-hidden-until-start");
+    render(now-startAt);
     requestAnimationFrame(tick);
   }
 
   render(0);
-  requestAnimationFrame(tick);
+  tick();
 })();
