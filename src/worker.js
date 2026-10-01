@@ -29,6 +29,33 @@ function safeString(v,max=500){
   return String(v??"").trim().slice(0,max);
 }
 
+function getCookie(request,name){
+  const raw=request.headers.get("Cookie")||"";
+  for(const part of raw.split(";")){
+    const [k,...rest]=part.trim().split("=");
+    if(k===name) return decodeURIComponent(rest.join("="));
+  }
+  return "";
+}
+
+function cookie(name,value,{maxAge=604800,httpOnly=true,path="/"}={}){
+  const parts=[name+"="+encodeURIComponent(value),"Path="+path,"SameSite=Lax","Secure"];
+  if(httpOnly)parts.push("HttpOnly");
+  if(Number.isFinite(maxAge))parts.push("Max-Age="+maxAge);
+  return parts.join("; ");
+}
+
+function redirect(location,headers={}){
+  return new Response(null,{status:302,headers:{Location:location,...headers}});
+}
+
+function discordAvatarUrl(user){
+  if(!user?.id)return "";
+  if(user.avatar)return "https://cdn.discordapp.com/avatars/"+user.id+"/"+user.avatar+".png?size=128";
+  const index=Number((BigInt(user.id)>>22n)%6n);
+  return "https://cdn.discordapp.com/embed/avatars/"+index+".png";
+}
+
 async function sha256Hex(value) {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -178,6 +205,46 @@ export class CommandStore {
       return json({ok:true,message:"Raid signup confirmed.",signup},201);
     }
 
+    if(request.method==="POST" && url.pathname==="/session/create"){
+      let body;
+      try{body=await request.json();}catch{return json({error:"Invalid session"},400);}
+      const id=safeString(body.id,120);
+      const user=body.user||{};
+      if(!id || !user.id)return json({error:"Invalid session"},400);
+      const session={
+        id,
+        user:{
+          id:safeString(user.id,40),
+          username:safeString(user.username,80),
+          globalName:safeString(user.globalName,80),
+          avatar:safeString(user.avatar,200),
+          avatarUrl:safeString(user.avatarUrl,500)
+        },
+        createdAt:Date.now(),
+        expiresAt:Date.now()+7*24*60*60*1000
+      };
+      await this.ctx.storage.put("session:"+id,session);
+      return json({ok:true});
+    }
+
+    if(request.method==="GET" && url.pathname==="/session"){
+      const id=safeString(url.searchParams.get("id"),120);
+      if(!id)return json({loggedIn:false});
+      const session=await this.ctx.storage.get("session:"+id);
+      if(!session)return json({loggedIn:false});
+      if(session.expiresAt<=Date.now()){
+        await this.ctx.storage.delete("session:"+id);
+        return json({loggedIn:false});
+      }
+      return json({loggedIn:true,user:session.user});
+    }
+
+    if(request.method==="DELETE" && url.pathname==="/session"){
+      const id=safeString(url.searchParams.get("id"),120);
+      if(id)await this.ctx.storage.delete("session:"+id);
+      return json({ok:true});
+    }
+
     if(request.method!=="POST" || url.pathname!=="/action") return json({error:"Not found"},404);
 
     let body;
@@ -294,9 +361,110 @@ function store(env){
   return env.COMMAND_STORE.get(id);
 }
 
+async function getSiteSession(request,env){
+  const id=getCookie(request,"nox_session");
+  if(!id)return {loggedIn:false};
+  const u=new URL(request.url);
+  u.pathname="/session";
+  u.search="?id="+encodeURIComponent(id);
+  const r=await store(env).fetch(new Request(u.toString(),{method:"GET"}));
+  return r.json();
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if(url.pathname==="/auth/discord"){
+      if(!env.DISCORD_CLIENT_ID || !env.DISCORD_CLIENT_SECRET){
+        return new Response("Discord login is not configured yet.",{status:503,headers:{"Content-Type":"text/plain; charset=UTF-8"}});
+      }
+      const state=crypto.randomUUID().replaceAll("-","");
+      const origin=env.PUBLIC_ORIGIN||url.origin;
+      const callback=origin+"/auth/discord/callback";
+      const auth=new URL("https://discord.com/oauth2/authorize");
+      auth.searchParams.set("response_type","code");
+      auth.searchParams.set("client_id",env.DISCORD_CLIENT_ID);
+      auth.searchParams.set("scope","identify");
+      auth.searchParams.set("state",state);
+      auth.searchParams.set("redirect_uri",callback);
+      return redirect(auth.toString(),{
+        "Set-Cookie":cookie("nox_oauth_state",state,{maxAge:600})
+      });
+    }
+
+    if(url.pathname==="/auth/discord/callback"){
+      const returnedState=url.searchParams.get("state")||"";
+      const expectedState=getCookie(request,"nox_oauth_state");
+      const code=url.searchParams.get("code")||"";
+      if(!code || !returnedState || returnedState!==expectedState){
+        return new Response("Discord login could not be verified.",{status:400,headers:{"Content-Type":"text/plain; charset=UTF-8"}});
+      }
+
+      const origin=env.PUBLIC_ORIGIN||url.origin;
+      const callback=origin+"/auth/discord/callback";
+      const form=new URLSearchParams({
+        grant_type:"authorization_code",
+        code,
+        redirect_uri:callback,
+        client_id:env.DISCORD_CLIENT_ID,
+        client_secret:env.DISCORD_CLIENT_SECRET
+      });
+
+      const tokenRes=await fetch("https://discord.com/api/oauth2/token",{
+        method:"POST",
+        headers:{"Content-Type":"application/x-www-form-urlencoded"},
+        body:form
+      });
+      if(!tokenRes.ok)return new Response("Discord token exchange failed.",{status:502});
+      const token=await tokenRes.json();
+
+      const userRes=await fetch("https://discord.com/api/v10/users/@me",{
+        headers:{Authorization:"Bearer "+token.access_token}
+      });
+      if(!userRes.ok)return new Response("Discord profile lookup failed.",{status:502});
+      const discordUser=await userRes.json();
+
+      const sessionId=crypto.randomUUID()+crypto.randomUUID();
+      const sessionUrl=new URL(request.url);
+      sessionUrl.pathname="/session/create";
+      const saveRes=await store(env).fetch(new Request(sessionUrl.toString(),{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          id:sessionId,
+          user:{
+            id:discordUser.id,
+            username:discordUser.username,
+            globalName:discordUser.global_name||discordUser.username,
+            avatar:discordUser.avatar||"",
+            avatarUrl:discordAvatarUrl(discordUser)
+          }
+        })
+      }));
+      if(!saveRes.ok)return new Response("Could not create site session.",{status:500});
+
+      const headers=new Headers({Location:"/"});
+      headers.append("Set-Cookie",cookie("nox_session",sessionId,{maxAge:604800}));
+      headers.append("Set-Cookie",cookie("nox_oauth_state","",{maxAge:0}));
+      return new Response(null,{status:302,headers});
+    }
+
+    if(url.pathname==="/auth/me"){
+      const session=await getSiteSession(request,env);
+      return json(session);
+    }
+
+    if(url.pathname==="/auth/logout"){
+      const id=getCookie(request,"nox_session");
+      if(id){
+        const sessionUrl=new URL(request.url);
+        sessionUrl.pathname="/session";
+        sessionUrl.search="?id="+encodeURIComponent(id);
+        await store(env).fetch(new Request(sessionUrl.toString(),{method:"DELETE"}));
+      }
+      return redirect("/",{"Set-Cookie":cookie("nox_session","",{maxAge:0})});
+    }
 
     if(url.pathname==="/api/public-data"){
       return store(env).fetch(new Request(new URL("/public",url),request));
