@@ -25,5 +25,8 @@
         "CommandStore"
       ]
     }
-  ]
+  ],
+  "vars": {
+    "PUBLIC_ORIGIN": "https://obsidianreign.gg"
+  }
 }
