@@ -3642,3 +3642,71 @@ input,textarea,select{
 @media(max-width:920px){
   .nav-login.is-user{max-width:none}
 }
+
+/* ===== MEMBER PROFILE / DISCORD LINKING ===== */
+.profile-shell{
+  display:grid;
+  grid-template-columns:minmax(260px,.7fr) minmax(0,1.3fr);
+  gap:22px;
+  align-items:start;
+}
+.profile-account,.profile-editor{padding:24px!important}
+.profile-editor h2{margin:5px 0 12px!important}
+.profile-intro{color:#aaa3b0;margin-bottom:22px!important}
+.profile-discord-user{
+  display:flex;
+  align-items:center;
+  gap:13px;
+  margin:14px 0 20px;
+}
+.profile-discord-user img{
+  width:54px;height:54px;border-radius:50%;object-fit:cover;
+  border:1px solid rgba(184,151,79,.28);
+  box-shadow:0 0 22px rgba(111,56,217,.16);
+}
+.profile-discord-user strong{display:block;color:#eee5cf;font-size:17px}
+.profile-discord-user small{display:block;color:#7f7784;margin-top:4px}
+.profile-link-state{
+  padding:14px;
+  border:1px solid rgba(184,151,79,.15);
+  background:#08080c;
+}
+.profile-link-state b{
+  display:block;
+  font-size:9px;
+  letter-spacing:.13em;
+  margin-bottom:7px;
+}
+.profile-link-state span{color:#8f8793;font-size:11px;line-height:1.55}
+.profile-link-state.is-linked{border-color:rgba(111,56,217,.34)}
+.profile-link-state.is-linked b{color:#b99aff}
+.profile-link-state.is-unlinked b{color:#d5b86e}
+.profile-actions{
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:18px;
+}
+.profile-save-status{margin-top:14px;min-height:20px;color:#918996}
+.profile-success{color:#b99aff}
+.profile-error{color:#d88d95}
+.application-login-note{
+  margin:14px 0 18px;
+  padding:12px 14px;
+  border-left:2px solid rgba(111,56,217,.62);
+  background:rgba(111,56,217,.06);
+  color:#918996;
+  line-height:1.55;
+}
+.application-login-note a{color:#d8c783;text-decoration:underline}
+.roster-discord-state{margin-top:6px}
+.roster-discord-state span{
+  display:inline-block;
+  font-size:8px;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+  padding:4px 7px;
+  border:1px solid rgba(184,151,79,.14);
+}
+.roster-discord-state .linked{color:#b99aff;border-color:rgba(111,56,217,.28)}
+.roster-discord-state .unlinked{color:#8b838f}
+@media(max-width:780px){
+  .profile-shell{grid-template-columns:1fr}
+}
