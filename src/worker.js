@@ -115,6 +115,7 @@ export class CommandStore {
     }));
     s.roster ||= [];
     s.applications ||= [];
+    s.profiles ||= {};
     s.settings = {...DEFAULT_STATE.settings,...(s.settings||{})};
     return s;
   }
@@ -153,11 +154,12 @@ export class CommandStore {
       const interest=safeString(body.interest,20);
       const discord=safeString(body.discord,100);
       const notes=safeString(body.notes,1000);
+      const discordId=safeString(body.discordId,40);
       if(!name || !VALID_CLASSES.includes(className) || !["PvE","PvP","Both"].includes(interest)){
         return json({error:"Choose a valid main class and play interest."},400);
       }
       const app={
-        id:uid("app"),name,className,interest,discord,notes,
+        id:uid("app"),name,className,interest,discord,notes,discordId,
         status:"Pending",submittedAt:new Date().toISOString()
       };
       s.applications.unshift(app);
@@ -245,6 +247,60 @@ export class CommandStore {
       return json({ok:true});
     }
 
+    if(request.method==="GET" && url.pathname==="/profile"){
+      const discordId=safeString(url.searchParams.get("discordId"),40);
+      if(!discordId)return json({error:"Missing Discord ID"},400);
+      const profile=s.profiles[discordId]||null;
+      const member=s.roster.find(x=>x.discordId===discordId)||null;
+      return json({
+        profile,
+        linked:Boolean(member),
+        member:member?{
+          id:member.id,name:member.name,role:member.role,className:member.className,
+          interest:member.interest,status:member.status
+        }:null
+      });
+    }
+
+    if(request.method==="POST" && url.pathname==="/profile"){
+      let body;
+      try{body=await request.json();}catch{return json({error:"Invalid profile"},400);}
+      const discordId=safeString(body.discordId,40);
+      const name=safeString(body.name,80);
+      const className=safeString(body.className,80);
+      const interest=safeString(body.interest,20);
+      if(!discordId || !name || !VALID_CLASSES.includes(className) || !["PvE","PvP","Both"].includes(interest)){
+        return json({error:"Character or Community Name, a valid class, and play interest are required."},400);
+      }
+
+      const profile={
+        discordId,
+        name,
+        className,
+        interest,
+        server:"Zikel",
+        region:"NA East",
+        updatedAt:new Date().toISOString()
+      };
+      s.profiles[discordId]=profile;
+
+      const member=s.roster.find(x=>x.discordId===discordId);
+      if(member){
+        member.name=name;
+        member.className=className;
+        member.interest=interest;
+        member.status=member.status||"Active";
+      }
+
+      await this.save(s);
+      return json({
+        ok:true,
+        profile,
+        linked:Boolean(member),
+        member:member||null
+      });
+    }
+
     if(request.method!=="POST" || url.pathname!=="/action") return json({error:"Not found"},404);
 
     let body;
@@ -264,6 +320,7 @@ export class CommandStore {
           item.className=VALID_CLASSES.includes(item.className)?item.className:"Templar";
           item.interest=["PvE","PvP","Both"].includes(item.interest)?item.interest:"Both";
           item.status=item.status==="Inactive"?"Inactive":"Active";
+          item.discordId=safeString(item.discordId,40);
         }
         if(type==="news"){
           item.title=safeString(item.title,120);
@@ -329,7 +386,13 @@ export class CommandStore {
         const role=safeString(body.role,80)||"Member";
         const existing=s.roster.find(x=>x.name.toLowerCase()===app.name.toLowerCase());
         if(existing){
-          Object.assign(existing,{role,className:app.className,interest:app.interest,status:"Active"});
+          Object.assign(existing,{
+            role,
+            className:app.className,
+            interest:app.interest,
+            status:"Active",
+            discordId:app.discordId||existing.discordId||""
+          });
         }else{
           s.roster.push({
             id:uid("member"),
@@ -337,8 +400,20 @@ export class CommandStore {
             role,
             className:app.className,
             interest:app.interest,
-            status:"Active"
+            status:"Active",
+            discordId:app.discordId||""
           });
+        }
+        if(app.discordId){
+          s.profiles[app.discordId]={
+            discordId:app.discordId,
+            name:app.name,
+            className:app.className,
+            interest:app.interest,
+            server:"Zikel",
+            region:"NA East",
+            updatedAt:new Date().toISOString()
+          };
         }
       } else if(action==="deny"){
         app.status="Denied";
@@ -471,7 +546,46 @@ export default {
     }
 
     if(url.pathname==="/api/applications" && request.method==="POST"){
-      return store(env).fetch(new Request(new URL("/apply",url),request));
+      let body;
+      try{body=await request.json();}catch{return json({error:"Invalid application"},400);}
+      const session=await getSiteSession(request,env);
+      if(session.loggedIn && session.user?.id){
+        body.discordId=session.user.id;
+        if(!body.discord)body.discord=session.user.globalName||session.user.username||"";
+      }
+      const applyUrl=new URL(request.url);
+      applyUrl.pathname="/apply";
+      return store(env).fetch(new Request(applyUrl.toString(),{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(body)
+      }));
+    }
+
+    if(url.pathname==="/api/profile" && request.method==="GET"){
+      const session=await getSiteSession(request,env);
+      if(!session.loggedIn || !session.user?.id)return json({error:"Login required"},401);
+      const profileUrl=new URL(request.url);
+      profileUrl.pathname="/profile";
+      profileUrl.search="?discordId="+encodeURIComponent(session.user.id);
+      const r=await store(env).fetch(new Request(profileUrl.toString(),{method:"GET"}));
+      const data=await r.json();
+      return json({...data,user:session.user});
+    }
+
+    if(url.pathname==="/api/profile" && request.method==="POST"){
+      const session=await getSiteSession(request,env);
+      if(!session.loggedIn || !session.user?.id)return json({error:"Login required"},401);
+      let body;
+      try{body=await request.json();}catch{return json({error:"Invalid profile"},400);}
+      body.discordId=session.user.id;
+      const profileUrl=new URL(request.url);
+      profileUrl.pathname="/profile";
+      return store(env).fetch(new Request(profileUrl.toString(),{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(body)
+      }));
     }
 
     if(url.pathname==="/api/raid-signup" && request.method==="POST"){
