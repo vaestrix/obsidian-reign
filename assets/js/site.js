@@ -119,3 +119,18 @@ document.querySelector("[data-nav-toggle]")?.addEventListener("click",()=>docume
 document.querySelectorAll(".card,.panel,.raid-hero-card,.news-feature,.leader-card,.join-art-panel,.identity-banner-wide,.recruitment-board,.war-room").forEach(el=>{el.addEventListener("pointermove",e=>{const r=el.getBoundingClientRect();el.style.setProperty("--px",((e.clientX-r.left)/r.width*100).toFixed(1)+"%");el.style.setProperty("--py",((e.clientY-r.top)/r.height*100).toFixed(1)+"%")});});
 
 hydrate();
+;(()=> {
+  if(!document.querySelector("#roster-grid"))return;
+  let busy=false;
+  async function noxRosterLiveRefresh(){
+    if(busy||document.hidden)return;
+    busy=true;
+    try{
+      const r=await fetch("/api/public-data",{cache:"no-store"});
+      if(r.ok)renderPublic(await r.json());
+    }catch{}
+    finally{busy=false}
+  }
+  setInterval(noxRosterLiveRefresh,15000);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)noxRosterLiveRefresh()});
+})();
