@@ -17,9 +17,9 @@
       }
 
       const u=data.user;
-      link.href="/auth/logout";
+      link.href="profile.html";
       link.classList.add("is-user");
-      link.title="Logged in as "+(u.globalName||u.username)+" • Click to log out";
+      link.title="Open your Nox Reign profile";
       link.innerHTML=(u.avatarUrl?'<img src="'+u.avatarUrl+'" alt="">':"")+'<span>'+(u.globalName||u.username)+'</span>';
     }catch{
       link.href="/auth/discord";
