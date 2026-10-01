@@ -3608,3 +3608,37 @@ input,textarea,select{
     filter:blur(34px)!important;
   }
 }
+
+/* ===== DISCORD SITE LOGIN ===== */
+.nav-login{
+  display:inline-flex!important;
+  align-items:center;
+  gap:7px;
+  min-height:34px;
+  padding:0 10px!important;
+  border:1px solid rgba(111,56,217,.34);
+  background:rgba(111,56,217,.07);
+  color:#cab8f2!important;
+}
+.nav-login:hover{
+  border-color:rgba(155,103,255,.62);
+  background:rgba(111,56,217,.13);
+}
+.nav-login.is-user{
+  max-width:170px;
+}
+.nav-login.is-user img{
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  object-fit:cover;
+  box-shadow:0 0 12px rgba(111,56,217,.25);
+}
+.nav-login.is-user span{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+@media(max-width:920px){
+  .nav-login.is-user{max-width:none}
+}
