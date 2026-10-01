@@ -1,0 +1,66 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Member Profile | Nox Reign</title>
+<meta name="description" content="Manage your Nox Reign member profile, main character, class, and PvE/PvP preference.">
+<link rel="icon" href="assets/img/favicon.svg?v=20260929b" type="image/svg+xml">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head><body>
+<header class="site-header">
+  <a class="brand brand-logo-only" href="index.html"><img class="brand-crest premium-logo-img" src="assets/img/obsidian-crest.svg?v=crest-original" alt="Nox Reign"></a>
+  <button class="nav-toggle" data-nav-toggle>☰</button>
+  <nav class="main-nav" data-nav>
+    <a href="index.html">Home</a><a href="news.html">News</a><a href="raids.html">Raids</a><a href="guides.html">Guides</a><a href="roster.html">Roster</a><a href="who-we-are.html">Who We Are</a><a href="join.html">Join</a><a data-discord href="https://discord.gg/docgotgame">Discord</a><a class="nav-login is-user" href="profile.html" data-auth-link>Profile</a><a class="nav-admin" href="admin/index.html">Command</a>
+  </nav>
+</header>
+
+<section class="page-hero cinematic-page-hero"><div class="shell">
+  <p class="eyebrow">MEMBER ACCOUNT</p>
+  <h1>Your Nox Reign Profile</h1>
+  <p>Manage the character information Nox Reign uses for the roster and live class composition.</p>
+</div></section>
+
+<main class="content shell cinematic-content">
+  <section class="profile-shell">
+    <aside class="profile-account card" id="profile-account">
+      <p class="eyebrow">DISCORD ACCOUNT</p>
+      <div class="profile-user-loading">Loading Discord profile…</div>
+    </aside>
+
+    <section class="profile-editor card">
+      <p class="eyebrow">MAIN CHARACTER</p>
+      <h2>Guild Profile</h2>
+      <p class="profile-intro">When your Discord account is linked to an accepted roster entry, changes here update the public roster and class statistics automatically.</p>
+
+      <form id="member-profile-form">
+        <div class="form-grid">
+          <label class="full">Character or Community Name<input name="name" required maxlength="80"></label>
+          <label>Main Class<select name="className" required>
+            <option value="" disabled>Select your main class</option>
+            <option>Templar</option><option>Gladiator</option><option>Assassin</option><option>Ranger</option>
+            <option>Sorcerer</option><option>Spiritmaster</option><option>Cleric</option><option>Chanter</option>
+          </select></label>
+          <label>Primary Interest<select name="interest" required>
+            <option value="Both">Both PvE & PvP</option><option value="PvE">PvE</option><option value="PvP">PvP</option>
+          </select></label>
+          <label>Server<input value="Zikel" disabled></label>
+          <label>Region<input value="NA East" disabled></label>
+        </div>
+        <div class="profile-actions">
+          <button class="btn btn-gold" type="submit">Save Profile</button>
+          <a class="btn btn-purple" href="/auth/logout">Log Out</a>
+        </div>
+        <div class="profile-save-status" id="profile-save-status" aria-live="polite"></div>
+      </form>
+    </section>
+  </section>
+</main>
+
+<footer class="footer"><div class="shell footer-inner"><div><strong>NOX REIGN</strong><small>AION 2 • ASMODIAN • ZIKEL • NA EAST</small></div><p>Conquer together. Or die somewhere else.</p></div></footer>
+<button class="site-mute" data-site-mute type="button" aria-label="Mute site music" aria-pressed="false"><span class="site-mute-icon" aria-hidden="true">🔊</span><span class="site-mute-label">Sound</span></button>
+<audio id="guild-theme" preload="metadata" autoplay loop><source src="assets/audio/obsidian-reign-theme-web.mp3" type="audio/mpeg"></audio>
+<script src="assets/js/site.js" defer></script>
+<script src="assets/js/auth.js" defer></script>
+<script src="assets/js/profile.js" defer></script>
+<script src="assets/js/music.js" defer></script>
+</body></html>
