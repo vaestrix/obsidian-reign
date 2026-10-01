@@ -1,4 +1,4 @@
-const $=(s,r=document)=>r.querySelector(s);
+<span><b>Discord Login:</b> Not linked</span>const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=x=>String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
 let state={news:[],raids:[],roster:[],applications:[],settings:{}};
@@ -108,7 +108,7 @@ function renderApplications(){
 
 function rosterItem(x){
   return `<div class="admin-item roster-admin-item">
-    <div><strong>${esc(x.name)}</strong><div class="muted">${esc(x.role)} • ${esc(x.className||"Unspecified")} • ${esc(x.interest||"Both")} • ${esc(x.status||"Active")}</div></div>
+    <div><strong>${esc(x.name)}</strong><div class="muted">${esc(x.role)} • ${esc(x.className||"Unspecified")} • ${esc(x.interest||"Both")} • ${esc(x.status||"Active")}</div><div class="roster-discord-state">${x.discordId?'<span class="linked">Discord Linked</span>':'<span class="unlinked">Discord Not Linked</span>'}</div></div>
     <div class="admin-item-actions">
       <button data-edit-roster="${esc(x.id)}">EDIT</button>
       <button data-delete-roster="${esc(x.id)}">REMOVE</button>
@@ -128,6 +128,7 @@ function renderRoster(){
       <label>Class<select name="className" required><option value="" disabled>Select your main class</option><option value="Templar">Templar</option><option value="Gladiator">Gladiator</option><option value="Assassin">Assassin</option><option value="Ranger">Ranger</option><option value="Sorcerer">Sorcerer</option><option value="Spiritmaster">Spiritmaster</option><option value="Cleric">Cleric</option><option value="Chanter">Chanter</option></select></label>
       <label>Interest<select name="interest"><option>PvE</option><option>PvP</option><option>Both</option></select></label>
       <label>Status<select name="status"><option>Active</option><option>Inactive</option></select></label>
+      <label class="full">Discord User ID <input name="discordId" maxlength="40" placeholder="Optional for existing members"></label>
     </div>
     <div class="admin-form-actions">
       <button class="btn btn-gold" type="submit">Save Member</button>
@@ -231,7 +232,7 @@ function bind(){
 
   $$("[data-edit-roster]").forEach(btn=>btn.addEventListener("click",()=>{
     const x=state.roster.find(r=>r.id===btn.dataset.editRoster); if(!x)return;
-    const f=$("#roster-form"); f.id.value=x.id; f.name.value=x.name; f.role.value=x.role; f.className.value=x.className||""; f.interest.value=x.interest||"Both"; f.status.value=x.status||"Active"; f.scrollIntoView({behavior:"smooth",block:"center"});
+    const f=$("#roster-form"); f.id.value=x.id; f.name.value=x.name; f.role.value=x.role; f.className.value=x.className||""; f.interest.value=x.interest||"Both"; f.status.value=x.status||"Active"; if(f.discordId)f.discordId.value=x.discordId||""; f.scrollIntoView({behavior:"smooth",block:"center"});
   }));
   $$("[data-delete-roster]").forEach(btn=>btn.addEventListener("click",()=>action({type:"roster",action:"delete",id:btn.dataset.deleteRoster})));
   $("[data-clear-roster]")?.addEventListener("click",()=>$("#roster-form")?.reset());
