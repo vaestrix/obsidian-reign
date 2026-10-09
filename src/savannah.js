@@ -65,11 +65,14 @@ export async function receiveWebhook(request, env) {
 
 async function mail(env, path, body, raw = false) {
   if (!env.HOSTINGER_MAIL_API_TOKEN) throw new Error('mail-not-configured');
+  // Log only operation/status, never tokens, email bodies or recipients.
+  console.log(JSON.stringify({ event: 'savannah-mail-start', operation: path.split('?')[0] }));
   const response = await fetch(`${API}/mailboxes/${encodeURIComponent(env.HOSTINGER_MAILBOX_ID)}${path}`, {
     method: body === undefined ? 'GET' : 'POST', redirect: 'error', signal: AbortSignal.timeout(20000),
     headers: { Authorization: `Bearer ${env.HOSTINGER_MAIL_API_TOKEN}`, 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body)
   });
+  console.log(JSON.stringify({ event: 'savannah-mail-response', operation: path.split('?')[0], status: response.status }));
   if (!response.ok) throw new Error(`mail-http-${response.status}`);
   const text = await bounded(response, 256000);
   return raw ? text : JSON.parse(text);
@@ -282,3 +285,4 @@ export class SavannahInbox {
     } catch { console.error(JSON.stringify({ event: 'savannah-escalation-delivery-unknown', uid: job.event.uid })); }
   }
 }
+
