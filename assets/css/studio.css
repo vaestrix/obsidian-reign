@@ -248,3 +248,63 @@ body:has(.hero:not(.hero-cinematic)) .hero{background:
 .hero:not(.hero-cinematic)>.shell:after{content:"";position:absolute;right:calc(7% + 120px);top:50%;width:88px;height:88px;transform:translateY(-50%) rotate(45deg);border:1px solid rgba(255,122,219,.28);background:linear-gradient(135deg,rgba(255,68,190,.08),rgba(110,76,255,.05));box-shadow:0 0 36px rgba(255,69,192,.13)}
 @keyframes innerGlyph{50%{transform:translateY(-50%) rotate(40deg) scale(1.035)}}
 @media(max-width:760px){.hero:not(.hero-cinematic):after,.hero:not(.hero-cinematic)>.shell:after{opacity:.35;right:-28%}}
+
+/* Canonical animated Obsidian Reign mark */
+.brand img{
+  border-radius:18px;
+  filter:drop-shadow(0 0 14px rgba(255,72,195,.28)) drop-shadow(0 0 20px rgba(102,209,255,.12));
+}
+.hero-crystal-mark{
+  overflow:visible;
+}
+.hero-crystal-mark:before{
+  content:"";
+  position:absolute;
+  inset:6%;
+  border-radius:50%;
+  background:conic-gradient(from 0deg,transparent 0 18%,rgba(255,91,204,.46) 24%,transparent 31% 54%,rgba(98,221,255,.38) 61%,transparent 68% 86%,rgba(231,200,126,.32) 92%,transparent);
+  filter:blur(10px);
+  animation:logoAuraSpin 9s linear infinite;
+  opacity:.85;
+}
+.hero-crystal-mark:after{
+  content:"";
+  position:absolute;
+  left:18%;
+  right:18%;
+  top:49%;
+  height:2px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),rgba(255,91,204,.92),transparent);
+  box-shadow:0 0 18px rgba(255,93,203,.72);
+  transform:rotate(-18deg) translateY(-50%);
+  animation:logoGlint 4.8s ease-in-out infinite;
+}
+.hero-crystal-mark img{
+  position:relative;
+  z-index:2;
+  width:190px;
+  border-radius:28%;
+  filter:
+    drop-shadow(0 0 20px rgba(255,77,198,.34))
+    drop-shadow(0 0 32px rgba(113,210,255,.16));
+  animation:logoBreath 5.8s ease-in-out infinite;
+}
+@keyframes logoAuraSpin{to{transform:rotate(360deg)}}
+@keyframes logoBreath{
+  0%,100%{transform:translateY(0) scale(1);filter:drop-shadow(0 0 20px rgba(255,77,198,.34)) drop-shadow(0 0 32px rgba(113,210,255,.16))}
+  50%{transform:translateY(-7px) scale(1.035);filter:drop-shadow(0 0 28px rgba(255,77,198,.46)) drop-shadow(0 0 42px rgba(113,210,255,.24))}
+}
+@keyframes logoGlint{
+  0%,18%,100%{opacity:0;transform:rotate(-18deg) translateX(-55%)}
+  42%{opacity:.85}
+  68%{opacity:0;transform:rotate(-18deg) translateX(55%)}
+}
+.founder-frame img{
+  object-position:center 38%;
+}
+.founder-caption{
+  max-width:260px;
+}
+@media(prefers-reduced-motion:reduce){
+  .hero-crystal-mark:before,.hero-crystal-mark:after,.hero-crystal-mark img{animation:none!important}
+}
