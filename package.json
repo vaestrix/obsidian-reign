@@ -2,9 +2,12 @@
   "name": "obsidian-reign",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "deploy": "wrangler deploy",
-    "preview": "wrangler dev"
+    "build": "node scripts/build-assets.js",
+    "deploy": "node scripts/build-assets.js && wrangler deploy",
+    "preview": "node scripts/build-assets.js && wrangler dev",
+    "test": "node --test test/*.test.js"
   },
   "devDependencies": {
     "wrangler": "4.143.0"

@@ -98,11 +98,17 @@
       data.refs||""
     ].join("\n");
 
+    const emailLink=document.querySelector("[data-project-email]");
+    if(emailLink){
+      emailLink.href="mailto:savannah@obsidianreign.gg?subject="+encodeURIComponent("Creator project inquiry")+"&body="+encodeURIComponent(brief);
+      emailLink.hidden=false;
+    }
+
     try{
       await navigator.clipboard.writeText(brief);
-      if(projectStatus)projectStatus.textContent="Project brief created and copied to your clipboard. We can connect this form to email/CRM next.";
+      if(projectStatus)projectStatus.textContent="Your brief is copied. Email it to Savannah using the button below. Nothing has been sent yet.";
     }catch{
-      if(projectStatus)projectStatus.textContent="Project brief created. Copy the information above and send it with your inquiry.";
+      if(projectStatus)projectStatus.textContent="Your brief is ready. Use the button below to open it in your email app, then review and send. Nothing has been sent yet.";
     }
   });
 

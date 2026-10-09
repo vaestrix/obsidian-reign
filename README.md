@@ -1,6 +1,6 @@
-# Nox Reign
+# Obsidian Reign Studios
 
-Official website for **Nox Reign**, an Aion 2 Global Asmodian guild.
+Creator studio website at https://obsidianreign.gg. Savannah's contact identity is **Savannah | Obsidian Reign Studios**, savannah@obsidianreign.gg.
 
 ## Brand
 - Primary: Black
@@ -8,6 +8,6 @@ Official website for **Nox Reign**, an Aion 2 Global Asmodian guild.
 - Tertiary: Gold
 
 ## Stack
-Static HTML/CSS/JavaScript designed for Cloudflare Pages, with Cloudflare Functions/D1 support planned for the admin command center.
+HTML/CSS/JavaScript served by a Cloudflare Worker. The build copies only public assets into `dist/`. Existing admin, Discord, guild APIs and the CommandStore Durable Object are preserved in `src/legacy-worker.js`. The admin verifier is stored in the private `ADMIN_PASSWORD_SHA256` Worker secret.
 
-> Conquer together. Or die somewhere else.
+Run `npm test`, then `npm run deploy`. See `docs/savannah-deployment.md` for email-agent setup and activation requirements.
