@@ -6,3 +6,13 @@ package-lock.json
 wrangler.jsonc
 README.md
 *.log
+src/
+test/
+docs/
+.gitignore
+.dev.vars*
+.env*
+.wrangler/
+.pnpm-store/
+pnpm-lock.yaml
+pnpm-workspace.yaml

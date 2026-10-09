@@ -3,6 +3,14 @@
   "name": "obsidian-reign",
   "main": "src/worker.js",
   "compatibility_date": "2026-10-08",
+  "durable_objects": { "bindings": [{ "name": "SAVANNAH_INBOX", "class_name": "SavannahInbox" }] },
+  "migrations": [{ "tag": "savannah-v1", "new_sqlite_classes": ["SavannahInbox"] }],
+  "ai": { "binding": "AI" },
+  "observability": { "enabled": true },
+  "vars": {
+    "SAVANNAH_AUTO_SEND": "false",
+    "HOSTINGER_MAILBOX_ID": "ACea1da873df8cf8ce1839b3cae221"
+  },
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
