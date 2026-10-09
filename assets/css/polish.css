@@ -1,4 +1,14 @@
 /* Layout corrections shared by every studio page. */
+.header-logo{position:relative;display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;isolation:isolate}
+.header-logo:before,.header-logo:after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%}
+.header-logo:before{inset:-6px;background:radial-gradient(circle,rgba(190,103,255,.3),rgba(151,64,231,.12) 40%,transparent 70%);animation:logo-aura 6s ease-in-out infinite}
+.header-logo:after{inset:-2px;background:conic-gradient(from 0deg,transparent 0 35%,rgba(197,147,255,.65) 44%,rgba(240,208,145,.8) 48%,transparent 55% 80%,rgba(221,107,204,.55) 87%,transparent 95%);mask:radial-gradient(circle,transparent 61%,#000 64% 68%,transparent 71%);animation:logo-orbit 12s linear infinite;opacity:.6}
+.brand .header-logo img{display:block;width:50px;height:50px;transform-origin:center;animation:logo-float 6s ease-in-out infinite;transition:filter .3s ease}
+.brand:hover .header-logo img,.brand:focus-visible .header-logo img{filter:drop-shadow(0 0 12px rgba(198,116,255,.65)) drop-shadow(0 0 5px rgba(231,199,133,.3))}
+@keyframes logo-aura{0%,100%{opacity:.55;transform:scale(.9)}50%{opacity:1;transform:scale(1.08)}}
+@keyframes logo-orbit{to{transform:rotate(360deg)}}
+@keyframes logo-float{0%,100%{transform:translateY(0) rotate(-1deg);filter:drop-shadow(0 0 5px rgba(177,91,255,.3))}50%{transform:translateY(-2px) rotate(1deg);filter:drop-shadow(0 0 10px rgba(194,116,255,.5)) drop-shadow(0 0 3px rgba(233,202,140,.2))}}
+@media(prefers-reduced-motion:reduce){.header-logo:before,.header-logo:after,.brand .header-logo img{animation:none}.brand .header-logo img{transform:none}.header-logo:before{opacity:.6}.header-logo:after{opacity:.35}}
 .section{padding:clamp(52px,6vw,84px) 0}
 .section-head{align-items:start;gap:32px}
 .section-head>div{flex:1;min-width:0}
