@@ -2,7 +2,7 @@
 
 ## What changed
 
-`POST /webhooks/hostinger` handles mail events. All other paths still delegate to the existing ASSETS binding with the same HTML/404 behavior. Source, tests, documentation, local secrets and Wrangler state are excluded from the uploaded static assets.
+`POST /webhooks/hostinger` handles mail events. All other paths delegate to the preserved production Worker, retaining admin, Discord, guild APIs and the CommandStore Durable Object. Public pages retain the ASSETS binding and HTML/404 behavior. The build copies only HTML, robots.txt, sitemap.xml and assets into dist; source, tests, documentation, local secrets and Wrangler state are not published.
 
 Hostinger authenticates webhook POSTs with `Authorization: Bearer <webhook secret>` (not HMAC). The handler compares SHA-256 digests, requires JSON, caps bodies at 16 KiB and validates the mailbox. The observed Hostinger sample uses `data.mailboxAddress` and `data.messageId`; the latter is resolved to a folder/UID through an exact Message-ID match in the authenticated Mail API. Legacy folder/UID deliveries are also supported. Unknown shapes fail closed. Webhook previews and `bodyUrl` are ignored: full message contents come only from the fixed Mail API origin.
 
@@ -32,7 +32,7 @@ npx wrangler secret put SAVANNAH_APPROVED_FACTS
 - HOSTINGER_MAIL_API_TOKEN: dedicated Hostinger Mail API bearer token authorized for Savannah's mailbox. The connected ChatGPT app token is not available to the Worker.
 - HOSTINGER_WEBHOOK_SECRET: one-time secret returned by Hostinger webhook creation, stored immediately. Minimum 32 characters. Do not substitute the Mail API token.
 - PHILIP_ESCALATION_EMAIL: Philip's verified email address; no address has been assumed in code.
-- SAVANNAH_APPROVED_FACTS: Philip-approved services/business facts. Include only current approved facts; do not instruct the agent to invent prices or timelines. Without facts, the agent escalates.
+- SAVANNAH_APPROVED_FACTS: already configured with service categories and the scope-before-payment process verified from the live services/start-project pages. The fact pack authorizes routine qualification only and contains no numeric prices, payment links, guarantees, usage-right promises or deadlines. Update it when published business information changes. Without facts, the agent escalates.
 
 Nonsecret vars in wrangler.jsonc: HOSTINGER_MAILBOX_ID is the connector-confirmed `ACea1da873df8cf8ce1839b3cae221`; SAVANNAH_AUTO_SEND is initially `false`.
 
@@ -40,7 +40,7 @@ Nonsecret vars in wrangler.jsonc: HOSTINGER_MAILBOX_ID is the connector-confirme
 
 1. Review/merge the PR; install dependencies with `npm install`; run `npm test` and `npx wrangler deploy --dry-run`. Authenticate Cloudflare with `npx wrangler login` or a deployment token supplied outside Git.
 2. Deploy with `npm run deploy`, keeping auto-send false. Existing custom-domain routing must continue to serve obsidianreign.gg through this Worker. Confirm GET / and /pricing and a missing page still work.
-3. A **paused** webhook already exists: `01a122ad-2ddf-71f9-ac8f-d9b4dbb0095e`, event `message.received`, URL `https://obsidianreign.gg/webhooks/hostinger`. Its one-time secret is stored as HOSTINGER_WEBHOOK_SECRET on the production Worker. Reuse this webhook; do not create a duplicate. Configure HOSTINGER_MAIL_API_TOKEN, PHILIP_ESCALATION_EMAIL and SAVANNAH_APPROVED_FACTS before activation.
+3. A **paused** webhook already exists: `01a122ad-2ddf-71f9-ac8f-d9b4dbb0095e`, event `message.received`, URL `https://obsidianreign.gg/webhooks/hostinger`. HOSTINGER_WEBHOOK_SECRET and SAVANNAH_APPROVED_FACTS are configured on the production Worker. Reuse this webhook; do not create a duplicate. Configure HOSTINGER_MAIL_API_TOKEN and PHILIP_ESCALATION_EMAIL before activation. If Hostinger blocks the embedded browser, use a normal Chrome/Edge browser to create a Selected-mailboxes token scoped only to savannah@obsidianreign.gg and save it directly as a Cloudflare Worker secret; never paste credentials into chat or commit them.
 4. Verify missing/wrong Authorization returns 401; non-POST returns 405. Missing Worker setup returns 503. Unsupported events return 200; invalid mailbox/message data returns 400; accepted deliveries return 202.
 5. Hostinger's sample webhook test now succeeds with HTTP 202. Its envelope has `event: "message.received"` and `data.mailboxAddress`/`data.messageId`; no UID is supplied. An authenticated Mail API search resolves the RFC Message-ID to a UID, with exact-match checks, bounded pagination and retries for delayed visibility. Junk/Spam matches are ignored. Real inbound mail and full-thread fetches still need a controlled test after the remaining secrets are configured. Do not infer readiness to auto-send from a sample delivery alone.
 6. Activate the webhook in review mode and send a controlled inbound test from a mailbox you own. Verify one notice to Philip, full-thread retrieval, exact sender display name, and no customer response. Replay the same delivery: no second job/send. Exercise refund, newsletter, phishing, thread-history and malformed-AI cases. Confirm Hostinger's trusted Authentication-Results behavior: the current implementation conservatively checks DMARC but header text is not a cryptographic trust anchor, and phishing classification is also applied by AI.

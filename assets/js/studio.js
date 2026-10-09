@@ -98,11 +98,17 @@
       data.refs||""
     ].join("\n");
 
+    const emailLink=document.querySelector("[data-project-email]");
+    if(emailLink){
+      emailLink.href="mailto:savannah@obsidianreign.gg?subject="+encodeURIComponent("Creator project inquiry")+"&body="+encodeURIComponent(brief);
+      emailLink.hidden=false;
+    }
+
     try{
       await navigator.clipboard.writeText(brief);
-      if(projectStatus)projectStatus.textContent="Project brief created and copied to your clipboard. We can connect this form to email/CRM next.";
+      if(projectStatus)projectStatus.textContent="Your brief is copied. Email it to Savannah using the button below. Nothing has been sent yet.";
     }catch{
-      if(projectStatus)projectStatus.textContent="Project brief created. Copy the information above and send it with your inquiry.";
+      if(projectStatus)projectStatus.textContent="Your brief is ready. Use the button below to open it in your email app, then review and send. Nothing has been sent yet.";
     }
   });
 
@@ -127,28 +133,6 @@
     },{passive:true});
     cinematicHero.addEventListener("pointerleave",()=>artColumn.style.transform="");
   }
-
-  const accentTargets=[...document.querySelectorAll(".section,.cta,.founder-section")];
-  const accentGlyphs=[
-    {t:"✦",c:""},
-    {t:"♡",c:""},
-    {t:"✧",c:"alt"},
-    {t:"⋆",c:"gold"}
-  ];
-  accentTargets.forEach((section,idx)=>{
-    if(section.querySelector(".cute-float"))return;
-    const count=idx%2===0?2:1;
-    for(let i=0;i<count;i++){
-      const g=accentGlyphs[(idx+i)%accentGlyphs.length];
-      const el=document.createElement("span");
-      el.className="cute-float "+g.c;
-      el.textContent=g.t;
-      el.style.left=(8+((idx*19+i*33)%82))+"%";
-      el.style.top=(12+((idx*23+i*17)%72))+"%";
-      el.style.animationDelay=(-((idx+i)%5)*1.3)+"s";
-      section.appendChild(el);
-    }
-  });
 
   const header=document.querySelector(".site-header");
   let lastY=0;
@@ -181,11 +165,11 @@
   const showroomAlert=document.querySelector("[data-showroom-alert]");
   const showroomStage=document.querySelector("[data-showroom-stage]");
   const showroomEvents={
-    follow:["NEW FOLLOWER","A new viewer just entered your world.","✦ NEW FOLLOW • WELCOME IN"],
-    sub:["NEW SUBSCRIBER","Make support feel like an event, not a popup.","♡ SUBSCRIBER UNLOCKED • THANK YOU"],
-    raid:["INCOMING RAID","Turn community moments into miniature cinematics.","⚡ RAID INBOUND • OPEN THE GATES"],
-    voice:["VOICE CHAOS","Custom character lines can turn alerts into recurring jokes.","☠ VOICE PACK • CHAOS ACTIVATED"],
-    stinger:["SCENE TRANSITION","One visual language from gameplay to BRB to ending.","✧ CINEMATIC STINGER • SCENE SHIFT"]
+    follow:["NEW FOLLOWER","A clear animated notification for new followers.","NEW FOLLOWER • THANK YOU"],
+    sub:["NEW SUBSCRIBER","Make support feel like an event, not a popup.","NEW SUBSCRIBER • THANK YOU"],
+    raid:["INCOMING RAID","Turn community moments into miniature cinematics.","INCOMING RAID"],
+    voice:["VOICE CHAOS","Custom character lines can turn alerts into recurring jokes.","CUSTOM VOICE ALERT"],
+    stinger:["SCENE TRANSITION","One visual language from gameplay to BRB to ending.","SCENE TRANSITION"]
   };
   document.querySelectorAll("[data-show]").forEach(btn=>btn.addEventListener("click",()=>{
     const [title,sub,alert]=showroomEvents[btn.dataset.show]||showroomEvents.follow;
@@ -199,8 +183,10 @@
   auditForm?.addEventListener("submit",async e=>{
     e.preventDefault();const d=Object.fromEntries(new FormData(auditForm));
     const payload=["OBSIDIAN REIGN STUDIOS - FREE CREATOR AUDIT REQUEST","","Channel: "+(d.channel||""),"Email: "+(d.email||""),"Primary goal: "+(d.goal||"")].join("\n");
-    try{await navigator.clipboard.writeText(payload);if(auditStatus)auditStatus.textContent="Audit request prepared and copied. Direct studio inbox delivery is being connected next.";}
-    catch{if(auditStatus)auditStatus.textContent="Audit request prepared. Direct submission will be connected to the studio inbox.";}
+    const emailLink=document.querySelector("[data-audit-email]");
+    if(emailLink){emailLink.href="mailto:savannah@obsidianreign.gg?subject="+encodeURIComponent("Creator audit request")+"&body="+encodeURIComponent(payload);emailLink.hidden=false;}
+    try{await navigator.clipboard.writeText(payload);if(auditStatus)auditStatus.textContent="Request copied. Open the email below, review it, and send it to Savannah.";}
+    catch{if(auditStatus)auditStatus.textContent="Request ready. Open the email below, review it, and send it to Savannah.";}
   });
 
   const quiz=document.querySelector("[data-quiz]");
@@ -208,15 +194,15 @@
   const quizResult=document.querySelector("[data-quiz-result]");
   let quizStep=0; const quizScores={glam:0,cozy:0,chaos:0,dark:0};
   const quizQuestions=[
-    {q:"What should viewers feel in the first five seconds?",a:[["glam","“This looks expensive.”"],["cozy","“I want to hang out here.”"],["chaos","“What on earth is happening?”"],["dark","“This creator has lore.”"]]},
-    {q:"What kind of alert would make you happiest?",a:[["glam","A gorgeous cinematic reveal"],["cozy","A cute character waving hello"],["chaos","A completely unhinged voice line"],["dark","A dramatic ritual-like animation"]]},
-    {q:"Pick the compliment you want most.",a:[["glam","“Your brand is flawless.”"],["cozy","“Your community feels like home.”"],["chaos","“I clipped that immediately.”"],["dark","“Your stream has its own universe.”"]]}
+    {q:"What should viewers feel in the first five seconds?",a:[["glam","“This looks expensive.”"],["cozy","“I want to hang out here.”"],["chaos","“What on earth is happening?”"],["dark","“This stream has a strong theme.”"]]},
+    {q:"What kind of alert would make you happiest?",a:[["glam","A gorgeous cinematic reveal"],["cozy","A cute character waving hello"],["chaos","A completely unhinged voice line"],["dark","A dramatic cinematic animation"]]},
+    {q:"Pick the compliment you want most.",a:[["glam","“Your brand is flawless.”"],["cozy","“Your community feels like home.”"],["chaos","“I clipped that immediately.”"],["dark","“Your stream has a distinctive style.”"]]}
   ];
   const quizProfiles={
     glam:["THE MAIN CHARACTER","Polished, confident, glamorous. Your strongest direction is cinematic motion, alt-girl glam, premium alerts, and a brand that feels expensive.","Fan Service / Glam"],
     cozy:["THE COZY MENACE","Warm, cute, community-first, with a gamer-girl edge. Think personality-rich emotes, soft motion, funny alerts, and cozy neon.","Cozy"],
     chaos:["THE CHAOS GOBLIN","Your brand should create clips by itself. Voice packs, absurd alerts, mascot bits, reactive emotes, and high-energy transitions fit you.","Chaos / Comedy"],
-    dark:["THE LOREKEEPER","Atmosphere is the product. Goth visuals, cinematics, custom music, and a world that feels bigger than the stream itself.","Dark Fantasy"]
+    dark:["THE CINEMATIC CREATOR","A strong theme ties your stream together. Dark visuals, animated scenes, and custom music give your channel a consistent atmosphere.","Dark Fantasy"]
   };
   function renderQuiz(){if(!quizQ||!quizResult)return;if(quizStep>=quizQuestions.length){const key=Object.entries(quizScores).sort((a,b)=>b[1]-a[1])[0][0];const [title,copy,vibe]=quizProfiles[key];quizQ.hidden=true;quizResult.hidden=false;quizResult.innerHTML="<small>YOUR CREATOR TYPE</small><strong>"+title+"</strong><p>"+copy+"</p><a class='btn btn-primary' href='start-project.html?vibe="+encodeURIComponent(vibe)+"'>BUILD MY "+vibe.toUpperCase()+" DIRECTION</a>";return;}const item=quizQuestions[quizStep];quizQ.innerHTML="<small>QUESTION "+(quizStep+1)+" OF "+quizQuestions.length+"</small><h3>"+item.q+"</h3><div class='quiz-options'>"+item.a.map(([k,t])=>"<button data-quiz-answer='"+k+"'>"+t+"</button>").join("")+"</div>";quizQ.querySelectorAll("[data-quiz-answer]").forEach(b=>b.addEventListener("click",()=>{quizScores[b.dataset.quizAnswer]++;quizStep++;renderQuiz();}));}
   if(quiz)renderQuiz();
