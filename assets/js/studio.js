@@ -72,6 +72,16 @@
     }
   });
 
+  const heroVideo=document.querySelector("[data-hero-video]");
+  if(heroVideo){
+    const syncVideo=()=>{
+      if(document.hidden){heroVideo.pause();}
+      else{heroVideo.play().catch(()=>{});}
+    };
+    document.addEventListener("visibilitychange",syncVideo);
+    if(matchMedia("(prefers-reduced-motion: reduce)").matches){heroVideo.pause();}
+  }
+
   const cinematicHero=document.querySelector(".hero-cinematic");
   const artColumn=document.querySelector(".hero-art-column");
   if(cinematicHero && artColumn && matchMedia("(hover:hover) and (pointer:fine)").matches){
