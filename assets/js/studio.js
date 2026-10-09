@@ -71,4 +71,26 @@
       if(projectStatus)projectStatus.textContent="Project brief created. Copy the information above and send it with your inquiry.";
     }
   });
+
+  const cinematicHero=document.querySelector(".hero-cinematic");
+  const artColumn=document.querySelector(".hero-art-column");
+  if(cinematicHero && artColumn && matchMedia("(hover:hover) and (pointer:fine)").matches){
+    cinematicHero.addEventListener("pointermove",e=>{
+      const r=cinematicHero.getBoundingClientRect();
+      const x=(e.clientX-r.left)/r.width-.5;
+      const y=(e.clientY-r.top)/r.height-.5;
+      artColumn.style.transform="translate3d("+(x*12).toFixed(1)+"px,"+(y*8).toFixed(1)+"px,0)";
+    },{passive:true});
+    cinematicHero.addEventListener("pointerleave",()=>artColumn.style.transform="");
+  }
+
+  const header=document.querySelector(".site-header");
+  let lastY=0;
+  const onScroll=()=>{
+    const y=window.scrollY||0;
+    header?.classList.toggle("scrolled",y>18);
+    lastY=y;
+  };
+  onScroll();
+  window.addEventListener("scroll",onScroll,{passive:true});
 })();
