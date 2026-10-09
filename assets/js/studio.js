@@ -213,4 +213,35 @@
     btn.classList.toggle("active");addonTotal=addonButtons.reduce((s,b)=>s+(b.classList.contains("active")?Number(b.dataset.addQuote||0):0),0);
     if(quoteTotal){const base=quoteBoxes.reduce((sum,x)=>sum+(x.checked?Number(x.value||0):0),0);quoteTotal.textContent="$"+(base+addonTotal).toLocaleString();}
   }));
+  // Prefill project intake from package, vibe, and Surprise Me links
+  const params=new URLSearchParams(location.search);
+  const projectFormEl=document.getElementById("project-form");
+  if(projectFormEl){
+    const vibeField=projectFormEl.querySelector('[name="vibe"]');
+    const budgetField=projectFormEl.querySelector('[name="budget"]');
+    const scopeField=projectFormEl.querySelector('[name="scope"]');
+    const modeNote=document.querySelector("[data-project-mode-note]");
+    const vibeParam=params.get("vibe");
+    const packageParam=params.get("package");
+    const modeParam=params.get("mode");
+    if(vibeParam && vibeField && !vibeField.value){
+      vibeField.value=vibeParam;
+    }
+    const packageMap={
+      starter:["$300–$600","I'm interested in the Reign Starter package."],
+      ascension:["$600–$1,200","I'm interested in the Creator Ascension package."],
+      cinematic:["$1,200–$2,500","I'm interested in the Cinematic Reign package."],
+      dominion:["$2,500+","I'm interested in the Creator Dominion package."]
+    };
+    if(packageParam && packageMap[packageParam]){
+      const [budget,scope]=packageMap[packageParam];
+      if(budgetField)budgetField.value=budget;
+      if(scopeField && !scopeField.value)scopeField.value=scope;
+    }
+    if(modeParam==="surprise"){
+      if(modeNote)modeNote.innerHTML="<strong>♡ SURPRISE ME MODE</strong><span>Tell us who you are, what you stream, and what you want people to feel. We will propose the creative direction.</span>";
+      if(vibeField && !vibeField.value)vibeField.placeholder="You do not need to choose a style. Tell us your personality, favorite games, colors you love or hate, and what feels like you.";
+      if(scopeField && !scopeField.value)scopeField.placeholder="Tell us what feels weak or unfinished about your current channel. We will recommend the creative system.";
+    }
+  }
 })();
