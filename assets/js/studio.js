@@ -56,9 +56,10 @@
 
   const quoteBoxes=[...document.querySelectorAll("[data-quote]")];
   const quoteTotal=document.querySelector("[data-quote-total]");
+  let addonTotal=0;
   function updateQuote(){
     if(!quoteTotal)return;
-    const total=quoteBoxes.reduce((sum,x)=>sum+(x.checked?Number(x.value||0):0),0);
+    const total=quoteBoxes.reduce((sum,x)=>sum+(x.checked?Number(x.value||0):0),0)+addonTotal;
     quoteTotal.textContent="$"+total.toLocaleString();
   }
   quoteBoxes.forEach(x=>x.addEventListener("change",updateQuote));
@@ -207,7 +208,7 @@
   function renderQuiz(){if(!quizQ||!quizResult)return;if(quizStep>=quizQuestions.length){const key=Object.entries(quizScores).sort((a,b)=>b[1]-a[1])[0][0];const [title,copy,vibe]=quizProfiles[key];quizQ.hidden=true;quizResult.hidden=false;quizResult.innerHTML="<small>YOUR CREATOR TYPE</small><strong>"+title+"</strong><p>"+copy+"</p><a class='btn btn-primary' href='start-project.html?vibe="+encodeURIComponent(vibe)+"'>BUILD MY "+vibe.toUpperCase()+" DIRECTION</a>";return;}const item=quizQuestions[quizStep];quizQ.innerHTML="<small>QUESTION "+(quizStep+1)+" OF "+quizQuestions.length+"</small><h3>"+item.q+"</h3><div class='quiz-options'>"+item.a.map(([k,t])=>"<button data-quiz-answer='"+k+"'>"+t+"</button>").join("")+"</div>";quizQ.querySelectorAll("[data-quiz-answer]").forEach(b=>b.addEventListener("click",()=>{quizScores[b.dataset.quizAnswer]++;quizStep++;renderQuiz();}));}
   if(quiz)renderQuiz();
 
-  const addonButtons=[...document.querySelectorAll("[data-add-quote]")]; let addonTotal=0;
+  const addonButtons=[...document.querySelectorAll("[data-add-quote]")];
   addonButtons.forEach(btn=>btn.addEventListener("click",()=>{
     btn.classList.toggle("active");addonTotal=addonButtons.reduce((s,b)=>s+(b.classList.contains("active")?Number(b.dataset.addQuote||0):0),0);
     if(quoteTotal){const base=quoteBoxes.reduce((sum,x)=>sum+(x.checked?Number(x.value||0):0),0);quoteTotal.textContent="$"+(base+addonTotal).toLocaleString();}
