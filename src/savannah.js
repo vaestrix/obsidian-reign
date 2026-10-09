@@ -36,6 +36,13 @@ export async function authenticate(request, secret) {
 export function normalizeEvent(payload, mailboxId) {
   if (payload.event !== 'message.received') return null;
   const data = payload.data ?? payload;
+  // Hostinger's observed delivery identifies a message by RFC Message-ID,
+  // not IMAP UID. Resolve that identifier through the authenticated Mail API.
+  if (data.mailboxAddress !== undefined) {
+    if (typeof data.mailboxAddress !== 'string' || data.mailboxAddress.toLowerCase() !== ADDRESS ||
+        typeof data.messageId !== 'string' || !data.messageId.trim() || data.messageId.length > 998 || /[\r\n]/.test(data.messageId)) throw new Error('invalid-event');
+    return { messageId: data.messageId };
+  }
   const mailbox = data.mailboxResourceId ?? data.mailbox?.resourceId ?? data.mailbox?.id ?? data.mailbox;
   const message = data.message;
   if (mailbox !== mailboxId || !Number.isSafeInteger(message?.uid) || message.uid < 1 ||
@@ -78,6 +85,18 @@ export function headersFrom(source) {
   return headers;
 }
 const location = e => `/folders/${encodeURIComponent(e.folder)}/messages/${e.uid}`;
+async function resolveMessage(env, messageId) {
+  for (const folder of ['INBOX', 'INBOX.Junk', 'INBOX.Spam']) {
+    let result;
+    try { result = await mail(env, `/folders/${encodeURIComponent(folder)}/messages/search?perPage=100`, { header: `Message-ID:${messageId}` }); }
+    catch (error) { if (error.message === 'mail-http-404' && folder !== 'INBOX') continue; throw error; }
+    if (!Array.isArray(result.data) || result.pagination?.totalPages > 1) throw new Error('incomplete-message-search');
+    const matches = result.data.filter(m => m.messageId === messageId);
+    if (matches.length > 1) throw new Error('ambiguous-message-search');
+    if (matches.length === 1) return { folder, uid: matches[0].uid };
+  }
+  throw new Error('message-not-yet-resolvable');
+}
 async function load(env, event) {
   const message = (await mail(env, location(event))).data;
   if (!message || message.uid !== event.uid || message.path !== event.folder) throw new Error('message-mismatch');
@@ -176,7 +195,7 @@ async function decide(env, messages) {
 export class SavannahInbox {
   constructor(ctx, env) { this.ctx = ctx; this.env = env; }
   async fetch(request) {
-    const event = await request.json(); const key = `job:${event.folder}:${event.uid}`;
+    const event = await request.json(); const key = event.messageId ? `job:message:${event.messageId}` : `job:${event.folder}:${event.uid}`;
     return this.ctx.blockConcurrencyWhile(async () => {
       if (await this.ctx.storage.get(key)) return json({ duplicate: true }, 202);
       await this.ctx.storage.transaction(async tx => {
@@ -210,6 +229,10 @@ export class SavannahInbox {
   async process(key, job) {
     const env = this.env;
     if (!env.HOSTINGER_MAIL_API_TOKEN || !email.test(env.PHILIP_ESCALATION_EMAIL ?? '') || env.PHILIP_ESCALATION_EMAIL.toLowerCase() === ADDRESS) throw new Error('not-configured');
+    if (job.event.messageId) {
+      job.event = await resolveMessage(env, job.event.messageId);
+      await this.ctx.storage.put(key, job);
+    }
     if (job.event.folder !== 'INBOX') return this.finish(key, job, 'ignored');
     const latest = await load(env, job.event);
     const identity = `message:${latest.messageId}`;

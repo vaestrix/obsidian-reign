@@ -40,7 +40,12 @@ function mockMail(t, options = {}) {
       return Response.json({ data: { messageId: '<sent@example.com>' } });
     }
     if (options.readFailure) return new Response('', { status: 503 });
-    if (url.includes('/search')) return Response.json({ data: options.alreadyAnswered ? [{ inReplyTo: message.messageId }] : [], pagination: { totalPages: 1 } });
+    if (url.includes('/search')) {
+      const query = JSON.parse(init.body);
+      if (options.resolveFolder && query.header === `Message-ID:${message.messageId}` && url.includes(`/folders/${encodeURIComponent(options.resolveFolder)}/`))
+        return Response.json({ data: [{ ...message, path: options.resolveFolder }], pagination: { totalPages: 1 } });
+      return Response.json({ data: options.alreadyAnswered ? [{ inReplyTo: message.messageId }] : [], pagination: { totalPages: 1 } });
+    }
     if (url.endsWith('/source')) return new Response('Authentication-Results: mx; dmarc=pass\r\n\r\nbody');
     if (url.endsWith('/text')) return Response.json({ data: { text: options.text ?? message.text } });
     return Response.json({ data: { ...message, headers: undefined, text: undefined, ...(options.message ?? {}) } });
@@ -74,6 +79,13 @@ test('authenticated webhook checks mailbox, UID, event, JSON and size', async ()
   assert.throws(() => normalizeEvent({ ...event, message: { uid: 0, path: 'INBOX' } }, 'mailbox'));
   assert.equal(normalizeEvent({ event: 'message.sent' }, 'mailbox'), null);
 });
+test('observed Hostinger payload uses mailboxAddress and Message-ID; bodyUrl is ignored', () => {
+  const payload = { event: 'message.received', data: { mailboxAddress: 'savannah@obsidianreign.gg', messageId: '<in@example.com>',
+    plainBody: 'Untrusted preview', bodyUrl: 'https://attacker.example/' } };
+  assert.deepEqual(normalizeEvent(payload, 'mailbox'), { messageId: '<in@example.com>' });
+  assert.throws(() => normalizeEvent({ ...payload, data: { ...payload.data, mailboxAddress: 'other@example.com' } }, 'mailbox'));
+  assert.throws(() => normalizeEvent({ ...payload, data: { ...payload.data, messageId: 'id\r\nInjected: value' } }, 'mailbox'));
+});
 test('spam, lists, automated mail and self messages ignored', () => {
   for (const patch of [{ path: 'INBOX.Junk' }, { from: { address: 'savannah@obsidianreign.gg' } },
     { headers: { 'list-unsubscribe': '<https://example.com>' } }, { headers: { 'auto-submitted': 'auto-replied' } },
@@ -95,6 +107,17 @@ test('routine inquiry replies with exact identity and source reference, once', a
   assert.deepEqual(sends[0].inReplyTo, { folder: 'INBOX', uid: 12 });
   assert.equal(sends[0].to[0], 'customer@example.com');
   assert.equal((await storage.get('job:INBOX:12')).state, 'replied');
+});
+test('real delivery Message-ID resolves to API UID before reply and replay is suppressed', async t => {
+  const { sends } = mockMail(t, { resolveFolder: 'INBOX' }); const { object } = setup();
+  const deliver = () => object.fetch(new Request('https://internal', { method: 'POST', body: JSON.stringify({ messageId: message.messageId }) }));
+  await deliver(); await object.alarm(); await deliver(); await object.alarm();
+  assert.equal(sends.length, 1); assert.deepEqual(sends[0].inReplyTo, { folder: 'INBOX', uid: 12 });
+});
+test('real delivery resolving to Junk is ignored', async t => {
+  const { sends } = mockMail(t, { resolveFolder: 'INBOX.Junk' }); const { object } = setup();
+  await object.fetch(new Request('https://internal', { method: 'POST', body: JSON.stringify({ messageId: message.messageId }) }));
+  await object.alarm(); assert.equal(sends.length, 0);
 });
 test('refund escalates only to Philip', async t => {
   const { sends } = mockMail(t, { text: 'I want a refund' }); const { object } = setup();
