@@ -235,3 +235,16 @@ img{max-width:100%}
 .cta-panel>*{position:relative;z-index:2}
 .footer{position:relative;overflow:hidden}
 .footer:before{content:"";position:absolute;left:50%;top:0;width:44%;height:1px;transform:translateX(-50%);background:linear-gradient(90deg,transparent,#8e54ff,#ff52c5,#65d9ff,transparent)}
+
+/* Inner-page art direction */
+body:has(.hero:not(.hero-cinematic)) .hero{background:
+ radial-gradient(circle at 78% 36%,rgba(255,68,190,.12),transparent 18%),
+ radial-gradient(circle at 70% 46%,rgba(126,64,255,.22),transparent 30%),
+ linear-gradient(135deg,#050307,#0e0715 52%,#050407)}
+.hero:not(.hero-cinematic):after{content:"";position:absolute;right:7%;top:50%;width:330px;height:330px;transform:translateY(-50%) rotate(24deg);border:1px solid rgba(255,255,255,.07);border-radius:42%;box-shadow:
+ 0 0 0 34px rgba(164,78,255,.025),
+ 0 0 0 68px rgba(255,73,193,.018),
+ 0 0 70px rgba(131,59,255,.10);animation:innerGlyph 12s ease-in-out infinite}
+.hero:not(.hero-cinematic)>.shell:after{content:"";position:absolute;right:calc(7% + 120px);top:50%;width:88px;height:88px;transform:translateY(-50%) rotate(45deg);border:1px solid rgba(255,122,219,.28);background:linear-gradient(135deg,rgba(255,68,190,.08),rgba(110,76,255,.05));box-shadow:0 0 36px rgba(255,69,192,.13)}
+@keyframes innerGlyph{50%{transform:translateY(-50%) rotate(40deg) scale(1.035)}}
+@media(max-width:760px){.hero:not(.hero-cinematic):after,.hero:not(.hero-cinematic)>.shell:after{opacity:.35;right:-28%}}
