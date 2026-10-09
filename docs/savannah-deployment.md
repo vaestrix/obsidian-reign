@@ -52,6 +52,8 @@ Emergency stop: set SAVANNAH_AUTO_SEND=false and redeploy, or pause the Hostinge
 
 Unit/integration tests mock Mail API and AI; no customer emails are sent by tests. Live deployment and real Hostinger delivery verification require Cloudflare credentials, a Mail API token, Philip's email and approved facts. These were unavailable in the preparation environment. The production domain's current status is recorded separately in the task report; it must not be mistaken for verification of this new handler.
 
+All 12 mocked tests and the deployment dry run pass. `node test/runtime-smoke.mjs` also passes in the local Cloudflare runtime: homepage and pricing 200, missing/private source/documentation/lockfiles 404, invalid Bearer token 401, valid event 202 and replay detected as duplicate. The smoke test creates fresh state/logs outside the watched asset directory and disables remote AI in a temporary configuration. It uses a local-only compatibility-date override because the pinned runtime predates the production compatibility date. Production configuration and assets are unchanged. These checks validate local intake/storage/routing; they do not validate real Hostinger payloads, credentials or AI/email delivery.
+
 ## Authoritative references
 
 - https://www.hostinger.com/support/how-to-use-agentic-mail-in-hostinger/ (Bearer webhook authentication)
