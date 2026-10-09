@@ -788,3 +788,88 @@ input:focus,select:focus,textarea:focus{
 
 @media(max-width:900px){.vibe-layout,.split-proof,.audit-grid{grid-template-columns:1fr}.process-line{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:650px){.before-after{height:420px}.vibe-grid,.quiz-options,.faq-grid{grid-template-columns:1fr}.process-line{grid-template-columns:repeat(2,1fr)}.showroom-alert{min-width:0;width:88%}}
+
+/* Alt-girl gamer / cute goth art direction */
+body{
+  background:
+    radial-gradient(circle at 16% 6%,rgba(255,73,188,.075),transparent 25%),
+    radial-gradient(circle at 84% 14%,rgba(132,73,255,.10),transparent 28%),
+    linear-gradient(180deg,#050407,#0a0710 43%,#050407);
+}
+.site-header:after{
+  content:"";
+  position:absolute;left:18%;right:18%;bottom:-1px;height:1px;
+  background:linear-gradient(90deg,transparent,#ff70cf 28%,#a56dff 52%,#70ddff 72%,transparent);
+  opacity:.22;box-shadow:0 0 10px rgba(255,95,205,.22)
+}
+.brand-copy b{letter-spacing:.10em}
+.brand-copy small{color:#b799bd}
+.hero-copy-panel:before{
+  content:"♡  ALT • GAMER • CREATOR  ♡";
+  display:inline-block;margin-bottom:13px;padding:6px 10px;border:1px solid rgba(255,111,211,.13);
+  border-radius:999px;color:#d89ac7;background:rgba(255,77,185,.025);
+  font-size:7px;letter-spacing:.15em
+}
+.hero-microstats span:nth-child(2){border-color:rgba(255,103,203,.12)}
+.hero-microstats span:nth-child(3){border-color:rgba(102,216,255,.11)}
+.section-head h2,.founder-copy h2,.card h3,.price,.showroom-copy strong,.quiz-result strong{
+  text-wrap:balance;
+}
+.card{
+  background:
+    radial-gradient(circle at 92% 8%,rgba(255,75,191,.035),transparent 25%),
+    linear-gradient(145deg,rgba(16,13,23,.97),rgba(7,6,10,.99));
+}
+.card:nth-child(2n){
+  background:
+    radial-gradient(circle at 88% 10%,rgba(103,211,255,.028),transparent 24%),
+    linear-gradient(145deg,rgba(15,13,22,.97),rgba(7,6,10,.99));
+}
+.service-icon{
+  background:
+    radial-gradient(circle at 35% 30%,rgba(255,255,255,.08),transparent 28%),
+    linear-gradient(145deg,rgba(255,65,180,.075),rgba(115,67,255,.07));
+}
+.founder-section{
+  background:
+    radial-gradient(circle at 22% 48%,rgba(255,82,190,.055),transparent 23%),
+    radial-gradient(circle at 80% 48%,rgba(126,71,255,.045),transparent 24%);
+}
+.founder-frame{
+  border-color:rgba(255,116,213,.13);
+}
+.founder-frame:after{
+  content:"";
+  position:absolute;z-index:3;left:12px;right:12px;bottom:12px;height:1px;
+  background:linear-gradient(90deg,transparent,#ff78d4,#a66bff,#73dfff,transparent);
+  opacity:.42
+}
+.founder-quote:after{
+  content:" ♡";
+  color:#ff8bd9;font-style:normal;font-size:14px
+}
+.vibe-chip[data-tone="goth"]:before,.vibe-chip[data-tone="kawaii"]:before,.vibe-chip[data-tone="glam"]:before{
+  margin-right:7px;color:#f29bda
+}
+.vibe-chip[data-tone="goth"]:before{content:"☾"}
+.vibe-chip[data-tone="kawaii"]:before{content:"♡"}
+.vibe-chip[data-tone="glam"]:before{content:"✦"}
+.vibe-chip[data-tone="cozy"]:before{content:"☕";font-size:11px}
+.vibe-chip[data-tone="horror"]:before{content:"†";color:#b85471;margin-right:7px}
+.quiz-options button:before{
+  content:"♡";margin-right:8px;color:rgba(255,127,218,.58)
+}
+.faq-item:nth-child(odd) summary:before{content:"✦";margin-right:9px;color:#db8bca}
+.faq-item:nth-child(even) summary:before{content:"♡";margin-right:9px;color:#94dff3}
+.audit-section{
+  background:
+    radial-gradient(circle at 78% 35%,rgba(255,67,180,.06),transparent 25%),
+    radial-gradient(circle at 16% 72%,rgba(125,73,255,.05),transparent 26%);
+}
+.reign-standard:before{
+  content:"♡";display:block;margin-bottom:8px;color:#ff84d7;text-shadow:0 0 12px rgba(255,83,197,.34)
+}
+.builder-choice .btn-primary:after{opacity:.85}
+@media(max-width:760px){
+  .hero-copy-panel:before{font-size:6px}
+}
