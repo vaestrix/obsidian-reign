@@ -196,3 +196,15 @@ img{max-width:100%}
  .founder-specialties{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){.orbit,.hero-crystal-mark,.hero-float-card,.spark-field i{animation:none!important}}
+
+.site-header.scrolled{background:rgba(4,3,7,.92);border-bottom-color:rgba(181,111,255,.18);box-shadow:0 12px 45px rgba(0,0,0,.24)}
+.hero-art-column{transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.kinetic-ribbon{position:relative;z-index:8;overflow:hidden;border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.07);background:linear-gradient(90deg,#07050a,#100818 48%,#07050a);padding:16px 0}
+.kinetic-ribbon:before,.kinetic-ribbon:after{content:"";position:absolute;top:0;bottom:0;width:130px;z-index:3;pointer-events:none}
+.kinetic-ribbon:before{left:0;background:linear-gradient(90deg,#07050a,transparent)}
+.kinetic-ribbon:after{right:0;background:linear-gradient(-90deg,#07050a,transparent)}
+.kinetic-track{display:flex;align-items:center;gap:28px;width:max-content;animation:ribbonMove 30s linear infinite;white-space:nowrap}
+.kinetic-track span{font:600 12px/1 Georgia,serif;letter-spacing:.19em;color:#c7bdcc}
+.kinetic-track i{font-style:normal;color:#ff5ccb;text-shadow:0 0 16px rgba(255,83,201,.65)}
+@keyframes ribbonMove{to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.kinetic-track{animation:none}}
