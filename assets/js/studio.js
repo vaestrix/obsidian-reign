@@ -145,4 +145,71 @@
   };
   onScroll();
   window.addEventListener("scroll",onScroll,{passive:true});
+  const baSlider=document.querySelector("[data-ba-slider]");
+  const baAfter=document.querySelector("[data-ba-after]");
+  const baDivider=document.querySelector("[data-ba-divider]");
+  const syncBA=()=>{if(!baSlider||!baAfter||!baDivider)return;const v=Number(baSlider.value||50);baAfter.style.clipPath="inset(0 0 0 "+v+"%)";baDivider.style.left=v+"%";};
+  baSlider?.addEventListener("input",syncBA); syncBA();
+
+  const vibeButtons=[...document.querySelectorAll("[data-vibe]")];
+  const vibePreview=document.querySelector("[data-vibe-preview]");
+  const vibeLabel=document.querySelector("[data-vibe-label]");
+  const vibeLink=document.querySelector("[data-vibe-link]");
+  vibeButtons.forEach(btn=>btn.addEventListener("click",()=>{
+    vibeButtons.forEach(x=>x.classList.remove("active"));btn.classList.add("active");
+    const vibe=btn.dataset.vibe||"Custom"; if(vibePreview)vibePreview.dataset.tone=btn.dataset.tone||"violet";
+    if(vibeLabel)vibeLabel.textContent=vibe.toUpperCase();
+    if(vibeLink)vibeLink.href="start-project.html?vibe="+encodeURIComponent(vibe);
+  }));
+
+  const showroomTitle=document.querySelector("[data-showroom-title]");
+  const showroomSub=document.querySelector("[data-showroom-sub]");
+  const showroomAlert=document.querySelector("[data-showroom-alert]");
+  const showroomStage=document.querySelector("[data-showroom-stage]");
+  const showroomEvents={
+    follow:["NEW FOLLOWER","A new viewer just entered your world.","✦ NEW FOLLOW • WELCOME IN"],
+    sub:["NEW SUBSCRIBER","Make support feel like an event, not a popup.","♡ SUBSCRIBER UNLOCKED • THANK YOU"],
+    raid:["INCOMING RAID","Turn community moments into miniature cinematics.","⚡ RAID INBOUND • OPEN THE GATES"],
+    voice:["VOICE CHAOS","Custom character lines can turn alerts into recurring jokes.","☠ VOICE PACK • CHAOS ACTIVATED"],
+    stinger:["SCENE TRANSITION","One visual language from gameplay to BRB to ending.","✧ CINEMATIC STINGER • SCENE SHIFT"]
+  };
+  document.querySelectorAll("[data-show]").forEach(btn=>btn.addEventListener("click",()=>{
+    const [title,sub,alert]=showroomEvents[btn.dataset.show]||showroomEvents.follow;
+    if(showroomTitle)showroomTitle.textContent=title;if(showroomSub)showroomSub.textContent=sub;
+    if(showroomAlert){showroomAlert.classList.remove("play");void showroomAlert.offsetWidth;showroomAlert.textContent=alert;showroomAlert.classList.add("play");}
+    showroomStage?.animate([{filter:"brightness(1) saturate(1)"},{filter:"brightness(1.18) saturate(1.18)"},{filter:"brightness(1) saturate(1)"}],{duration:700,easing:"ease-out"});
+  }));
+
+  const auditForm=document.querySelector("[data-audit-form]");
+  const auditStatus=document.querySelector("[data-audit-status]");
+  auditForm?.addEventListener("submit",async e=>{
+    e.preventDefault();const d=Object.fromEntries(new FormData(auditForm));
+    const payload=["OBSIDIAN REIGN STUDIOS - FREE CREATOR AUDIT REQUEST","","Channel: "+(d.channel||""),"Email: "+(d.email||""),"Primary goal: "+(d.goal||"")].join("\n");
+    try{await navigator.clipboard.writeText(payload);if(auditStatus)auditStatus.textContent="Audit request prepared and copied. Direct studio inbox delivery is being connected next.";}
+    catch{if(auditStatus)auditStatus.textContent="Audit request prepared. Direct submission will be connected to the studio inbox.";}
+  });
+
+  const quiz=document.querySelector("[data-quiz]");
+  const quizQ=document.querySelector("[data-quiz-question]");
+  const quizResult=document.querySelector("[data-quiz-result]");
+  let quizStep=0; const quizScores={glam:0,cozy:0,chaos:0,dark:0};
+  const quizQuestions=[
+    {q:"What should viewers feel in the first five seconds?",a:[["glam","“This looks expensive.”"],["cozy","“I want to hang out here.”"],["chaos","“What on earth is happening?”"],["dark","“This creator has lore.”"]]},
+    {q:"What kind of alert would make you happiest?",a:[["glam","A gorgeous cinematic reveal"],["cozy","A cute character waving hello"],["chaos","A completely unhinged voice line"],["dark","A dramatic ritual-like animation"]]},
+    {q:"Pick the compliment you want most.",a:[["glam","“Your brand is flawless.”"],["cozy","“Your community feels like home.”"],["chaos","“I clipped that immediately.”"],["dark","“Your stream has its own universe.”"]]}
+  ];
+  const quizProfiles={
+    glam:["THE MAIN CHARACTER","Polished, confident, glamorous. Your strongest direction is cinematic motion, alt-girl glam, premium alerts, and a brand that feels expensive.","Fan Service / Glam"],
+    cozy:["THE COZY MENACE","Warm, cute, community-first, with a gamer-girl edge. Think personality-rich emotes, soft motion, funny alerts, and cozy neon.","Cozy"],
+    chaos:["THE CHAOS GOBLIN","Your brand should create clips by itself. Voice packs, absurd alerts, mascot bits, reactive emotes, and high-energy transitions fit you.","Chaos / Comedy"],
+    dark:["THE LOREKEEPER","Atmosphere is the product. Goth visuals, cinematics, custom music, and a world that feels bigger than the stream itself.","Dark Fantasy"]
+  };
+  function renderQuiz(){if(!quizQ||!quizResult)return;if(quizStep>=quizQuestions.length){const key=Object.entries(quizScores).sort((a,b)=>b[1]-a[1])[0][0];const [title,copy,vibe]=quizProfiles[key];quizQ.hidden=true;quizResult.hidden=false;quizResult.innerHTML="<small>YOUR CREATOR TYPE</small><strong>"+title+"</strong><p>"+copy+"</p><a class='btn btn-primary' href='start-project.html?vibe="+encodeURIComponent(vibe)+"'>BUILD MY "+vibe.toUpperCase()+" DIRECTION</a>";return;}const item=quizQuestions[quizStep];quizQ.innerHTML="<small>QUESTION "+(quizStep+1)+" OF "+quizQuestions.length+"</small><h3>"+item.q+"</h3><div class='quiz-options'>"+item.a.map(([k,t])=>"<button data-quiz-answer='"+k+"'>"+t+"</button>").join("")+"</div>";quizQ.querySelectorAll("[data-quiz-answer]").forEach(b=>b.addEventListener("click",()=>{quizScores[b.dataset.quizAnswer]++;quizStep++;renderQuiz();}));}
+  if(quiz)renderQuiz();
+
+  const addonButtons=[...document.querySelectorAll("[data-add-quote]")]; let addonTotal=0;
+  addonButtons.forEach(btn=>btn.addEventListener("click",()=>{
+    btn.classList.toggle("active");addonTotal=addonButtons.reduce((s,b)=>s+(b.classList.contains("active")?Number(b.dataset.addQuote||0):0),0);
+    if(quoteTotal){const base=quoteBoxes.reduce((sum,x)=>sum+(x.checked?Number(x.value||0):0),0);quoteTotal.textContent="$"+(base+addonTotal).toLocaleString();}
+  }));
 })();
