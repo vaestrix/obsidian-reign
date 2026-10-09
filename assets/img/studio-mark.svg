@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Obsidian Reign Studios">
+<defs>
+  <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ffffff"/>
+    <stop offset=".18" stop-color="#b8b3c2"/>
+    <stop offset=".42" stop-color="#3a3644"/>
+    <stop offset=".62" stop-color="#f5f0ff"/>
+    <stop offset="1" stop-color="#625d70"/>
+  </linearGradient>
+  <linearGradient id="neon" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ff3ac8"/>
+    <stop offset=".45" stop-color="#9d54ff"/>
+    <stop offset="1" stop-color="#27d9ff"/>
+  </linearGradient>
+  <radialGradient id="core"><stop stop-color="#fff7ff"/><stop offset=".22" stop-color="#ff70df"/><stop offset=".58" stop-color="#8a45ff"/><stop offset="1" stop-color="#150827"/></radialGradient>
+  <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+    <feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<path d="M128 14 154 51 205 35 184 83 231 106 181 122 204 177 153 159 128 236 103 159 52 177 75 122 25 106 72 83 51 35 102 51Z" fill="#08060c" stroke="url(#chrome)" stroke-width="6"/>
+<path d="M128 32 148 65 183 54 169 88 199 105 166 116 181 151 145 139 128 193 111 139 75 151 90 116 57 105 87 88 73 54 108 65Z" fill="url(#neon)" opacity=".94" filter="url(#glow)"/>
+<path d="M128 58 152 101 128 156 104 101Z" fill="url(#core)" stroke="#ffe5fb" stroke-width="3"/>
+<path d="M83 106h90" stroke="#ffd77d" stroke-width="3" opacity=".72"/>
+<circle cx="128" cy="107" r="8" fill="#fff" filter="url(#glow)"/>
+</svg>
