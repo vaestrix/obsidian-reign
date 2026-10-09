@@ -49,6 +49,7 @@
 .hero-cinematic .hero-sub{font-size:clamp(21px,1.7vw,26px);line-height:1.45}
 .hero-art-column{min-height:460px}
 .card h3:after{display:none}
+.card:before,.card:after,.btn:before{pointer-events:none}
 .hero:not(.hero-cinematic) h1{font-size:clamp(42px,6.5vw,90px);max-width:1100px}
 .hero:not(.hero-cinematic):after,.hero:not(.hero-cinematic)>.shell:after{opacity:.2;pointer-events:none}
 .footer-inner{align-items:center;flex-wrap:wrap;line-height:1.7}
@@ -103,7 +104,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
  .showcase-list{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto}
  .showcase-list .card{padding:20px}
  .showcase-list .card h3{font-size:22px}
- .quote-box{position:static}
+ .quote-box{position:relative;top:auto}
 }
 @media(max-width:760px){
  .hero-cinematic-inner{grid-template-columns:minmax(0,1fr);padding:52px 0 70px;gap:0}

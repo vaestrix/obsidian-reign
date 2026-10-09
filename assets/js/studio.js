@@ -1,7 +1,8 @@
 (()=> {
   const navToggle=document.querySelector("[data-nav-toggle]");
   const nav=document.querySelector("[data-nav]");
-  navToggle?.addEventListener("click",()=>nav?.classList.toggle("open"));
+  navToggle?.setAttribute("aria-expanded","false");
+  navToggle?.addEventListener("click",()=>{const open=nav?.classList.toggle("open");navToggle.setAttribute("aria-expanded",String(Boolean(open)));navToggle.setAttribute("aria-label",open?"Close navigation":"Open navigation");});
 
   const glow=document.querySelector("[data-cursor-glow]");
   let sparkFrame=0;
