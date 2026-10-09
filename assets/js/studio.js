@@ -82,7 +82,20 @@
       data.vibe||"",
       "",
       "WHAT TO BUILD",
-      data.scope||""
+      [
+        data.want_streamkit?"Stream Kit":"",
+        data.want_emotes?"Emotes / Badges":"",
+        data.want_cinematics?"Cinematics / Trailer":"",
+        data.want_audio?"Music / Voice":"",
+        data.want_branding?"Branding / Logo":"",
+        data.want_site?"Creator Website":""
+      ].filter(Boolean).join(", ") || "Not selected",
+      "",
+      "GOAL / SUCCESS",
+      data.scope||"",
+      "",
+      "LINKS / REFERENCES",
+      data.refs||""
     ].join("\n");
 
     try{
