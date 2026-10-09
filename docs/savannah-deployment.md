@@ -24,6 +24,7 @@ Secrets (use Cloudflare dashboard or interactive Wrangler prompts; never commit 
 
 ```sh
 npx wrangler secret put HOSTINGER_MAIL_API_TOKEN
+npx wrangler secret put HOSTINGER_MAILBOX_ID
 npx wrangler secret put HOSTINGER_WEBHOOK_SECRET
 npx wrangler secret put PHILIP_ESCALATION_EMAIL
 npx wrangler secret put SAVANNAH_APPROVED_FACTS
@@ -34,13 +35,13 @@ npx wrangler secret put SAVANNAH_APPROVED_FACTS
 - PHILIP_ESCALATION_EMAIL: Philip's verified email address; no address has been assumed in code.
 - SAVANNAH_APPROVED_FACTS: already configured with service categories and the scope-before-payment process verified from the live services/start-project pages. The fact pack authorizes routine qualification only and contains no numeric prices, payment links, guarantees, usage-right promises or deadlines. Update it when published business information changes. Without facts, the agent escalates.
 
-Nonsecret vars in wrangler.jsonc: HOSTINGER_MAILBOX_ID is the connector-confirmed `ACea1da873df8cf8ce1839b3cae221`; SAVANNAH_AUTO_SEND is initially `false`.
+HOSTINGER_MAILBOX_ID is configured in production as a secret with the connector-confirmed value `ACea1da873df8cf8ce1839b3cae221`. Keep it out of `vars` to avoid replacing the dashboard binding on deployment. The nonsecret vars PUBLIC_ORIGIN and SAVANNAH_AUTO_SEND match the dashboard; auto-send remains `false`. The dashboard's configuration-sync banner is informational, not a runtime error.
 
 ## Deployment and activation
 
 1. Review/merge the PR; install dependencies with `npm install`; run `npm test` and `npx wrangler deploy --dry-run`. Authenticate Cloudflare with `npx wrangler login` or a deployment token supplied outside Git.
 2. Deploy with `npm run deploy`, keeping auto-send false. Existing custom-domain routing must continue to serve obsidianreign.gg through this Worker. Confirm GET / and /pricing and a missing page still work.
-3. A **paused** webhook already exists: `01a122ad-2ddf-71f9-ac8f-d9b4dbb0095e`, event `message.received`, URL `https://obsidianreign.gg/webhooks/hostinger`. HOSTINGER_WEBHOOK_SECRET and SAVANNAH_APPROVED_FACTS are configured on the production Worker. Reuse this webhook; do not create a duplicate. Configure HOSTINGER_MAIL_API_TOKEN and PHILIP_ESCALATION_EMAIL before activation. If Hostinger blocks the embedded browser, use a normal Chrome/Edge browser to create a Selected-mailboxes token scoped only to savannah@obsidianreign.gg and save it directly as a Cloudflare Worker secret; never paste credentials into chat or commit them.
+3. The existing webhook `01a122ad-2ddf-71f9-ac8f-d9b4dbb0095e` is active in review mode: event `message.received`, URL `https://obsidianreign.gg/webhooks/hostinger`. All required production secrets are configured. Reuse this webhook; do not create a duplicate. For a new installation, keep deliveries paused until credentials and controlled checks are complete. Never paste credentials into chat or commit them.
 4. Verify missing/wrong Authorization returns 401; non-POST returns 405. Missing Worker setup returns 503. Unsupported events return 200; invalid mailbox/message data returns 400; accepted deliveries return 202.
 5. Hostinger's sample webhook test now succeeds with HTTP 202. Its envelope has `event: "message.received"` and `data.mailboxAddress`/`data.messageId`; no UID is supplied. An authenticated Mail API search resolves the RFC Message-ID to a UID, with exact-match checks, bounded pagination and retries for delayed visibility. Junk/Spam matches are ignored. Real inbound mail and full-thread fetches still need a controlled test after the remaining secrets are configured. Do not infer readiness to auto-send from a sample delivery alone.
 6. Activate the webhook in review mode and send a controlled inbound test from a mailbox you own. Verify one notice to Philip, full-thread retrieval, exact sender display name, and no customer response. Replay the same delivery: no second job/send. Exercise refund, newsletter, phishing, thread-history and malformed-AI cases. Confirm Hostinger's trusted Authentication-Results behavior: the current implementation conservatively checks DMARC but header text is not a cryptographic trust anchor, and phishing classification is also applied by AI.
@@ -50,9 +51,13 @@ Emergency stop: set SAVANNAH_AUTO_SEND=false and redeploy, or pause the Hostinge
 
 ## Verification status
 
-The production Worker includes the corrected adapter (verified version `b40e1f10-7cde-4260-903c-30c210069a3c`). Live invalid-token requests return 401; authenticated unrelated events return 200/ignored; Hostinger's sample test returns 202/success. The webhook remains paused and SAVANNAH_AUTO_SEND=false. A temporary authenticated diagnostic Worker captured only sample structure and was deleted afterward. No customer email was sent. Actual Mail API retrieval, AI review and escalation delivery still require the remaining secrets and controlled end-to-end tests.
+On October 9, 2026, the controlled inbound Test (INBOX UID 3) was read and escalated successfully. Sent UID 2 has subject `[Savannah review] Message 3`, the exact sender `Savannah | Obsidian Reign Studios`, and the configured escalation recipient. Customer automatic replies remain disabled. Hostinger sample deliveries return 202; authenticated Mail API folder access returns 200. The webhook is active in review mode.
 
-All 15 mocked tests and the deployment dry run pass. `node test/runtime-smoke.mjs` also passes in the local Cloudflare runtime: homepage and pricing 200, missing/private source/documentation/lockfiles 404, invalid Bearer token 401, valid event 202 and replay detected as duplicate. The smoke test creates fresh state/logs outside the watched asset directory and disables remote AI in a temporary configuration. It uses a local-only compatibility-date override because the pinned runtime predates the production compatibility date. The production site has newer command-center/site changes than the original PR snapshot; preserve those during integration. The mail adapter was integrated without replacing that deployed site. Local tests and a sample delivery do not verify real AI/email sends.
+All 17 mocked tests pass, including redirects and structured AI responses. `node test/runtime-smoke.mjs` passes: public pages 200, missing/private files 404, invalid Bearer token 401, valid delivery/replay 202. It supplies test-only bindings, uses fresh state/logs and disables remote AI in a temporary configuration.
+
+Real-runtime verification exposed two compatibility issues, now corrected: Workers supports `redirect: manual`, and non-success/redirect status is explicitly rejected; Workers AI can return an already-parsed decision object as well as JSON text, so both receive identical conservative validation. A synthetic routine inquiry produced routine=true/confidence=0.9 and was correctly held below the 0.98 threshold. All temporary replay/credential/AI hooks were removed; safe operation/status logs remain. The production site and client portal were preserved. Previous failed test jobs remain held to prevent blind retries.
+
+Before enabling customer auto-send, disable the previous hourly sender and complete controlled real routine/thread/escalation cases. Escalation sending is verified in Sent; mailbox delivery/inbox placement must be confirmed by Philip. Review mode can continue collecting drafts meanwhile.
 
 ## Authoritative references
 
@@ -60,3 +65,4 @@ All 15 mocked tests and the deployment dry run pass. `node test/runtime-smoke.mj
 - https://github.com/hostinger/mail-api/blob/main/openapi.json (message/search/text/source/send schemas; inReplyTo is `{folder, uid}`)
 - https://developers.cloudflare.com/durable-objects/api/alarms/ (durable alarm delivery/retries)
 - https://developers.cloudflare.com/workers-ai/models/llama-3.3-70b-instruct-fp8-fast/ (AI binding/model)
+

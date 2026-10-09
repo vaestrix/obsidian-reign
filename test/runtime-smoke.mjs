@@ -13,6 +13,7 @@ config.main = resolve(config.main);
 config.assets.directory = resolve(config.assets.directory);
 config.compatibility_date = '2026-10-03';
 config.vars.HOSTINGER_WEBHOOK_SECRET = secret;
+config.vars.HOSTINGER_MAILBOX_ID = 'ACea1da873df8cf8ce1839b3cae221';
 delete config.ai;
 const configPath = join(temporary, 'wrangler.json');
 await writeFile(configPath, JSON.stringify(config));
@@ -46,3 +47,4 @@ try {
   const duplicate = await post(secret); assert.equal(duplicate.status, 202); assert.equal((await duplicate.json()).duplicate, true);
   console.log('Webhook: wrong token 401; accepted 202; duplicate 202');
 } finally { child.kill(); }
+

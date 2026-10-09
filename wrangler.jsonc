@@ -3,14 +3,13 @@
   "name": "obsidian-reign",
   "main": "src/worker.js",
   "compatibility_date": "2026-10-08",
-  "durable_objects": { "bindings": [{ "name": "COMMAND_STORE", "class_name": "CommandStore" }, { "name": "SAVANNAH_INBOX", "class_name": "SavannahInbox" }] },
-  "migrations": [{ "tag": "v1", "new_classes": ["CommandStore"] }, { "tag": "savannah-v1", "new_sqlite_classes": ["SavannahInbox"] }],
+  "durable_objects": { "bindings": [{ "name": "COMMAND_STORE", "class_name": "CommandStore" }, { "name": "SAVANNAH_INBOX", "class_name": "SavannahInbox" }, { "name": "PROJECT_HUB", "class_name": "ProjectHub" }] },
+  "migrations": [{ "tag": "v1", "new_classes": ["CommandStore"] }, { "tag": "savannah-v1", "new_sqlite_classes": ["SavannahInbox"] }, { "tag": "projects-v1", "new_sqlite_classes": ["ProjectHub"] }],
   "ai": { "binding": "AI" },
   "observability": { "enabled": true },
   "vars": {
     "PUBLIC_ORIGIN": "https://obsidianreign.gg",
-    "SAVANNAH_AUTO_SEND": "false",
-    "HOSTINGER_MAILBOX_ID": "ACea1da873df8cf8ce1839b3cae221"
+    "SAVANNAH_AUTO_SEND": "false"
   },
   "assets": {
     "directory": "dist",
@@ -20,3 +19,4 @@
     "not_found_handling": "404-page"
   }
 }
+

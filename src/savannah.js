@@ -68,7 +68,7 @@ async function mail(env, path, body, raw = false) {
   // Log only operation/status, never tokens, email bodies or recipients.
   console.log(JSON.stringify({ event: 'savannah-mail-start', operation: path.split('?')[0] }));
   const response = await fetch(`${API}/mailboxes/${encodeURIComponent(env.HOSTINGER_MAILBOX_ID)}${path}`, {
-    method: body === undefined ? 'GET' : 'POST', redirect: 'error', signal: AbortSignal.timeout(20000),
+    method: body === undefined ? 'GET' : 'POST', redirect: 'manual', signal: AbortSignal.timeout(20000),
     headers: { Authorization: `Bearer ${env.HOSTINGER_MAIL_API_TOKEN}`, 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body)
   });
@@ -187,7 +187,8 @@ async function decide(env, messages) {
     { role: 'system', content: PERSONA + '\nApproved facts: ' + env.SAVANNAH_APPROVED_FACTS },
     { role: 'user', content: context }
   ] });
-  const decision = JSON.parse(result.response);
+  const decision = typeof result.response === 'string' ? JSON.parse(result.response) : result.response;
+  if (!decision || typeof decision !== 'object' || Array.isArray(decision)) throw new Error('invalid-ai-decision');
   if (!['reply', 'ignore', 'escalate'].includes(decision.action)) throw new Error('invalid-ai-decision');
   if (decision.action === 'reply' && (decision.routine !== true || !(decision.confidence >= 0.98 && decision.confidence <= 1) ||
       typeof decision.reply !== 'string' || !decision.reply.trim() || decision.reply.length > 6000 ||

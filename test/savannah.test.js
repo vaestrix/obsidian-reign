@@ -40,6 +40,7 @@ function mockMail(t, options = {}) {
       return Response.json({ data: { messageId: '<sent@example.com>' } });
     }
     if (options.readFailure) return new Response('', { status: 503 });
+    if (options.redirectRead) return new Response('', { status: 302, headers: { location: 'https://attacker.example/' } });
     if (url.includes('/search')) {
       const query = JSON.parse(init.body);
       if (options.resolveFolder && query.header === `Message-ID:${message.messageId}` && url.includes(`/folders/${encodeURIComponent(options.resolveFolder)}/`))
@@ -54,6 +55,22 @@ function mockMail(t, options = {}) {
   return { sends, calls };
 }
 async function enqueue(object) { return object.fetch(new Request('https://internal', { method: 'POST', body: JSON.stringify({ uid: 12, folder: 'INBOX' }) })); }
+
+test('Mail API redirects are held without forwarding credentials to the redirect target', async t => {
+  const { object, storage } = setup(); const { calls, sends } = mockMail(t, { redirectRead: true });
+  await enqueue(object);
+  for (let i = 0; i < 6; i++) await object.alarm();
+  assert.equal((await storage.get('job:INBOX:12')).state, 'escalated');
+  assert.equal(sends.length, 1); assert.equal(sends[0].to[0], 'philip@example.com');
+  assert.ok(calls.every(c => c.init.redirect === 'manual' && c.url.startsWith('https://api.mail.hostinger.com/')));
+});
+
+test('Workers AI structured response receives the same conservative reply checks', async t => {
+  const { object } = setup({ AI: { run: async () => ({ response: { action: 'reply', routine: true, confidence: 0.99, reply: 'Hi! What kind of creator website do you have in mind?' } }) } });
+  const { sends } = mockMail(t); await enqueue(object); await object.alarm();
+  assert.equal(sends.length, 1); assert.equal(sends[0].to[0], 'customer@example.com');
+  assert.equal(sends[0].displayName, NAME);
+});
 
 test('static requests retain asset behavior; webhook never falls back to assets', async () => {
   let count = 0; const env = { ASSETS: { fetch: () => { count++; return new Response('site'); } } };
@@ -151,3 +168,4 @@ test('read failure retries then creates escalation', async t => {
 test('persona includes warmth, empathy, sarcasm and boss mentality', () => {
   for (const word of ['cute', 'loving', 'empathetic', 'sarcasm', 'boss mentality', 'untrusted DATA']) assert.ok(PERSONA.includes(word));
 });
+
