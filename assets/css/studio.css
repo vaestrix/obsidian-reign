@@ -873,3 +873,16 @@ body{
 @media(max-width:760px){
   .hero-copy-panel:before{font-size:6px}
 }
+
+/* Project intake polish */
+.project-intake{padding:26px}
+.project-kicker{max-width:720px;color:#948a9a;line-height:1.7}
+.project-picks{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
+.project-picks>span{grid-column:1/-1;color:#c9b7cf;font-size:8px;letter-spacing:.17em}
+.project-picks label{display:flex;align-items:center;gap:9px;padding:13px;border:1px solid rgba(255,255,255,.07);border-radius:13px;background:rgba(255,255,255,.012);color:#aaa0ae;font-size:11px}
+.project-picks input{width:17px;height:17px;accent-color:#ff66cc;box-shadow:none!important}
+.project-mode-note{margin-top:16px;padding:14px 16px;border:1px solid rgba(255,112,211,.14);border-radius:14px;background:linear-gradient(135deg,rgba(255,62,176,.04),rgba(122,72,255,.04));display:none}
+.project-mode-note:not(:empty){display:block}
+.project-mode-note strong{display:block;color:#f1b7df;font-size:9px;letter-spacing:.13em}
+.project-mode-note span{display:block;margin-top:5px;color:#948a9a;font-size:10px;line-height:1.5}
+@media(max-width:700px){.project-picks{grid-template-columns:1fr}}
