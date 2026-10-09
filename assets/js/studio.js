@@ -4,6 +4,26 @@
   navToggle?.addEventListener("click",()=>nav?.classList.toggle("open"));
 
   const glow=document.querySelector("[data-cursor-glow]");
+  let sparkFrame=0;
+  let lastSpark=0;
+  const sparkleColors=["dot","star"];
+  if(matchMedia("(hover:hover) and (pointer:fine)").matches && !matchMedia("(prefers-reduced-motion: reduce)").matches){
+    window.addEventListener("pointermove",e=>{
+      const now=performance.now();
+      if(now-lastSpark<34)return;
+      lastSpark=now;
+      const s=document.createElement("i");
+      s.className="cursor-spark "+(sparkFrame++%5===0?"star":"");
+      s.style.left=e.clientX+"px";
+      s.style.top=e.clientY+"px";
+      const angle=(sparkFrame*47)%360*Math.PI/180;
+      const dist=8+(sparkFrame%4)*2;
+      s.style.setProperty("--dx",(Math.cos(angle)*dist).toFixed(1)+"px");
+      s.style.setProperty("--dy",(Math.sin(angle)*dist-10).toFixed(1)+"px");
+      document.body.appendChild(s);
+      setTimeout(()=>s.remove(),760);
+    },{passive:true});
+  }
   if(glow && matchMedia("(hover:hover) and (pointer:fine)").matches){
     window.addEventListener("pointermove",e=>{
       glow.style.left=e.clientX+"px";
