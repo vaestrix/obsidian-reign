@@ -114,6 +114,28 @@
     cinematicHero.addEventListener("pointerleave",()=>artColumn.style.transform="");
   }
 
+  const accentTargets=[...document.querySelectorAll(".section,.cta,.founder-section")];
+  const accentGlyphs=[
+    {t:"✦",c:""},
+    {t:"♡",c:""},
+    {t:"✧",c:"alt"},
+    {t:"⋆",c:"gold"}
+  ];
+  accentTargets.forEach((section,idx)=>{
+    if(section.querySelector(".cute-float"))return;
+    const count=idx%2===0?2:1;
+    for(let i=0;i<count;i++){
+      const g=accentGlyphs[(idx+i)%accentGlyphs.length];
+      const el=document.createElement("span");
+      el.className="cute-float "+g.c;
+      el.textContent=g.t;
+      el.style.left=(8+((idx*19+i*33)%82))+"%";
+      el.style.top=(12+((idx*23+i*17)%72))+"%";
+      el.style.animationDelay=(-((idx+i)%5)*1.3)+"s";
+      section.appendChild(el);
+    }
+  });
+
   const header=document.querySelector(".site-header");
   let lastY=0;
   const onScroll=()=>{
