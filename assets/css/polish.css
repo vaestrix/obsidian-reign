@@ -1,4 +1,4 @@
-/* Layout corrections shared by every studio page. */
+/* Layout and finishing details shared by every studio page. */
 .header-logo{position:relative;display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;isolation:isolate}
 .header-logo:before,.header-logo:after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%}
 .header-logo:before{inset:-6px;background:radial-gradient(circle,rgba(190,103,255,.3),rgba(151,64,231,.12) 40%,transparent 70%);animation:logo-aura 6s ease-in-out infinite}
@@ -65,6 +65,32 @@
 .process-line span{font-size:12px;line-height:1.6}
 .section:before,.section:after{pointer-events:none}
 [data-audit-email][hidden]{display:none}
+/* Soft light, fine edges, and consistent reading rhythm. */
+:root{--muted:#b5acbe;--line:rgba(219,199,241,.12)}
+::selection{background:#7042a8;color:#fff}
+.site-header{background:rgba(9,6,15,.88);border-bottom-color:rgba(220,190,135,.2);box-shadow:0 8px 32px rgba(0,0,0,.16)}
+.brand-copy small{color:#b3a6bf}
+.hero-copy,.section-copy,.card p,.price-card ul{color:#b9afc2;line-height:1.8}
+.kicker,.eyebrow{color:#dac38e}
+.section-head h2,.founder-copy h2{letter-spacing:-.025em;line-height:1.12;text-wrap:balance}
+.card{border-color:rgba(213,181,241,.13);background:linear-gradient(145deg,rgba(26,18,37,.94),rgba(10,8,16,.98));box-shadow:0 1px 0 rgba(255,255,255,.035) inset,0 16px 48px rgba(0,0,0,.28);transition:transform .3s ease,border-color .3s ease,box-shadow .3s ease}
+.card h3{letter-spacing:-.015em}
+.card p:last-child{margin-bottom:0}
+.btn{border-radius:8px;transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease}
+.btn-primary{background:linear-gradient(135deg,#6533ad,#9847cc 60%,#b54999);border-color:rgba(233,184,255,.36);box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 8px 24px rgba(107,45,160,.24)}
+.btn-gold{color:#f0dca9;background:linear-gradient(135deg,rgba(211,177,109,.11),rgba(124,69,169,.07));border-color:rgba(224,194,140,.38)}
+.price-card.featured{border-color:rgba(209,157,248,.48);background:linear-gradient(145deg,rgba(49,27,65,.94),rgba(15,10,23,.98));box-shadow:0 1px 0 rgba(237,205,255,.1) inset,0 18px 54px rgba(107,46,160,.15)}
+input:not([type=checkbox]):not([type=range]),select,textarea{border-radius:8px;border-color:rgba(212,183,236,.2);background-color:#100c18;color:#eee8f4;transition:border-color .2s ease,box-shadow .2s ease}
+input::placeholder,textarea::placeholder{color:#a59aad;opacity:1}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #dfbdff;outline-offset:4px}
+.main-nav a.active:not(.nav-cta){color:#eedbff;background:rgba(172,108,230,.09);box-shadow:0 -1px 0 rgba(214,171,247,.55) inset}
+@media(hover:hover) and (pointer:fine){
+ .card:hover{transform:translateY(-3px);border-color:rgba(209,159,248,.38);box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 22px 54px rgba(0,0,0,.35),0 0 24px rgba(142,74,196,.08)}
+ .btn-primary:hover{box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 12px 30px rgba(145,66,183,.32)}
+ .main-nav a:hover{background:rgba(172,108,230,.07)}
+}
+@media(hover:none){.card:hover,.btn:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){.card,.btn{transition:none}.card:hover,.btn:hover{transform:none}}
 @media(max-width:1050px){
  .hero-cinematic-inner{grid-template-columns:minmax(0,1fr);padding:64px 0 80px}
  .hero-art-column{display:none}
