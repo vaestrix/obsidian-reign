@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 720" role="img" aria-labelledby="title desc">
+<title id="title">Obsidian Reign creator system</title><desc id="desc">A coordinated purple and gold stream scene, webcam frame, subscriber alert and audio waveform.</desc>
+<defs>
+<linearGradient id="bg" x2="1" y2="1"><stop stop-color="#171025"/><stop offset="1" stop-color="#05040a"/></linearGradient>
+<linearGradient id="edge" x2="1" y2="1"><stop stop-color="#e6cd92"/><stop offset=".4" stop-color="#9d6bf3"/><stop offset="1" stop-color="#d85cbb"/></linearGradient>
+<radialGradient id="a"><stop stop-color="#7343b8"/><stop offset="1" stop-color="#090710"/></radialGradient>
+<linearGradient id="mount" x2="0" y2="1"><stop stop-color="#35204f"/><stop offset="1" stop-color="#08060e"/></linearGradient>
+<filter id="glow"><feGaussianBlur stdDeviation="14"/></filter>
+</defs>
+<rect width="1000" height="720" rx="26" fill="url(#bg)"/>
+<ellipse cx="470" cy="300" rx="320" ry="200" fill="#7945c7" opacity=".12" filter="url(#glow)"/>
+<g fill="none" stroke="#c5a5ff" opacity=".07"><path d="M0 120h1000M0 240h1000M0 360h1000M0 480h1000M0 600h1000"/><path d="M140 0v720M320 0v720M500 0v720M680 0v720M860 0v720"/></g>
+<!-- The main scene is complete artwork, with no embedded marketing headline. -->
+<rect x="72" y="78" width="682" height="424" rx="16" fill="#09070f" stroke="url(#edge)" stroke-width="2"/>
+<rect x="86" y="92" width="654" height="358" rx="8" fill="url(#a)"/>
+<circle cx="416" cy="224" r="78" fill="#ac85e0" opacity=".1"/>
+<circle cx="416" cy="224" r="53" fill="none" stroke="#d8bc87" stroke-opacity=".7"/>
+<path d="m416 160 43 64-43 64-43-64Z" fill="#b892ee" opacity=".12" stroke="#cfaef6"/>
+<path d="m86 379 102-122 76 76 82-126 112 157 75-72 89 94 61-98 57 79v83H86Z" fill="url(#mount)"/>
+<path d="m188 257 76 76 82-126 112 157 75-72" fill="none" stroke="#9b76b7" stroke-opacity=".28"/>
+<path d="M111 417h604" stroke="url(#edge)" stroke-opacity=".5"/>
+<text x="101" y="480" fill="#cbbddd" font-family="Arial,sans-serif" font-size="13" letter-spacing="3">STREAM SCENE</text>
+<circle cx="722" cy="475" r="4" fill="#b897ed"/>
+<!-- Separate webcam frame. -->
+<rect x="640" y="276" width="282" height="226" rx="14" fill="#0c0913" stroke="url(#edge)" stroke-width="2"/>
+<path d="M660 325v-28h28M902 325v-28h-28M660 449v28h28M902 449v28h-28" fill="none" stroke="#c5a5ef"/>
+<g transform="translate(781 382)" stroke="url(#edge)" fill="none"><path d="m0-48 39 24v48L0 48-39 24v-48Z"/><path d="m0-48 0 96M-39-24l78 48M39-24l-78 48" opacity=".45"/></g>
+<text x="781" y="463" text-anchor="middle" fill="#b7a7ca" font-family="Arial,sans-serif" font-size="11" letter-spacing="2">CAMERA FRAME</text>
+<!-- Coordinated alert and sound treatment. -->
+<rect x="72" y="544" width="454" height="102" rx="14" fill="#0e0a17" stroke="#775891" stroke-opacity=".55"/>
+<path d="m116 570 8 17 19 3-14 14 3 20-16-9-17 9 4-20-14-14 19-3Z" fill="none" stroke="#d8bb83" stroke-width="2"/>
+<text x="166" y="585" fill="#9b83b1" font-family="Arial,sans-serif" font-size="11" letter-spacing="2">SUBSCRIBER ALERT</text>
+<text x="166" y="614" fill="#eee3f5" font-family="Arial,sans-serif" font-size="20">Thanks for subscribing</text>
+<rect x="552" y="544" width="370" height="102" rx="14" fill="#0e0a17" stroke="#775891" stroke-opacity=".55"/>
+<g stroke="url(#edge)" stroke-width="4" stroke-linecap="round"><path d="M580 590v10M594 581v28M608 574v42M622 583v24M636 565v60M650 579v32M664 572v46M678 584v22M692 568v54M706 581v28M720 588v14M734 574v42M748 581v28M762 586v18M776 569v52M790 580v30M804 573v44M818 584v22M832 577v36M846 586v18M860 580v30M874 588v14M888 592v6"/></g>
+</svg>
