@@ -283,9 +283,11 @@
  const goal=document.querySelector('[name=goal]');if(goal){const film=panel(goal.closest('form'),'branding');goal.addEventListener('change',()=>film.choose(goal.value.includes('Emotes')?'emotes':goal.value.includes('Website')?'website':goal.value.includes('visuals')?'scene':'branding'));}
  // Muted demos play only while visible. Reduced-motion users retain manual controls.
  const motion=matchMedia('(prefers-reduced-motion: reduce)');
- if('IntersectionObserver'in window){const observer=new IntersectionObserver(entries=>entries.forEach(e=>{const v=e.target;if(e.isIntersecting&&!document.hidden&&!motion.matches){v.muted=true;v.loop=true;v.play().catch(()=>{});}else v.pause();}),{threshold:.25});document.querySelectorAll('video').forEach(v=>{v.muted=true;v.playsInline=true;observer.observe(v);});
+ if('IntersectionObserver'in window){const observer=new IntersectionObserver(entries=>entries.forEach(e=>{const v=e.target;if(e.isIntersecting&&!document.hidden&&!motion.matches){v.muted=true;v.loop=!v.hasAttribute('data-ad-video');v.play().catch(()=>{});}else v.pause();}),{threshold:.25});document.querySelectorAll('video').forEach(v=>{v.muted=true;v.playsInline=true;observer.observe(v);});
  document.addEventListener('visibilitychange',()=>{document.querySelectorAll('video').forEach(v=>{if(document.hidden)v.pause();else{const r=v.getBoundingClientRect();if(!motion.matches&&r.top<innerHeight&&r.bottom>0)v.play().catch(()=>{});}});});}
 
 })();
 
 
+
+(()=>{const v=document.querySelector('[data-feature-video]'),b=document.querySelector('[data-ad-sound]');if(!v||!b)return;b.addEventListener('click',()=>{v.muted=!v.muted;if(!v.muted){v.currentTime=0;v.play().catch(()=>{});}b.textContent=v.muted?'WATCH WITH SOUND':'MUTE SOUND';b.setAttribute('aria-pressed',String(!v.muted));});v.addEventListener('volumechange',()=>{b.textContent=v.muted?'WATCH WITH SOUND':'MUTE SOUND';b.setAttribute('aria-pressed',String(!v.muted));});})();

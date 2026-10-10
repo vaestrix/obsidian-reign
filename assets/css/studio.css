@@ -1021,3 +1021,5 @@ body [data-vibe-preview] .selection-film figcaption{display:none;}
 .social-offer{display:flex;flex-direction:column;gap:12px;} .social-offer h3{margin:0;line-height:1.25;} .social-offer .price{font-size:36px;} .social-offer ul{padding-left:20px;line-height:1.7;color:#d8cde1;margin:0 0 16px;} .social-offer .btn{margin-top:auto;}
 
 .selection-film[hidden]{display:none;}
+
+.cinema-frame:has([data-ad-video]){aspect-ratio:1052 / 882;} [data-ad-video]{object-fit:contain;} .scene-title .btn{margin:16px 8px 0 0;}
