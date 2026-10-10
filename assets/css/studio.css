@@ -901,3 +901,68 @@ body .card,body .portal-panel,body .project-intake{border-radius:24px;border-col
 body .kicker{color:#e6b5cd}
 @media(prefers-reduced-motion:reduce){body .btn,body .nav-cta{transition:none}body .btn:hover,body .nav-cta:hover,body .btn:active,body .nav-cta:active{transform:none}}
 
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 600;
+  font-stretch: normal;
+  font-display: swap;
+  src: url(/assets/fonts/fredoka-0.woff2) format('truetype');
+}
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 700;
+  font-stretch: normal;
+  font-display: swap;
+  src: url(/assets/fonts/fredoka-1.woff2) format('truetype');
+}
+
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/assets/fonts/nunito-0.woff2) format('truetype');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(/assets/fonts/nunito-1.woff2) format('truetype');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(/assets/fonts/nunito-2.woff2) format('truetype');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(/assets/fonts/nunito-3.woff2) format('truetype');
+}
+
+
+/* Rounded display lettering with a readable, friendly text family. */
+:root{--font-display:'Fredoka',system-ui,sans-serif;--font-text:'Nunito',system-ui,sans-serif}
+body{font-family:var(--font-text);font-size:16px;line-height:1.65}
+body h1,body h2,body h3,body .hero h1,body .portal-heading h1,body .portal-panel h2,body .project-record h2,body .portal-admin-item h3{font-family:var(--font-display);font-weight:600;letter-spacing:-.025em;line-height:1.14;text-wrap:balance;overflow-wrap:break-word}
+body .hero h1{font-size:clamp(44px,4.7vw,76px);line-height:1.08;letter-spacing:-.035em}
+body .portal-heading h1,body .hero:not(.hero-cinematic) h1{font-size:clamp(38px,4.4vw,64px)}
+body .section h2,body .section-head h2{font-size:clamp(30px,3.1vw,44px)}
+body .card h3,body .project-record h2,body .portal-panel h2{font-size:clamp(24px,2.2vw,30px)}
+body .hero-sub{font-family:var(--font-text);font-weight:700;font-size:clamp(20px,1.8vw,26px);line-height:1.5;letter-spacing:0}
+body .hero-copy,body .section-copy{font-size:16px;line-height:1.8}
+body .brand-copy b{font-family:var(--font-display);font-weight:600;letter-spacing:.045em;font-size:19px}
+body .btn{font-family:var(--font-text);font-size:12px;font-weight:800;letter-spacing:.055em;line-height:1.4;white-space:normal;text-align:center;padding-block:12px}
+body .main-nav{font-family:var(--font-text);font-weight:800;font-size:11px;letter-spacing:.04em;gap:10px}
+body .kicker{font-size:11px;font-weight:800;letter-spacing:.16em}
+body .portal-form label,body .portal-panel label{font-size:14px;font-weight:700}
+body input,body select,body textarea{font-family:var(--font-text);font-size:16px;line-height:1.5}
+body .portal-admin-item h3{font-size:24px}
+@media(max-width:760px){body .hero h1{font-size:clamp(38px,10.5vw,52px)}body .portal-heading h1,body .hero:not(.hero-cinematic) h1{font-size:clamp(34px,9vw,46px)}body .hero-copy,body .section-copy{font-size:15px}body .hero-sub{font-size:20px}body .section h2,body .section-head h2{font-size:clamp(28px,7.6vw,36px)}}
