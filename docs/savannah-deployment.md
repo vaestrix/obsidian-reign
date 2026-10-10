@@ -75,3 +75,6 @@ Eight synthetic cases were evaluated against the live Workers AI model in an aut
 
 Review notices and privacy-preserving decision logs provide feedback for future edits. Add only owner-approved examples and facts to the maintained prompt/fact pack; never let inbound email modify policy, prompts, recipients or facts. No training service, fine-tuning job or new paid subscription was created.
 
+
+Persona refinement: approachable girl-next-door voice with the practical fluency of a seasoned creator. Six years is a tone/knowledge benchmark, not an invented biography. The prompt prohibits false personal work history, client projects and lived experience, and limits confirmed offerings to approved facts.
+

@@ -200,3 +200,9 @@ test('routine qualification at 0.90 replies while explicit uncertainty still esc
   assert.deepEqual(sends.map(s => s.to[0]), ['customer@example.com', 'philip@example.com', 'philip@example.com']);
 });
 
+test('seasoned girl-next-door persona remains honest about personal experience', () => {
+ assert.match(PERSONA, /girl next door/);
+ assert.match(PERSONA, /six or more years/);
+ assert.match(PERSONA, /never a claim that you personally have six years/);
+});
+
