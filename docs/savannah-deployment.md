@@ -81,3 +81,6 @@ Persona refinement: approachable girl-next-door voice with the practical fluency
 
 Review notices now use readable plain text with the sender, summary, hold reason, required decision and review draft. A routing note explains that replying to the review notice addresses Savannah rather than the customer. Durable notice data remains structured for recovery. Qualification instructions reuse details already present in the full thread and ask only the next one to three needed questions.
 
+
+Reply-To validation requires exactly one address matching the sender. A sender address appearing only in a display name or as a substring is not accepted. Multiple addresses, malformed headers and mismatches escalate for review. Named headers with the same address remain eligible for routine processing.
+

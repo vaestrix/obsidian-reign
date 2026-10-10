@@ -208,3 +208,10 @@ test('seasoned girl-next-door persona remains honest about personal experience',
  assert.match(PERSONA, /never a claim that you personally have six years/);
 });
 
+test('reply address must exactly match the sender, including named headers', () => {
+ const check = value => preflight({ ...message, headers: { ...message.headers, 'reply-to': value } });
+ for (const value of ['customer@example.com', 'Customer <CUSTOMER@example.com>']) assert.equal(check(value), 'review');
+ for (const value of ['customer@example.com.attacker.test', 'customer@example.com <attacker@example.com>',
+  'customer@example.com, attacker@example.com', 'attacker@example.com', 'Customer <customer@example.com>; attacker@example.com']) assert.equal(check(value), 'escalate');
+});
+

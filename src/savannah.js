@@ -111,6 +111,14 @@ async function load(env, event) {
   return { ...message, headers, text: body.text };
 }
 
+function replyAddressMatches(value, sender) {
+  if (typeof value !== 'string' || /[\r\n,;]/.test(value)) return false;
+  const header = value.trim();
+  const named = /^[^<>]*<([^<>\s]+)>$/.exec(header);
+  const address = named ? named[1] : header;
+  return email.test(address) && address.toLowerCase() === sender;
+}
+
 export function preflight(message) {
   const h = message.headers;
   const sender = message.from?.address?.toLowerCase();
@@ -125,7 +133,7 @@ export function preflight(message) {
   // Missing/failing authentication is held; the model still checks phishing on passes.
   const auth = h['authentication-results'] ?? '';
   if (!/dmarc=pass\b/i.test(auth) || /dmarc=fail|spf=fail|dkim=fail/i.test(auth) ||
-      h['reply-to'] && !h['reply-to'].toLowerCase().includes(sender)) return 'escalate';
+      h['reply-to'] && !replyAddressMatches(h['reply-to'], sender)) return 'escalate';
   if (sensitive.test(message.subject + '\n' + message.text) || injection.test(message.text) ||
       /https?:\/\/|verify.{0,30}(identity|account)|credential|one.time code/i.test(message.text)) return 'escalate';
   return 'review';
