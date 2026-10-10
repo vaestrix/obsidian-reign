@@ -32,7 +32,7 @@ Savannah's email agent is not automatically connected to these records, and no r
 
 ## Activate social sign-in
 
-Register web applications in the owner's developer accounts. No provider credentials were available during implementation. Buttons appear automatically only when both secrets for that provider exist.
+Register web applications in the owner's developer accounts. Google, Twitch, and Kick credentials are configured as encrypted Cloudflare secrets, and each provider has passed a real-account sign-in test. Google remains in Testing and needs its remaining branding and production publishing configuration completed before general launch. Buttons appear automatically only when both secrets for that provider exist.
 
 | Provider | Exact authorized redirect URI | Worker secrets | Requested permissions |
 | --- | --- | --- | --- |
@@ -42,7 +42,7 @@ Register web applications in the owner's developer accounts. No provider credent
 
 For Google, create a Web application OAuth client, add the authorized domain `obsidianreign.gg`, configure consent/branding and publish the app (or add explicit test users while testing). For Twitch and Kick, register the website app and exact redirect URI. Configure IDs and secrets using **Cloudflare → Workers & Pages → obsidian-reign → Settings → Variables and Secrets** as encrypted secrets. Do not commit them, put them in HTML, or paste them into chat.
 
-YouTube uses Google account sign-in. Channel linking is not implemented: it would require separate YouTube API consent. Signing in requests identity only, not access to videos, messages or channel controls. Each provider still needs a real-account end-to-end test after registration before advertising it to clients.
+YouTube uses Google account sign-in. Channel linking is not implemented: it would require separate YouTube API consent. Signing in requests identity only, not access to videos, messages or channel controls. Clients can copy their account ID or open a prefilled email to Savannah from the portal to request project assignment; that email is not sent automatically.
 
 Official references: [Google](https://developers.google.com/identity/openid-connect/openid-connect), [Twitch](https://dev.twitch.tv/docs/authentication/register-app/), [Kick](https://docs.kick.com/getting-started/generating-tokens-oauth2-flow).
 
