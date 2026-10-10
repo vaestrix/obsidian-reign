@@ -1022,4 +1022,4 @@ body [data-vibe-preview] .selection-film figcaption{display:none;}
 
 .selection-film[hidden]{display:none;}
 
-.cinema-frame:has([data-ad-video]){aspect-ratio:1052 / 882;} [data-ad-video]{object-fit:contain;} .scene-title .btn{margin:16px 8px 0 0;}
+.cinema-frame:has([data-ad-video]){aspect-ratio:16 / 9;} [data-ad-video]{object-fit:contain;} .scene-title .btn{margin:16px 8px 0 0;}
