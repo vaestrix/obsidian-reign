@@ -245,3 +245,24 @@
     }
   }
 })();
+
+// Scene directions change the artwork, palette, copy and alert together.
+(()=>{
+ const profiles={
+ violet:['◇','After-hours neon.','Prismatic light. Glossy chrome. Electric confidence.','A neon-lit scene family with holographic borders, luminous transitions, and jewel-toned alerts.','Violet / Electric pink / Ice blue','✦ A little extra sparkle for every new subscriber.','#a467ff','#fa68d4','#79e7ff','Chrome & neon'],
+ goth:['☾','Velvet after midnight.','Moonlight. Gothic arches. A little beautiful darkness.','Cathedral-inspired framing, a crimson moon, drifting mist, and elegant silver details.','Black plum / Crimson / Moon silver','☾ A new soul joins the night.','#36203f','#c33d69','#d8c9ea','Moonlit & dramatic'],
+ kawaii:['♡','Sweet, with a sparkle.','Candy clouds. Heart confetti. Main-character joy.','Bubblegum colors, floating hearts, soft cloud shapes, and playful subscriber moments.','Candy pink / Lilac / Mint cream','♡ Another sweet little reason to celebrate.','#ff9bd5','#b6a1ff','#a8eedc','Candy & cloud-soft'],
+ fantasy:['✧','Enter another world.','Arcane portals. Ember dust. Epic anticipation.','A glowing rune portal anchors your scenes with layered peaks, magical particles, and ornate alert framing.','Arcane violet / Ember gold / Deep indigo','✧ A new adventurer has entered the party.','#8361dc','#efbf7e','#202346','Arcane & cinematic'],
+ glam:['✦','Make an entrance.','Rose-gold spotlights. Satin curves. Spotlight energy.','Sculpted light ribbons and a glamorous jewel centerpiece give every scene a confident, polished presence.','Hot rose / Champagne / Aubergine','✦ The spotlight just got a little brighter.','#e85ca6','#f2d5aa','#47263f','Satin & spotlight'],
+ cozy:['☕','Stay a little longer.','Warm windows. Gentle rain. Your favorite corner.','Amber window light, layered room shapes, and warm, gentle alert moments for a relaxed community space.','Honey / Warm mauve / Cream','☕ There is always room for one more.','#dfa969','#a37b96','#f2ddbc','Warm & welcoming'],
+ horror:['†','Something is stirring.','Crimson fog. Broken silhouettes. Slow suspense.','A moody red horizon, distorted framing, and atmospheric alert reveals without rapid flashing.','Blood red / Charcoal / Mist gray','† You heard that too, right?','#be4658','#272329','#b4a6ad','Fog & suspense'],
+ luxury:['◈','Quietly unforgettable.','Fine gold lines. Sculptural forms. Intentional space.','A restrained champagne-and-obsidian direction with precise frames and an elegant monogram-inspired focal point.','Champagne / Obsidian / Ivory','◈ A moment worth celebrating.','#d8bd7c','#19171f','#ece3d5','Sculptural & refined'],
+ chaos:['★','Expect the unexpected.','Sticker energy. Pop-art shapes. Controlled mayhem.','Bright layered shapes, playful tilts, and punchy alert moments that match a lively comedy-driven channel.','Lime / Punch pink / Electric violet','★ Plot twist: the community got bigger.','#cce974','#ef79b6','#9770e8','Pop art & playful']
+ };
+ const preview=document.querySelector('[data-vibe-preview]');if(!preview)return;
+ const buttons=[...document.querySelectorAll('[data-vibe]')];
+ function update(btn){const p=profiles[btn.dataset.tone];if(!p)return;buttons.forEach(b=>b.setAttribute('aria-pressed',String(b===btn)));preview.style.setProperty('--direction-a',p[6]);preview.style.setProperty('--direction-b',p[7]);preview.style.setProperty('--direction-c',p[8]);[['symbol',0],['title',1],['sub',2],['description',3],['palette',4],['alert',5]].forEach(([key,i])=>{const el=preview.querySelector('[data-direction-'+key+']');if(el)el.textContent=p[i];});}
+ buttons.forEach(btn=>{const title=document.createElement('strong');title.textContent=btn.textContent;const note=document.createElement('small');note.textContent=profiles[btn.dataset.tone][9];btn.replaceChildren(title,note);btn.addEventListener('click',()=>update(btn));});update(buttons[0]);
+ const video=document.querySelector('[data-alert-video]'),pause=document.querySelector('[data-demo-motion]'),stage=document.querySelector('[data-showroom-stage]');
+ if(video&&pause){pause.textContent='Play video';pause.addEventListener('click',async()=>{if(video.paused){try{await video.play();pause.textContent='Pause video';}catch{pause.textContent='Try video again';}}else{video.pause();pause.textContent='Play video';}});video.addEventListener('ended',()=>pause.textContent='Replay video');video.addEventListener('error',()=>{pause.textContent='Video unavailable';});document.querySelectorAll('[data-show]').forEach(btn=>btn.addEventListener('click',async()=>{stage.dataset.event=btn.dataset.show;document.querySelectorAll('[data-show]').forEach(b=>b.setAttribute('aria-pressed',String(b===btn)));video.currentTime=0;try{await video.play();pause.textContent='Pause video';}catch{pause.textContent='Play video';}}));}
+})();
