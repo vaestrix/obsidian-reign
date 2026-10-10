@@ -1017,3 +1017,7 @@ body .vibe-stage[hidden]{display:none;}
 body .selection-film .direction-copy{margin:0;padding:20px 22px;}
 body .selection-film .direction-copy strong{display:block;font:600 clamp(26px,3vw,38px)/1.15 var(--font-display);margin-top:8px;text-wrap:balance;}
 body [data-vibe-preview] .selection-film figcaption{display:none;}
+
+.social-offer{display:flex;flex-direction:column;gap:12px;} .social-offer h3{margin:0;line-height:1.25;} .social-offer .price{font-size:36px;} .social-offer ul{padding-left:20px;line-height:1.7;color:#d8cde1;margin:0 0 16px;} .social-offer .btn{margin-top:auto;}
+
+.selection-film[hidden]{display:none;}

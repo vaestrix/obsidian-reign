@@ -89,7 +89,7 @@
         data.want_cinematics?"Cinematics / Trailer":"",
         data.want_audio?"Music / Voice":"",
         data.want_branding?"Branding / Logo":"",
-        data.want_site?"Creator Website":""
+        data.want_site?"Creator Website":"",data.want_shorts?"Shorts, Reels & TikTok Editing":"",data.want_monthly?"Monthly Clip Editing":"",data.want_social?"TikTok & Instagram Brand Kit":"",data.want_youtube?"YouTube Packaging":"",data.want_sponsor?"Sponsor-Ready Creator Kit":"",data.want_vertical?"Vertical Livestream Setup":""
       ].filter(Boolean).join(", ") || "Not selected",
       "",
       "GOAL / SUCCESS",
@@ -221,6 +221,7 @@
     const budgetField=projectFormEl.querySelector('[name="budget"]');
     const scopeField=projectFormEl.querySelector('[name="scope"]');
     const modeNote=document.querySelector("[data-project-mode-note]");
+    const serviceTitles={"shorts":"Shorts, Reels & TikTok Editing","monthly":"Monthly Clip Editing","social":"TikTok & Instagram Brand Kit","youtube":"YouTube Packaging","sponsor":"Sponsor-Ready Creator Kit","vertical":"Vertical Livestream Setup"}; const service=params.get("service");if(serviceTitles[service]){const choice=projectFormEl.querySelector('[name="want_'+service+'"]');if(choice)choice.checked=true;if(scopeField&&!scopeField.value)scopeField.value="I am interested in "+serviceTitles[service]+". Please confirm the scope and final quote.";if(budgetField)budgetField.value=["shorts","youtube","social","sponsor","vertical"].includes(service)?"$100–$300":"$300–$600";}
     const vibeParam=params.get("vibe");
     const packageParam=params.get("package");
     const modeParam=params.get("mode");
@@ -277,7 +278,7 @@
  const quoteKeys=['branding','scene','alerts','emotes','audio','audio','trailer','website'];const quotes=[...document.querySelectorAll('[data-quote]')];const builder=quotes.length?panel(document.querySelector('.quote-box'),'scene'):null;quotes.forEach((input,i)=>input.addEventListener('change',()=>{if(input.checked)builder?.choose(quoteKeys[i]);else{const last=quotes.findLastIndex(x=>x.checked);builder?.choose(last<0?'scene':quoteKeys[last]);}}));
  const upsells=document.querySelector('.builder-upsells');if(upsells){const film=panel(upsells,'audio');const keys={199:'audio',129:'audio',119:'emotes',399:'trailer'};upsells.querySelectorAll('[data-add-quote]').forEach(b=>b.addEventListener('click',()=>film.choose(keys[b.dataset.addQuote])));}
  document.querySelectorAll('.price-card').forEach((card,i)=>panel(card,['branding','scene','fantasy','website'][i%4],card.querySelector('ul')));
- const picks=document.querySelector('.project-picks');if(picks){const film=panel(picks.parentElement,'scene',picks.nextElementSibling);film.box.classList.add('wide');film.box.style.gridColumn='1 / -1';const keys={want_streamkit:'scene',want_emotes:'emotes',want_cinematics:'trailer',want_audio:'audio',want_branding:'branding',want_site:'website'};picks.querySelectorAll('input[type=checkbox]').forEach(input=>input.addEventListener('change',()=>{if(input.checked)film.choose(keys[input.name]);}));}
+ const picks=document.querySelector('.project-picks');if(picks){const film=panel(picks.parentElement,'scene',picks.nextElementSibling);film.box.classList.add('wide');film.box.style.gridColumn='1 / -1';const keys={want_streamkit:'scene',want_emotes:'emotes',want_cinematics:'trailer',want_audio:'audio',want_branding:'branding',want_site:'website'};film.box.hidden=!!picks.querySelector('input:checked')&&!keys[picks.querySelector('input:checked').name];picks.querySelectorAll('input[type=checkbox]').forEach(input=>input.addEventListener('change',()=>{if(input.checked){film.box.hidden=!keys[input.name];if(keys[input.name])film.choose(keys[input.name]);}}));}
  const quiz=document.querySelector('[data-quiz]');if(quiz){const film=panel(quiz,'glam');quiz.addEventListener('click',e=>{const b=e.target.closest('[data-quiz-answer]');if(b)film.choose({glam:'glam',cozy:'cozy',chaos:'chaos',dark:'fantasy'}[b.dataset.quizAnswer]||'violet');},true);}
  const goal=document.querySelector('[name=goal]');if(goal){const film=panel(goal.closest('form'),'branding');goal.addEventListener('change',()=>film.choose(goal.value.includes('Emotes')?'emotes':goal.value.includes('Website')?'website':goal.value.includes('visuals')?'scene':'branding'));}
  // Muted demos play only while visible. Reduced-motion users retain manual controls.
