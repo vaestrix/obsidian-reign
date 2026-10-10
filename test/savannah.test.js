@@ -235,3 +235,13 @@ test('Anna alias inquiries reach Savannah while own alias mail is ignored', asyn
  assert.equal(preflight({ ...message, to: [{ address: 'other@obsidianreign.gg' }] }), 'escalate');
 });
 
+test('Anna mailbox inquiry uses Anna API credentials with Savannah response identity', async t => {
+  const { sends, calls } = mockMail(t, { message: { ...message, to: [{ address: 'anna@obsidianreign.gg' }] } });
+  const { object } = setup({ ANNA_MAIL_API_TOKEN:'anna-test-only', ANNA_MAILBOX_ID:'anna-mailbox' });
+  await object.fetch(new Request('https://internal/enqueue',{method:'POST',body:JSON.stringify({folder:'INBOX',uid:12,mailbox:'anna'})}));
+  await object.alarm();
+  assert.equal(sends.length,1); assert.equal(sends[0].displayName,NAME);
+  assert.ok(calls.every(c=>c.url.includes('/mailboxes/anna-mailbox/')));
+  assert.ok(calls.every(c=>c.init.headers.Authorization==='Bearer anna-test-only'));
+});
+

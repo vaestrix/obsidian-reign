@@ -48,7 +48,8 @@
   "vars": {
     "PUBLIC_ORIGIN": "https://obsidianreign.gg",
     "SAVANNAH_AUTO_SEND": "true",
-    "ANNA_MAILBOX_ID": "AC087f44100a23d1b44998ca5baa35"
+    "ANNA_MAILBOX_ID": "AC087f44100a23d1b44998ca5baa35",
+    "ANNA_AUTO_SEND": "false"
   },
   "assets": {
     "directory": "dist",

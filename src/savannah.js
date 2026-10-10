@@ -1,3 +1,4 @@
+import { queueProspect, dispatchProspects } from './anna-runtime.js';
 export const NAME = 'Savannah | Obsidian Reign Studios';
 const ADDRESS = 'savannah@obsidianreign.gg';
 const ANNA_ALIAS = 'anna@obsidianreign.gg';
@@ -35,13 +36,13 @@ export async function authenticate(request, secret) {
   return diff === 0;
 }
 
-export function normalizeEvent(payload, mailboxId) {
+export function normalizeEvent(payload, mailboxId, mailboxAddress = ADDRESS) {
   if (payload.event !== 'message.received') return null;
   const data = payload.data ?? payload;
   // Hostinger's observed delivery identifies a message by RFC Message-ID,
   // not IMAP UID. Resolve that identifier through the authenticated Mail API.
   if (data.mailboxAddress !== undefined) {
-    if (typeof data.mailboxAddress !== 'string' || data.mailboxAddress.toLowerCase() !== ADDRESS ||
+    if (typeof data.mailboxAddress !== 'string' || data.mailboxAddress.toLowerCase() !== mailboxAddress ||
         typeof data.messageId !== 'string' || !data.messageId.trim() || data.messageId.length > 998 || /[\r\n]/.test(data.messageId)) throw new Error('invalid-event');
     return { messageId: data.messageId };
   }
@@ -58,10 +59,11 @@ export async function receiveWebhook(request, env) {
   if (!await authenticate(request, env.HOSTINGER_WEBHOOK_SECRET)) return json({ error: 'unauthorized' }, 401);
   if (!request.headers.get('content-type')?.toLowerCase().startsWith('application/json')) return json({ error: 'json-required' }, 415);
   let event;
-  try { event = normalizeEvent(JSON.parse(await bounded(request, 16384)), env.HOSTINGER_MAILBOX_ID); }
+  try { event = normalizeEvent(JSON.parse(await bounded(request, 16384)), env.HOSTINGER_MAILBOX_ID, env.INBOUND_MAILBOX_ADDRESS ?? ADDRESS); }
   catch { return json({ error: 'invalid-event' }, 400); }
   if (!event) return json({ ignored: true });
-  return env.SAVANNAH_INBOX.get(env.SAVANNAH_INBOX.idFromName(env.HOSTINGER_MAILBOX_ID)).fetch(
+  if (env.INBOUND_MAILBOX_ADDRESS === ANNA_ALIAS) event.mailbox = 'anna';
+  return env.SAVANNAH_INBOX.get(env.SAVANNAH_INBOX.idFromName(env.SAVANNAH_REGISTRY_ID ?? env.HOSTINGER_MAILBOX_ID)).fetch(
     new Request('https://internal/enqueue', { method: 'POST', body: JSON.stringify(event) }));
 }
 
@@ -267,7 +269,9 @@ async function recordAnnaInbound(storage, latest) {
 export class SavannahInbox {
   constructor(ctx, env) { this.ctx = ctx; this.env = env; }
   async fetch(request) {
-    const event = await request.json(); const key = event.messageId ? `job:message:${event.messageId}` : `job:${event.folder}:${event.uid}`;
+    const event = await request.json();
+    if (event.annaLead) return queueProspect(this.ctx, this.env, event.annaLead);
+    const key = event.messageId ? `job:message:${event.messageId}` : `job:${event.mailbox === 'anna' ? 'anna:' : ''}${event.folder}:${event.uid}`;
     return this.ctx.blockConcurrencyWhile(async () => {
       if (await this.ctx.storage.get(key)) return json({ duplicate: true }, 202);
       await this.ctx.storage.transaction(async tx => {
@@ -278,6 +282,7 @@ export class SavannahInbox {
     });
   }
   async alarm() {
+    await dispatchProspects(this.ctx, this.env);
     const jobs = await this.ctx.storage.list({ prefix: 'job:' });
     for (const [key, job] of jobs) {
       if (job.state === 'send-attempted') {
@@ -299,10 +304,12 @@ export class SavannahInbox {
       await this.ctx.storage.setAlarm(Date.now() + 60000);
   }
   async process(key, job) {
-    const env = this.env;
+    const env = job.event.mailbox === 'anna' ? { ...this.env, HOSTINGER_MAIL_API_TOKEN: this.env.ANNA_MAIL_API_TOKEN, HOSTINGER_MAILBOX_ID: this.env.ANNA_MAILBOX_ID } : this.env;
     if (!env.HOSTINGER_MAIL_API_TOKEN || !email.test(env.PHILIP_ESCALATION_EMAIL ?? '') || env.PHILIP_ESCALATION_EMAIL.toLowerCase() === ADDRESS) throw new Error('not-configured');
     if (job.event.messageId) {
+      const mailbox = job.event.mailbox;
       job.event = await resolveMessage(env, job.event.messageId);
+      if (mailbox) job.event.mailbox = mailbox;
       await this.ctx.storage.put(key, job);
     }
     if (job.event.folder !== 'INBOX') return this.finish(key, job, 'ignored');

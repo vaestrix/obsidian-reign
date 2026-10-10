@@ -54,3 +54,14 @@ All temporary imports/routes/helpers were removed after each test with current-d
 
 Anna’s separately provisioned mailbox is verified through the production ANNA_MAIL_API_TOKEN secret: anna@obsidianreign.gg, resource AC087f44100a23d1b44998ca5baa35. ANNA_MAILBOX_ID is a production text binding and is mirrored in Wrangler configuration. API token value was not read or exported. A temporary authenticated /me lookup succeeded and was removed. Outbound campaign remains disabled; separate-mailbox reply handoff, shared-registry dispatcher and campaign-template approval remain required.
 
+
+## Approved campaign runtime
+
+The owner approved the warm, casual, professional approach promoting emotes, stream branding and stream kits, with personalized factual introductions, business mailing address and reply-based opt-out. Approval provenance is recorded in the campaign configuration. No fresh approval per prospect is required within this campaign.
+
+Live infrastructure: Anna Mail API token, mailbox ID, separate ANNA_WEBHOOK_SECRET, scoped ANNA_AGENT_TOKEN, protected POST /api/anna/prospects, and active message.received callback /webhooks/hostinger/anna. Anna runtime shares Savannah’s Durable Object contact registry. It durably reserves contacts and send attempts, enforces five daily reservations and five actual send attempts in America/Chicago, cancels suppressed/replied contacts and never automatically retries an uncertain send. Verified source evidence must be at most seven days old. It sends only the approved template under Anna | Obsidian Reign Studios. The separate Anna token handles Anna's threads. Savannah's persona responds to Anna-inbox replies with display name Savannah | Obsidian Reign Studios from the Anna mailbox, preserving the reply thread; direct Savannah-inbox replies keep Savannah's own address. This is a persona handoff, not mailbox forwarding.
+
+Production ANNA_AUTO_SEND=false remains the outreach kill switch until a real inbound reply test succeeds. No prospects contacted. Prospect discovery and recurring scheduling are not yet configured. Local tests: 46 combined Anna, Savannah and portal checks pass; live site/portal return 200, unauthorized Anna API and webhook return 401. Authenticated webhook verification returned 200 and temporary setup routes were removed.
+
+Private verified leads can be submitted with node scripts/anna-queue.mjs queue PRIVATE_LEAD_JSON. The local scoped credential is ignored by Git. Do not use the portal credential for outreach. Required lead fields match outreachMessage in src/anna-runtime.js, including English language, smaller-growing-streamer segment, public business contact, actual source verification and outreach eligibility. Flags alone do not establish permission: discovery must verify jurisdiction and contact instructions. Automatic audience expansion remains a future evaluation feature; the initial runtime restricts the smaller segment rather than silently widening it.
+
