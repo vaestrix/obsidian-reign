@@ -78,3 +78,6 @@ Review notices and privacy-preserving decision logs provide feedback for future 
 
 Persona refinement: approachable girl-next-door voice with the practical fluency of a seasoned creator. Six years is a tone/knowledge benchmark, not an invented biography. The prompt prohibits false personal work history, client projects and lived experience, and limits confirmed offerings to approved facts.
 
+
+Review notices now use readable plain text with the sender, summary, hold reason, required decision and review draft. A routing note explains that replying to the review notice addresses Savannah rather than the customer. Durable notice data remains structured for recovery. Qualification instructions reuse details already present in the full thread and ask only the next one to three needed questions.
+

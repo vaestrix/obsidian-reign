@@ -181,10 +181,12 @@ test('persona includes warmth, empathy, sarcasm and boss mentality', () => {
 
  test('held reply explains confidence check and replaces empty review placeholders', async t => {
   const { sends } = mockMail(t);
-  const { object } = setup({ AI: { run: async () => ({ response: { action: 'reply', routine: true, uncertain: false, confidence: 0.7,
+  const { object, storage } = setup({ AI: { run: async () => ({ response: { action: 'reply', routine: true, uncertain: false, confidence: 0.7,
     reply: 'Hi! What services do you need?', reason: 'Routine inquiry', decision: 'none', recommendedResponse: 'none' } }) } });
   await enqueue(object); await object.alarm();
-  const notice = JSON.parse(sends[0].text);
+  const notice = (await storage.get('job:INBOX:12')).notice;
+  assert.match(sends[0].text, /Why I held it:/);
+  assert.match(sends[0].text, /Replying to this notice sends to Savannah, not the customer/);
   assert.match(notice.reason, /0.90 minimum/);
   assert.match(notice.decision, /respond manually/);
   assert.equal(notice.recommendedResponse, 'Hi! What services do you need?');
