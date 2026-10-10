@@ -45,3 +45,9 @@ An unauthenticated, certificate-validated TLS probe to smtp.hostinger.com:465 su
 
 Successful MAIL FROM alone is not complete sender verification. Before activating outreach, send one controlled test to the owner through the chosen transport and inspect received From, Reply-To, authentication, Sent retention and reply handoff. Do not retry an uncertain send. The automatic dispatcher is still not enabled.
 
+## Cloudflare SMTP secret test result
+
+The owner added HOSTINGER_SMTP_PASSWORD as a production Cloudflare secret. Binding type was confirmed without reading or exporting its value. Temporary, randomly authenticated runtime probes attempted smtp.hostinger.com:465 with implicit TLS and :587 with STARTTLS. Both failed on socket.opened with "proxy request failed, cannot connect to the specified address", before authentication. Thus the password and alias envelope acceptance remain untested; this result concerns the Worker transport, not whether Hostinger generally supports SMTP aliases. The earlier workstation TLS capability probe succeeded on 465.
+
+All temporary imports/routes/helpers were removed after each test with current-deployment readback, keeping secrets, bindings and assets. No SMTP DATA or email was sent. Do not describe the campaign as active. Options: a separately provisioned Anna mailbox using the already-working Mail API, or a separately secured SMTP relay outside this Worker after testing. Do not provision a new paid relay without the owner's chosen approach.
+
