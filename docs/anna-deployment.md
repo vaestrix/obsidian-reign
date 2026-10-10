@@ -30,3 +30,10 @@ Tests cover review preparation, exact-message approval binding/expiry and reject
 
 Savannah now durably records explicit outreach opt-outs before AI or customer sending. The contact key is a SHA-256 hash of the normalized sender email under `anna:contact:` in the mailbox Durable Object. An inbound response from an existing Anna contact marks it replied; a previous suppressed state is never cleared by a response. The future Anna dispatcher must read this same registry immediately before sending. This opt-out registry hook is live infrastructure, not an enabled outreach campaign.
 
+
+## Alias compatibility check
+
+The owner created anna@obsidianreign.gg as an alias of Savannah. Hostinger webmail supports sending from an alias, but the current public Mail API Send schema exposes displayName and no from/alias/replyTo field. Do not send an undocumented from field or claim that displayName changes the email address. Automated Anna-alias sending remains unverified. Options are API outreach from the managed Savannah mailbox with Anna displayName, or a separate managed Anna mailbox with its own inbound handoff.
+
+Savannah now accepts full messages addressed to the Anna alias inside her authenticated managed mailbox, replies under Savannah’s established identity, and ignores self-mail from either studio address. Webhook mailbox authentication still validates the managed Savannah address and secret. No sending campaign was enabled.
+

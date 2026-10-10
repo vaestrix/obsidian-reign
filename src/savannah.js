@@ -1,5 +1,6 @@
 export const NAME = 'Savannah | Obsidian Reign Studios';
 const ADDRESS = 'savannah@obsidianreign.gg';
+const ANNA_ALIAS = 'anna@obsidianreign.gg';
 const API = 'https://api.mail.hostinger.com/api/v1';
 const MIN_REPLY_CONFIDENCE = 0.90;
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
@@ -122,13 +123,13 @@ function replyAddressMatches(value, sender) {
 export function preflight(message) {
   const h = message.headers;
   const sender = message.from?.address?.toLowerCase();
-  if (message.path !== 'INBOX' || sender === ADDRESS || /^(no-?reply|mailer-daemon|postmaster)@/i.test(sender ?? '') ||
+  if (message.path !== 'INBOX' || sender === ADDRESS || sender === ANNA_ALIAS || /^(no-?reply|mailer-daemon|postmaster)@/i.test(sender ?? '') ||
       h['list-unsubscribe'] || h['list-id'] || /bulk|list|junk/i.test(h.precedence ?? '') ||
       (h['auto-submitted'] && h['auto-submitted'].toLowerCase() !== 'no') ||
       /yes/i.test(h['x-spam-flag'] ?? '') || /spam|phish|newsletter/i.test((message.flags ?? []).join(' '))) return 'ignore';
   if ((message.flags ?? []).includes('\\Answered')) return 'ignore';
   if (!email.test(sender ?? '') || !message.messageId || message.attachments?.length || message.cc?.length ||
-      !message.to?.some(a => a.address?.toLowerCase() === ADDRESS)) return 'escalate';
+      !message.to?.some(a => [ADDRESS, ANNA_ALIAS].includes(a.address?.toLowerCase()))) return 'escalate';
   // Authentication-Results is not a trust anchor: incoming senders can forge it.
   // Missing/failing authentication is held; the model still checks phishing on passes.
   const auth = h['authentication-results'] ?? '';
@@ -252,7 +253,7 @@ function formatReview(notice) {
 
 async function recordAnnaInbound(storage, latest) {
   const sender = latest.from?.address?.trim().toLowerCase();
-  if (!email.test(sender ?? '') || sender === ADDRESS) return false;
+  if (!email.test(sender ?? '') || [ADDRESS, ANNA_ALIAS].includes(sender)) return false;
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(sender));
   const key = 'anna:contact:' + [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
   const previous = await storage.get(key);

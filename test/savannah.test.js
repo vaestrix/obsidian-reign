@@ -225,3 +225,13 @@ test('Anna opt-out is durably suppressed without AI or reply', async t => {
  assert.equal(contacts.size,1); assert.equal([...contacts.values()][0].state,'suppressed');
 });
 
+test('Anna alias inquiries reach Savannah while own alias mail is ignored', async t => {
+ const aliasMessage = { ...message, to: [{ address: 'anna@obsidianreign.gg' }] };
+ assert.equal(preflight(aliasMessage), 'review');
+ assert.equal(preflight({ ...aliasMessage, from: { address: 'anna@obsidianreign.gg' } }), 'ignore');
+ const { sends } = mockMail(t, { message: aliasMessage }); const { object } = setup();
+ await enqueue(object); await object.alarm();
+ assert.equal(sends.length, 1); assert.equal(sends[0].displayName, NAME); assert.deepEqual(sends[0].to, ['customer@example.com']);
+ assert.equal(preflight({ ...message, to: [{ address: 'other@obsidianreign.gg' }] }), 'escalate');
+});
+

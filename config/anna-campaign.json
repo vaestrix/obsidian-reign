@@ -14,6 +14,8 @@
   "contactName": "Obsidian Reign Studios",
   "handoffEmail": "savannah@obsidianreign.gg",
   "status": "setup-in-progress",
-  "automaticSending": false
+  "automaticSending": false,
+  "aliasAddress": "anna@obsidianreign.gg",
+  "aliasApiSendingVerified": false
 }
 
