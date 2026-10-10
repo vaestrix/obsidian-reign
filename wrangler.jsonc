@@ -49,7 +49,7 @@
     "PUBLIC_ORIGIN": "https://obsidianreign.gg",
     "SAVANNAH_AUTO_SEND": "true",
     "ANNA_MAILBOX_ID": "AC087f44100a23d1b44998ca5baa35",
-    "ANNA_AUTO_SEND": "false"
+    "ANNA_AUTO_SEND": "true"
   },
   "assets": {
     "directory": "dist",
@@ -59,4 +59,3 @@
     "not_found_handling": "404-page"
   }
 }
-
