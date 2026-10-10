@@ -32,3 +32,4 @@
     reset();load().catch(err=>status.textContent=err.message);$('#new-project').addEventListener('click',reset);form.addEventListener('submit',async e=>{e.preventDefault();const button=form.querySelector('[type=submit]');button.disabled=true;status.textContent='Saving project…';try{const data=await api('/api/portal/admin/projects',Object.fromEntries(new FormData(form)));form.elements.id.value=data.project.id;form.elements.update.value='';form.elements.reviewLabel.value='';form.elements.reviewUrl.value='';await load();status.textContent='Project saved. Only its assigned client can view it.';}catch(err){status.textContent=err.message;}finally{button.disabled=false;}});
   }
 })();
+document.querySelector('#admin-signout')?.addEventListener('click',async()=>{await fetch('/auth/admin/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});location.assign('/admin-login.html');});

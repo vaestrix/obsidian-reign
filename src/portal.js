@@ -61,7 +61,7 @@ const clientProject = p => Object.fromEntries(['id','title','stage','due','summa
 
 export async function portal(request, env) {
   const url = new URL(request.url), path = decodeURIComponent(url.pathname);
-  if (!(path.startsWith('/api/portal/') || path.startsWith('/auth/client/') || path === '/admin/projects' || path === '/project-admin.html' || path === '/project-admin')) return null;
+  if (!(path.startsWith('/api/portal/') || path.startsWith('/auth/client/') || path.startsWith('/auth/admin/') || path === '/admin/projects' || path === '/project-admin.html' || path === '/project-admin')) return null;
   if (!env.PROJECT_HUB) return json({ error: 'Project access is temporarily unavailable.' }, 503);
   const origin = env.PUBLIC_ORIGIN || url.origin;
   const isAgent = path.startsWith('/api/portal/agent/');
@@ -79,10 +79,27 @@ export async function portal(request, env) {
       }
       return json({error:'Agents can review projects and schedule follow-ups only.'},403);
     }
+    if (path === '/auth/admin/login' && request.method === 'POST') {
+      const rate = await call(env, 'rate', { key: 'admin:' + await hash(request.headers.get('CF-Connecting-IP') || 'unknown') });
+      if (!rate.allowed) return json({ error: 'Too many attempts. Please wait a minute.' }, 429);
+      const data = await body(request);
+      const headers = new Headers(); headers.set('Authorization', 'Basic ' + btoa('admin:' + String(data.password || '')));
+      const check = await legacyWorker.fetch(new Request(origin + '/api/admin/state', { headers }), env);
+      if (!check.ok) return json({ error: 'That admin password was not accepted.' }, 401);
+      const token = random(); await call(env, 'login', { key: await hash(token), user: { id: 'studio:admin', authVersion: env.ADMIN_PASSWORD_SHA256 }, duration: 3600000 });
+      const response = json({ ok: true }); response.headers.append('Set-Cookie', cookie('__Host-or_admin', token, 3600)); return response;
+    }
+    if (path === '/auth/admin/logout' && request.method === 'POST') {
+      await call(env, 'logout', { key: await hash(readCookie(request, '__Host-or_admin')) });
+      const response = json({ ok: true }); response.headers.append('Set-Cookie', cookie('__Host-or_admin', '', 0)); return response;
+    }
     if (path === '/api/portal/providers' && request.method === 'GET') return json({ providers: Object.entries(providers).map(([id, p]) => ({ id, label: p.label, enabled: enabled(env, id) })) });
     if (path.startsWith('/admin/') || path.startsWith('/project-admin') || path.startsWith('/api/portal/admin/')) {
       const check = await legacyWorker.fetch(new Request(origin + '/api/admin/state', { headers: request.headers }), env);
-      if (!check.ok) return check;
+      const token = readCookie(request, '__Host-or_admin');
+      const admin = token ? await call(env, 'session', { key: await hash(token) }) : null;
+      const validSession = admin?.id === 'studio:admin' && admin.authVersion && admin.authVersion === env.ADMIN_PASSWORD_SHA256;
+      if (!check.ok && !validSession) return path.startsWith('/api/') ? json({ error: 'Admin sign-in required.' }, 401) : redirect('/admin-login.html');
       if (path === '/admin/projects' || path === '/project-admin.html' || path === '/project-admin') {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));
         const headers = new Headers(response.headers); headers.set('Cache-Control', 'no-store'); headers.set('X-Robots-Tag', 'noindex'); return new Response(response.body, { status: response.status, headers });
@@ -164,7 +181,7 @@ export class ProjectHub {
   async fetch(request) {
     const operation = new URL(request.url).pathname.slice(1), data = await request.json(), now = Date.now();
     const result = await this.ctx.storage.transaction(async store => {
-      if (operation === 'login') { await store.put('session:' + data.key, { user: data.user, expiresAt: now + 7 * DAY }); return { ok: true }; }
+      if (operation === 'login') { await store.put('session:' + data.key, { user: data.user, expiresAt: now + (data.duration === 3600000 ? 3600000 : 7 * DAY) }); return { ok: true }; }
       if (operation === 'session') { const s = await store.get('session:' + data.key); return s && s.expiresAt > now ? s.user : null; }
       if (operation === 'logout') { await store.delete('session:' + data.key); return { ok: true }; }
       if (operation === 'rate') { const key = 'rate:' + data.key; let rate = await store.get(key); if (!rate || rate.expiresAt <= now) rate = { count: 0, expiresAt: now + 60000 }; rate.count++; await store.put(key, rate); return { allowed: rate.count <= 10 }; }
