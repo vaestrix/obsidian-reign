@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "obsidian-reign-staging",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-08",
+  "workers_dev": true,
+  "durable_objects": {"bindings": [
+    {"name": "COMMAND_STORE", "class_name": "CommandStore"},
+    {"name": "SAVANNAH_INBOX", "class_name": "SavannahInbox"},
+    {"name": "PROJECT_HUB", "class_name": "ProjectHub"}
+  ]},
+  "migrations": [
+    {"tag": "v1", "new_classes": ["CommandStore"]},
+    {"tag": "savannah-v1", "new_sqlite_classes": ["SavannahInbox"]},
+    {"tag": "projects-v1", "new_sqlite_classes": ["ProjectHub"]}
+  ],
+  "observability": {"enabled": true},
+  "vars": {"SAVANNAH_AUTO_SEND": "false", "STAGING": "true"},
+  "assets": {"directory": "dist", "binding": "ASSETS", "run_worker_first": true,
+    "html_handling": "auto-trailing-slash", "not_found_handling": "404-page"}
+}

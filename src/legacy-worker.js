@@ -609,6 +609,7 @@ var worker_default = {
 };
 export {
   CommandStore,
+  authorized as adminAuthorized,
   worker_default as default
 };
 

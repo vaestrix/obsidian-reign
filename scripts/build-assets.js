@@ -12,4 +12,5 @@ for (const file of await readdir(root)) {
   }
 }
 await cp(path.join(root, 'assets'), path.join(output, 'assets'), { recursive: true });
-console.log('Public site assets prepared in dist.');
+await import('./build-pages.js');
+console.log('Public site assets and service pages prepared in dist.');
