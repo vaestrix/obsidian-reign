@@ -74,6 +74,7 @@ async function mail(env, path, body, raw = false) {
   });
   console.log(JSON.stringify({ event: 'savannah-mail-response', operation: path.split('?')[0], status: response.status }));
   if (!response.ok) throw new Error(`mail-http-${response.status}`);
+  if (response.status === 204 && path === '/send') return null;
   const text = await bounded(response, 256000);
   return raw ? text : JSON.parse(text);
 }

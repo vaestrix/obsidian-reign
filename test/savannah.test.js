@@ -37,6 +37,7 @@ function mockMail(t, options = {}) {
     if (url.endsWith('/send')) {
       const body = JSON.parse(init.body); sends.push(body);
       if (options.timeout && body.to[0] === 'customer@example.com') throw new Error('timeout');
+      if (options.emptySend) return new Response(null, { status: 204 });
       return Response.json({ data: { messageId: '<sent@example.com>' } });
     }
     if (options.readFailure) return new Response('', { status: 503 });
@@ -55,6 +56,15 @@ function mockMail(t, options = {}) {
   return { sends, calls };
 }
 async function enqueue(object) { return object.fetch(new Request('https://internal', { method: 'POST', body: JSON.stringify({ uid: 12, folder: 'INBOX' }) })); }
+
+test('successful empty send responses finish replies and escalations without repeat sends', async t => {
+  const { sends } = mockMail(t, { emptySend: true });
+  const reply = setup(); await enqueue(reply.object); await reply.object.alarm(); await reply.object.alarm();
+  assert.equal((await reply.storage.get('job:INBOX:12')).state, 'replied');
+  const review = setup({ SAVANNAH_AUTO_SEND: 'false' }); await enqueue(review.object); await review.object.alarm(); await review.object.alarm();
+  assert.equal((await review.storage.get('job:INBOX:12')).state, 'escalated');
+  assert.equal(sends.length, 2);
+});
 
 test('Mail API redirects are held without forwarding credentials to the redirect target', async t => {
   const { object, storage } = setup(); const { calls, sends } = mockMail(t, { redirectRead: true });
