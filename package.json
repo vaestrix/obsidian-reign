@@ -7,9 +7,11 @@
     "build": "node scripts/build-assets.js",
     "deploy": "node scripts/build-assets.js && wrangler deploy",
     "preview": "node scripts/build-assets.js && wrangler dev",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "deploy:staging": "npm run build && wrangler deploy --config wrangler.staging.jsonc"
   },
   "devDependencies": {
-    "wrangler": "4.143.0"
+    "wrangler": "4.143.0",
+    "jsdom": "30.1.2"
   }
 }

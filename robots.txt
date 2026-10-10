@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 
+# Private pages emit noindex headers; do not block crawlers from seeing redirects.
 Sitemap: https://obsidianreign.gg/sitemap.xml
