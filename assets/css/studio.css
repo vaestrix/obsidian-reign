@@ -986,3 +986,11 @@ body .showroom-stage{position:relative;min-height:480px;isolation:isolate;overfl
 @media(max-width:600px){body .vibe-grid{grid-template-columns:repeat(2,minmax(0,1fr))}body .vibe-chip{padding:15px 12px;min-height:95px}body .vibe-chip strong{font-size:17px}body .vibe-stage{min-height:360px;padding:22px}body .direction-copy{margin-top:190px}body .showroom-stage{min-height:420px}.cinema-label{font-size:8px;padding:6px 9px;top:10px;left:10px}body .showcase-stage .scene-title h3{font-size:25px}}
 @media(prefers-reduced-motion:reduce){.direction-art i,.direction-art b{animation:none!important}}
 body .showroom-copy span{color:#eee3f3;text-shadow:0 2px 8px #000}body .showroom-copy strong{text-shadow:0 3px 18px #08040e}body .showroom-copy small{color:#e1cbea}body .showroom-controls{gap:12px;flex-wrap:wrap}body .showroom-controls .btn{min-width:110px}
+
+body .selection-film{margin:20px 0 0;min-width:0;width:100%;border:1px solid #c9a4e32b;border-radius:18px;overflow:hidden;background:#0b0812}
+.selection-film video{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#09070f}
+.selection-film figcaption{padding:11px 14px;color:#c9b9d5;font-size:12px;line-height:1.5}
+body .builder-upsells .selection-film{flex:1 1 100%;max-width:560px}body .vibe-preview .selection-film{margin-top:0}
+body .price-card .selection-film{margin-bottom:8px}body .project-fields .selection-film{max-width:680px}
+@media(max-width:600px){.selection-film figcaption{font-size:11px}body .selection-film{border-radius:14px}}
+body .selection-film-button{margin:0 14px 14px;min-height:42px;padding:9px 18px;font-size:11px}
