@@ -994,3 +994,26 @@ body .builder-upsells .selection-film{flex:1 1 100%;max-width:560px}body .vibe-p
 body .price-card .selection-film{margin-bottom:8px}body .project-fields .selection-film{max-width:680px}
 @media(max-width:600px){.selection-film figcaption{font-size:11px}body .selection-film{border-radius:14px}}
 body .selection-film-button{margin:0 14px 14px;min-height:42px;padding:9px 18px;font-size:11px}
+
+/* Rich artwork mirrors each direction's film, with protected text contrast. */
+body .vibe-stage .direction-art{background-size:cover;background-position:center 32%;transition:background-image .25s ease;}
+body .direction-art i,body .direction-art b{display:none;}
+body .vibe-stage .direction-live{padding:7px 10px;border-radius:20px;background:#09070f99;backdrop-filter:blur(8px);}
+body .direction-copy{max-width:100%;text-shadow:0 2px 16px #09070f;}
+
+body .showroom-stage{min-height:0;aspect-ratio:16 / 9;display:flex;align-items:flex-end;justify-content:flex-start;}
+body .showroom-stage .alert-video{opacity:1;z-index:0;}
+body .showroom-stage:after{z-index:1;background:linear-gradient(transparent 55%,#09070fdd);}
+body .showroom-copy{z-index:2;padding:20px 24px;text-align:left;}
+body .showroom-copy small,body .showroom-alert,body .showroom-stage>.showroom-sigil{display:none;}
+body .showroom-copy strong{font-size:clamp(22px,3vw,36px);}
+body .showroom-copy span{font-size:13px;max-width:600px;line-height:1.5;}
+body [data-demo-sound][hidden]{display:none;}
+@media(max-width:600px){body .showroom-copy{padding:12px 16px;}body .showroom-copy span{display:none;}}
+
+body .showroom-stage .showroom-logo{display:none;}
+
+body .vibe-stage[hidden]{display:none;}
+body .selection-film .direction-copy{margin:0;padding:20px 22px;}
+body .selection-film .direction-copy strong{display:block;font:600 clamp(26px,3vw,38px)/1.15 var(--font-display);margin-top:8px;text-wrap:balance;}
+body [data-vibe-preview] .selection-film figcaption{display:none;}
