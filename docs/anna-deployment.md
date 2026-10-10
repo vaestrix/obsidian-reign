@@ -37,3 +37,11 @@ The owner created anna@obsidianreign.gg as an alias of Savannah. Hostinger webma
 
 Savannah now accepts full messages addressed to the Anna alias inside her authenticated managed mailbox, replies under Savannah’s established identity, and ignores self-mail from either studio address. Webhook mailbox authentication still validates the managed Savannah address and secret. No sending campaign was enabled.
 
+## SMTP alias investigation
+
+An unauthenticated, certificate-validated TLS probe to smtp.hostinger.com:465 succeeded. EHLO advertised AUTH PLAIN LOGIN. No login or email was attempted. Hostinger documents SMTP configuration, while alias sending is explicitly documented for webmail; SMTP alias acceptance remains a test hypothesis, not verified support.
+
+`scripts/anna-smtp-probe.mjs` tests password login for savannah@obsidianreign.gg and MAIL FROM for anna@obsidianreign.gg, then resets the transaction and quits. It never issues DATA, so it cannot send an email. Supply HOSTINGER_SMTP_PASSWORD through a secure runtime environment, never source, command arguments or chat. The Mail API token is not an SMTP password. Certificate validation and a 15-second socket timeout are enforced. Credentials and SMTP authentication payloads are never logged.
+
+Successful MAIL FROM alone is not complete sender verification. Before activating outreach, send one controlled test to the owner through the chosen transport and inspect received From, Reply-To, authentication, Sent retention and reply handoff. Do not retry an uncertain send. The automatic dispatcher is still not enabled.
+
