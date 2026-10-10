@@ -51,3 +51,6 @@ The owner added HOSTINGER_SMTP_PASSWORD as a production Cloudflare secret. Bindi
 
 All temporary imports/routes/helpers were removed after each test with current-deployment readback, keeping secrets, bindings and assets. No SMTP DATA or email was sent. Do not describe the campaign as active. Options: a separately provisioned Anna mailbox using the already-working Mail API, or a separately secured SMTP relay outside this Worker after testing. Do not provision a new paid relay without the owner's chosen approach.
 
+
+Anna’s separately provisioned mailbox is verified through the production ANNA_MAIL_API_TOKEN secret: anna@obsidianreign.gg, resource AC087f44100a23d1b44998ca5baa35. ANNA_MAILBOX_ID is a production text binding and is mirrored in Wrangler configuration. API token value was not read or exported. A temporary authenticated /me lookup succeeded and was removed. Outbound campaign remains disabled; separate-mailbox reply handoff, shared-registry dispatcher and campaign-template approval remain required.
+

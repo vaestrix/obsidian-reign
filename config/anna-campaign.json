@@ -16,6 +16,10 @@
   "status": "setup-in-progress",
   "automaticSending": false,
   "aliasAddress": "anna@obsidianreign.gg",
-  "aliasApiSendingVerified": false
+  "aliasApiSendingVerified": false,
+  "senderAddress": "anna@obsidianreign.gg",
+  "mailboxId": "AC087f44100a23d1b44998ca5baa35",
+  "senderMode": "separate-mailbox",
+  "mailApiVerified": true
 }
 
