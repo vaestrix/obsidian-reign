@@ -18,8 +18,13 @@ try{
   const mine=await request('/api/portal/projects',null,{Cookie:cookie});const data=await mine.json();assert.equal(data.projects.some(p=>p.id===project.id),true);
   const feedback=await request('/api/portal/feedback',{id:project.id,message:'Local feedback check'},{Cookie:cookie});assert.equal(feedback.status,200);
   const admin=await(await request('/api/portal/admin/projects',null,{Authorization:auth})).json();assert.equal(admin.projects.find(p=>p.id===project.id).timeline[0].author,'Client');
+  const publish=await request('/api/portal/admin/projects',{...project,reviewLabel:'Concept review',reviewUrl:'https://example.com/concept',revisionsIncluded:'2',revisionsUsed:'0',nextUpdateDate:'2026-12-10'},{Authorization:auth});assert.equal(publish.status,200);const version=(await publish.json()).project.reviews[0];
+  assert.equal((await request('/api/portal/review',{id:project.id,versionId:version.id,action:'changes-requested'},{Cookie:cookie})).status,400);
+  assert.equal((await request('/api/portal/review',{id:project.id,versionId:version.id,action:'approved'},{Cookie:cookie})).status,200);
+  assert.equal((await request('/api/portal/review',{id:project.id,versionId:version.id,action:'changes-requested',message:'Replay'},{Cookie:cookie})).status,409);
+  const reviewed=(await(await request('/api/portal/projects',null,{Cookie:cookie})).json()).projects.find(p=>p.id===project.id);assert.equal(reviewed.reviews[0].status,'approved');assert.equal(reviewed.revisionsUsed,0);
   assert.equal((await request('/auth/client/invite',{code})).status,400);
   assert.equal((await request('/api/portal/feedback',{id:project.id,message:'Cross-site'},{Cookie:cookie,Origin:'https://evil.example'})).status,403);
   await request('/auth/client/logout',{}, {Cookie:cookie});assert.equal((await request('/api/portal/projects',null,{Cookie:cookie})).status,401);
-  console.log('Local Worker: admin protection, project creation, single-use invite, private project retrieval, client feedback, CSRF rejection and logout all passed.');
+  console.log('Local Worker: admin protection, project creation, single-use invite, private retrieval, feedback, preview publishing, approval, replay rejection, CSRF and logout passed.');
 }finally{child.kill();}

@@ -38,7 +38,15 @@ export function validateProject(input) {
   if (!QUOTE_STATUSES.includes(quoteStatus)) throw new Error('Choose a valid quote status.');
   const followupDate = text(input.followupDate, 10);
   if (followupDate && (!/^\d{4}-\d{2}-\d{2}$/.test(followupDate) || Number.isNaN(Date.parse(followupDate)))) throw new Error('Use a valid follow-up date.');
-  return { title, owner, stage, due, summary: text(input.summary), nextStep: text(input.nextStep, 500), fileUrl, quoteAmount, quoteStatus, followupDate, followupNote: text(input.followupNote, 1000), internalNotes: text(input.internalNotes, 3000) };
+  const nextUpdateDate = text(input.nextUpdateDate, 10);
+  if (nextUpdateDate && (!/^\d{4}-\d{2}-\d{2}$/.test(nextUpdateDate) || Number.isNaN(Date.parse(nextUpdateDate)))) throw new Error('Use a valid next update date.');
+  const counts = {};
+  for (const key of ['revisionsIncluded', 'revisionsUsed']) {
+    const value = input[key];
+    if (value === '' || value === undefined || value === null) counts[key] = null;
+    else { if (!/^\d{1,2}$/.test(String(value))) throw new Error('Revision counts must be whole numbers from 0 to 99.'); counts[key] = Number(value); }
+  }
+  return { title, owner, stage, due, summary: text(input.summary), nextStep: text(input.nextStep, 500), fileUrl, quoteAmount, quoteStatus, followupDate, followupNote: text(input.followupNote, 1000), internalNotes: text(input.internalNotes, 3000), nextUpdateDate, ...counts };
 }
 
 async function agentAuthorized(request, env) {
@@ -49,7 +57,7 @@ async function agentAuthorized(request, env) {
   for (let i=0;i<a.length;i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
 }
-const clientProject = p => Object.fromEntries(['id','title','stage','due','summary','nextStep','fileUrl','timeline','createdAt','updatedAt'].map(k=>[k,p[k]]));
+const clientProject = p => Object.fromEntries(['id','title','stage','due','summary','nextStep','fileUrl','timeline','createdAt','updatedAt','nextUpdateDate','revisionsIncluded','revisionsUsed','reviews'].map(k=>[k,p[k]]));
 
 export async function portal(request, env) {
   const url = new URL(request.url), path = decodeURIComponent(url.pathname);
@@ -81,7 +89,7 @@ export async function portal(request, env) {
       }
       if (path === '/api/portal/admin/projects' && request.method === 'GET') return json(await call(env, 'all'));
       if (path === '/api/portal/admin/projects' && request.method === 'POST') {
-        const data = await body(request); return json(await call(env, 'save', { ...validateProject(data), id: text(data.id, 80), update: text(data.update) }));
+        const data = await body(request); validateProject(data); const result = await call(env, 'save', { ...data, id: text(data.id, 80), update: text(data.update), reviewLabel: text(data.reviewLabel, 120), reviewUrl: text(data.reviewUrl, 1500) }); return json(result, result.error ? 400 : 200);
       }
       if (path === '/api/portal/admin/invite' && request.method === 'POST') {
         const data = await body(request), id = text(data.id, 80);
@@ -136,6 +144,12 @@ export async function portal(request, env) {
     const user = await session(request, env);
     if (!user) return json({ error: 'Sign in to view your projects.' }, 401);
     if (path === '/api/portal/projects' && request.method === 'GET') { const data = await call(env, 'projects', { owner: user.id }); return json({projects:data.projects.map(clientProject)}); }
+    if (path === '/api/portal/review' && request.method === 'POST') {
+      const data = await body(request), action = data.action, message = text(data.message);
+      if (!['approved', 'changes-requested'].includes(action) || (action === 'changes-requested' && !message)) return json({error:'Choose approval or describe the changes you need.'},400);
+      const result = await call(env,'review',{id:text(data.id,80),versionId:text(data.versionId,80),owner:user.id,action,message});
+      return json(result,result.error ? 409 : 200);
+    }
     if (path === '/api/portal/feedback' && request.method === 'POST') {
       const data = await body(request), message = text(data.message);
       if (!message) return json({ error: 'Write a message first.' }, 400);
@@ -160,12 +174,30 @@ export class ProjectHub {
       if (operation === 'save') {
         const id = data.id || crypto.randomUUID(); if (!/^[a-zA-Z0-9_-]{1,80}$/.test(id)) return { error: 'Invalid project ID.' };
         const old = await store.get('project:' + id); if (data.id && !old) return { error: 'Project not found.' };
-        const project = { ...validateProject(data), id, updatedAt: new Date(now).toISOString(), createdAt: old?.createdAt || new Date(now).toISOString(), timeline: old?.timeline || [], activity: old?.activity || [] };
+        const project = { ...validateProject({...old,...data}), id, updatedAt: new Date(now).toISOString(), createdAt: old?.createdAt || new Date(now).toISOString(), timeline: old?.timeline || [], activity: old?.activity || [], reviews: old?.reviews || [] };
+        if (data.reviewLabel || data.reviewUrl) {
+          if (!data.reviewLabel || !data.reviewUrl) return {error:'Add both a preview label and an HTTPS preview link.'};
+          let u; try { u = new URL(data.reviewUrl); } catch { return {error:'Use a valid HTTPS preview link.'}; }
+          if(u.protocol !== 'https:' || u.username || u.password) return {error:'Use a valid HTTPS preview link.'};
+          if(project.reviews.length >= 30) return {error:'This project has reached its 30-version limit.'};
+          project.reviews = [{id:crypto.randomUUID(),number:project.reviews.length+1,label:text(data.reviewLabel,120),url:u.href,status:'pending',createdAt:project.updatedAt},...project.reviews];
+          project.timeline = [{author:'Studio',message:'Preview v'+project.reviews[0].number+' ready: '+project.reviews[0].label,at:project.updatedAt},...project.timeline].slice(0,50);
+        }
         project.activity = [{author:'Studio admin',message:'Project details saved',at:project.updatedAt},...project.activity].slice(0,50);
         if (data.update || !old || old.stage !== project.stage) project.timeline = [{ author: 'Studio', message: text(data.update) || STAGES[project.stage], at: project.updatedAt }, ...project.timeline].slice(0, 50);
         await store.put('project:' + id, project); return { project };
       }
       if (operation === 'feedback') { const p = await store.get('project:' + data.id); if (!p || p.owner !== data.owner) return { error: 'Project not found.' }; if (p.timeline[0]?.author === 'Client' && now - Date.parse(p.timeline[0].at) < 10000) return { error: 'Please wait a moment before posting again.' }; p.timeline = [{ author: 'Client', message: text(data.message), at: new Date(now).toISOString() }, ...p.timeline].slice(0, 50); p.updatedAt = new Date(now).toISOString(); await store.put('project:' + p.id, p); return { ok: true }; }
+      if (operation === 'review') {
+        const p=await store.get('project:'+data.id), v=p?.reviews?.[0];
+        if(!p || p.owner!==data.owner || !v || v.id!==data.versionId) return {error:'This preview is no longer current. Refresh your project.'};
+        if(v.status!=='pending') return {error:'A decision has already been recorded for this version.'};
+        if(!['approved','changes-requested'].includes(data.action) || (data.action==='changes-requested' && !text(data.message))) return {error:'Describe the requested changes.'};
+        v.status=data.action;v.message=text(data.message);v.decidedAt=new Date(now).toISOString();
+        p.updatedAt=v.decidedAt;p.timeline=[{author:'Client',message:'Preview v'+v.number+' '+(v.status==='approved'?'approved':'changes requested')+(v.message?': '+v.message:''),at:v.decidedAt},...p.timeline].slice(0,50);
+        p.activity=[{author:'Client',message:'Decision recorded for preview v'+v.number,at:v.decidedAt},...(p.activity||[])].slice(0,50);
+        await store.put('project:'+p.id,p);return {ok:true};
+      }
       if(operation === 'followup') { const p = await store.get('project:'+data.id); if(!p) return {error:'Project not found.'}; p.followupDate=data.followupDate;p.followupNote=data.followupNote;p.updatedAt=new Date(now).toISOString();p.activity=[{author:'Project agent',message:'Follow-up scheduled for '+data.followupDate+': '+data.followupNote,at:p.updatedAt},...(p.activity||[])].slice(0,50);await store.put('project:'+p.id,p);return {ok:true,projectId:p.id,followupDate:p.followupDate}; }
       if (operation === 'invite') { const p = await store.get('project:' + data.id); if (!p || !p.owner.startsWith('invite:')) return { error: 'Access codes are available for invited client accounts only.' }; const expiresAt = now + 7 * DAY; const previous = await store.get('active-invite:' + p.owner); if (previous) await store.delete('invite:' + previous); await store.put('invite:' + data.key, { user: { id: p.owner, name: 'Client', provider: 'invite' }, expiresAt }); await store.put('active-invite:' + p.owner, data.key); return { expiresAt }; }
       return { error: 'Unknown operation.' };

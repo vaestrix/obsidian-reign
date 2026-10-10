@@ -51,3 +51,9 @@ Official references: [Google](https://developers.google.com/identity/openid-conn
 The creator brief has a required-field completion indicator and explicit save/restore/remove draft controls. Drafts stay in this browser's local storage until removed; they are not submitted to the server or synced between devices. Services has expandable FAQs. The navigation links to Client Login on every main page. No sample client data is published.
 
 UX references: [Form progress and clarity](https://www.nngroup.com/articles/4-principles-reduce-cognitive-load/), [Visibility of system status](https://www.nngroup.com/articles/visibility-system-status/).
+
+## Versioned previews and client decisions
+
+In the project admin area, enter a preview label and HTTPS link together to publish a numbered version. Existing versions and decisions remain in the project history. Only the assigned client can approve or request changes on the latest pending version; change requests require a note. A decision cannot be submitted twice. Preview files remain on the linked service, where the studio must set appropriate access permissions.
+
+Admins can set the next studio update date and included/used revision rounds. Client decisions do not automatically consume rounds, change the quote, trigger payment, or approve future versions. Quotes, internal notes, and follow-up scheduling remain private to admins and authorized agents. This release supports preview links and written feedback; file uploads and visual annotations are not included.
