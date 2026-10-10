@@ -9,7 +9,7 @@
   "observability": { "enabled": true },
   "vars": {
     "PUBLIC_ORIGIN": "https://obsidianreign.gg",
-    "SAVANNAH_AUTO_SEND": "false"
+    "SAVANNAH_AUTO_SEND": "true"
   },
   "assets": {
     "directory": "dist",
