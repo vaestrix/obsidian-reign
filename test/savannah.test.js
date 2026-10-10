@@ -25,7 +25,7 @@ function setup(overrides = {}) {
   const storage = new Storage();
   const env = { HOSTINGER_MAILBOX_ID: 'mailbox', HOSTINGER_MAIL_API_TOKEN: 'test-only',
     PHILIP_ESCALATION_EMAIL: 'philip@example.com', SAVANNAH_APPROVED_FACTS: 'We provide website design.', SAVANNAH_AUTO_SEND: 'true',
-    AI: { run: async () => ({ response: JSON.stringify({ action: 'reply', routine: true, confidence: 0.99, reply: 'Hi! Happy to help. What kind of website do you have in mind?' }) }) }, ...overrides };
+    AI: { run: async () => ({ response: JSON.stringify({ action: 'reply', routine: true, uncertain: false, confidence: 0.99, reply: 'Hi! Happy to help. What kind of website do you have in mind?' }) }) }, ...overrides };
   const object = new SavannahInbox({ storage, blockConcurrencyWhile: fn => fn() }, env);
   return { storage, env, object };
 }
@@ -76,7 +76,7 @@ test('Mail API redirects are held without forwarding credentials to the redirect
 });
 
 test('Workers AI structured response receives the same conservative reply checks', async t => {
-  const { object } = setup({ AI: { run: async () => ({ response: { action: 'reply', routine: true, confidence: 0.99, reply: 'Hi! What kind of creator website do you have in mind?' } }) } });
+  const { object } = setup({ AI: { run: async () => ({ response: { action: 'reply', routine: true, uncertain: false, confidence: 0.99, reply: 'Hi! What kind of creator website do you have in mind?' } }) } });
   const { sends } = mockMail(t); await enqueue(object); await object.alarm();
   assert.equal(sends.length, 1); assert.equal(sends[0].to[0], 'customer@example.com');
   assert.equal(sends[0].displayName, NAME);
@@ -154,7 +154,7 @@ test('refund escalates only to Philip', async t => {
 test('dry run, malformed AI and low confidence never reply to customer', async t => {
   const { sends } = mockMail(t);
   for (const env of [{ SAVANNAH_AUTO_SEND: 'false' }, { AI: { run: async () => ({ response: 'broken' }) } },
-    { AI: { run: async () => ({ response: JSON.stringify({ action: 'reply', routine: true, confidence: 0.7, reply: 'Hi' }) }) } }]) {
+    { AI: { run: async () => ({ response: JSON.stringify({ action: 'reply', routine: true, uncertain: false, confidence: 0.7, reply: 'Hi' }) }) } }]) {
     const { object } = setup(env); await enqueue(object); await object.alarm();
   }
   assert.equal(sends.length, 3); assert.ok(sends.every(s => s.to[0] === 'philip@example.com'));
@@ -181,13 +181,22 @@ test('persona includes warmth, empathy, sarcasm and boss mentality', () => {
 
  test('held reply explains confidence check and replaces empty review placeholders', async t => {
   const { sends } = mockMail(t);
-  const { object } = setup({ AI: { run: async () => ({ response: { action: 'reply', routine: true, confidence: 0.7,
+  const { object } = setup({ AI: { run: async () => ({ response: { action: 'reply', routine: true, uncertain: false, confidence: 0.7,
     reply: 'Hi! What services do you need?', reason: 'Routine inquiry', decision: 'none', recommendedResponse: 'none' } }) } });
   await enqueue(object); await object.alarm();
   const notice = JSON.parse(sends[0].text);
-  assert.match(notice.reason, /0.98 minimum/);
+  assert.match(notice.reason, /0.90 minimum/);
   assert.match(notice.decision, /respond manually/);
   assert.equal(notice.recommendedResponse, 'Hi! What services do you need?');
   assert.deepEqual(sends[0].to, ['philip@example.com']);
  });
+
+test('routine qualification at 0.90 replies while explicit uncertainty still escalates', async t => {
+  const { sends } = mockMail(t);
+  for (const uncertain of [false, true, undefined]) {
+    const { object } = setup({ AI: { run: async () => ({ response: { action: 'reply', routine: true, uncertain, confidence: 0.9, reply: 'Hi! Which platform and emote style do you have in mind?' } }) } });
+    await enqueue(object); await object.alarm();
+  }
+  assert.deepEqual(sends.map(s => s.to[0]), ['customer@example.com', 'philip@example.com', 'philip@example.com']);
+});
 
