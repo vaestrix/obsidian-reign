@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "anna-streamers-initial",
+  "name": "Anna",
+  "target": {
+    "language": "English",
+    "segment": "smaller growing streamers",
+    "expansion": "Gradually test larger streamers in small batches when results are weak; do not increase send volume automatically."
+  },
+  "dailyLimit": 5,
+  "approvalMode": "campaign",
+  "businessAddress": "Obsidian Reign Studios\n834-F S Perry Street #1258\nCastle Rock, CO 80104",
+  "businessAddressConfirmed": true,
+  "contactName": "Obsidian Reign Studios",
+  "handoffEmail": "savannah@obsidianreign.gg",
+  "status": "setup-in-progress",
+  "automaticSending": false
+}
+

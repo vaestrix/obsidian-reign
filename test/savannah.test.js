@@ -215,3 +215,13 @@ test('reply address must exactly match the sender, including named headers', () 
   'customer@example.com, attacker@example.com', 'attacker@example.com', 'Customer <customer@example.com>; attacker@example.com']) assert.equal(check(value), 'escalate');
 });
 
+test('Anna opt-out is durably suppressed without AI or reply', async t => {
+ const { sends } = mockMail(t, { text: 'Please stop outreach.' });
+ let aiCalls=0; const { object, storage } = setup({ AI: { run: async () => { aiCalls++; throw Error('Must not run'); } } });
+ await enqueue(object); await object.alarm(); await object.alarm();
+ assert.equal(aiCalls,0); assert.equal(sends.length,0);
+ assert.equal((await storage.get('job:INBOX:12')).state, 'opted-out');
+ const contacts=await storage.list({prefix:'anna:contact:'});
+ assert.equal(contacts.size,1); assert.equal([...contacts.values()][0].state,'suppressed');
+});
+

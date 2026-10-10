@@ -23,3 +23,10 @@ U.S. commercial outreach requirements include accurate headers, honest subjects,
 
 Tests cover review preparation, exact-message approval binding/expiry and rejection of unverified, duplicate or suppressed contacts. No secrets or real prospect data are committed.
 
+
+## Confirmed campaign settings
+
+`config/anna-campaign.json` records the owner-approved targeting: English-speaking smaller growing streamers, five emails per day and one campaign approval. Gradual larger-channel tests may follow weak results without automatically raising volume. The owner confirmed the business private mailbox is active and identity verification complete: Obsidian Reign Studios, 834-F S Perry Street #1258, Castle Rock, CO 80104. This is an intentionally public business mailing address, not a secret. Sending remains off pending sender provisioning, final campaign template approval and dispatcher/registry checks.
+
+Savannah now durably records explicit outreach opt-outs before AI or customer sending. The contact key is a SHA-256 hash of the normalized sender email under `anna:contact:` in the mailbox Durable Object. An inbound response from an existing Anna contact marks it replied; a previous suppressed state is never cleared by a response. The future Anna dispatcher must read this same registry immediately before sending. This opt-out registry hook is live infrastructure, not an enabled outreach campaign.
+

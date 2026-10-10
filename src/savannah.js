@@ -250,6 +250,19 @@ function formatReview(notice) {
   ].join('\n\n');
 }
 
+async function recordAnnaInbound(storage, latest) {
+  const sender = latest.from?.address?.trim().toLowerCase();
+  if (!email.test(sender ?? '') || sender === ADDRESS) return false;
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(sender));
+  const key = 'anna:contact:' + [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+  const previous = await storage.get(key);
+  const optOut = /\bstop outreach\b|\bunsubscribe\b|\bremove me\b|\bdo not (email|contact) me\b|\bstop (emailing|contacting) me\b/i.test((latest.subject ?? '') + '\n' + (latest.text ?? ''));
+  if (optOut || previous) await storage.put(key, { ...previous,
+    state: optOut || previous?.state === 'suppressed' ? 'suppressed' : 'replied',
+    lastInboundMessageId: latest.messageId, updatedAt: Date.now() });
+  return optOut;
+}
+
 export class SavannahInbox {
   constructor(ctx, env) { this.ctx = ctx; this.env = env; }
   async fetch(request) {
@@ -293,6 +306,7 @@ export class SavannahInbox {
     }
     if (job.event.folder !== 'INBOX') return this.finish(key, job, 'ignored');
     const latest = await load(env, job.event);
+    if (await recordAnnaInbound(this.ctx.storage, latest)) return this.finish(key, job, 'opted-out');
     const identity = `message:${latest.messageId}`;
     if (await this.ctx.storage.get(identity)) return this.escalate(key, job, latest, { reason: 'Message-ID previously processed or send outcome uncertain; verify Sent.' });
     const gate = preflight(latest);
