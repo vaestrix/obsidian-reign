@@ -266,7 +266,7 @@ async function recordAnnaInbound(storage, latest) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(sender));
   const key = 'anna:contact:' + [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
   const previous = await storage.get(key);
-  const optOut = /\bstop outreach\b|\bunsubscribe\b|\bremove me\b|\bdo not (email|contact) me\b|\bstop (emailing|contacting) me\b/i.test((latest.subject ?? '') + '\n' + (latest.text ?? ''));
+  const optOut = /\bstop outreach\b|\bunsubscribe\b|\bremove me\b|\b(?:do not|don['’]t) (?:email|contact|message) me\b|\bstop (?:emailing|contacting|messaging) me\b|\b(?:take|remove) me (?:off|from) (?:your|the|this) (?:mailing |email |contact )?list\b|\bno more (?:emails|outreach)(?: please)?\b/i.test((latest.subject ?? '') + '\n' + (latest.text ?? ''));
   if (optOut || previous) await storage.put(key, { ...previous,
     state: optOut || previous?.state === 'suppressed' ? 'suppressed' : 'replied',
     lastInboundMessageId: latest.messageId, updatedAt: Date.now() });

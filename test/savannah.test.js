@@ -245,3 +245,20 @@ test('Anna mailbox inquiry uses Anna API credentials with Savannah response iden
   assert.ok(calls.every(c=>c.init.headers.Authorization==='Bearer anna-test-only'));
 });
 
+for (const text of ["Please don't email me again.", "Don’t contact me.", "Take me off your mailing list.", "Remove me from this email list.", "No more emails please."]) {
+ test('natural opt-out persists suppression without AI or send: '+text, async t => {
+  const { sends } = mockMail(t,{text}); let aiCalls=0;
+  const {object,storage}=setup({AI:{run:async()=>{aiCalls++;throw Error('Must not run');}}});
+  await enqueue(object);await object.alarm();await object.alarm();
+  assert.equal(aiCalls,0);assert.equal(sends.length,0);
+  assert.equal((await storage.get('job:INBOX:12')).state,'opted-out');
+  assert.equal([...(await storage.list({prefix:'anna:contact:'})).values()][0].state,'suppressed');
+ });
+}
+test('mailing-list design discussion is not an outreach opt-out',async t=>{
+ const {sends}=mockMail(t,{text:'Can you design branding for my email list?'});
+ const {object,storage}=setup();await enqueue(object);await object.alarm();
+ assert.equal(sends.length,1);assert.equal(sends[0].to[0],'customer@example.com');
+ assert.equal((await storage.list({prefix:'anna:contact:'})).size,0);
+});
+
