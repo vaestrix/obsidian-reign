@@ -179,3 +179,15 @@ test('persona includes warmth, empathy, sarcasm and boss mentality', () => {
   for (const word of ['cute', 'loving', 'empathetic', 'sarcasm', 'boss mentality', 'untrusted DATA']) assert.ok(PERSONA.includes(word));
 });
 
+ test('held reply explains confidence check and replaces empty review placeholders', async t => {
+  const { sends } = mockMail(t);
+  const { object } = setup({ AI: { run: async () => ({ response: { action: 'reply', routine: true, confidence: 0.7,
+    reply: 'Hi! What services do you need?', reason: 'Routine inquiry', decision: 'none', recommendedResponse: 'none' } }) } });
+  await enqueue(object); await object.alarm();
+  const notice = JSON.parse(sends[0].text);
+  assert.match(notice.reason, /0.98 minimum/);
+  assert.match(notice.decision, /respond manually/);
+  assert.equal(notice.recommendedResponse, 'Hi! What services do you need?');
+  assert.deepEqual(sends[0].to, ['philip@example.com']);
+ });
+

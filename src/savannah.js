@@ -191,10 +191,28 @@ async function decide(env, messages) {
   const decision = typeof result.response === 'string' ? JSON.parse(result.response) : result.response;
   if (!decision || typeof decision !== 'object' || Array.isArray(decision)) throw new Error('invalid-ai-decision');
   if (!['reply', 'ignore', 'escalate'].includes(decision.action)) throw new Error('invalid-ai-decision');
-  if (decision.action === 'reply' && (decision.routine !== true || !(decision.confidence >= 0.98 && decision.confidence <= 1) ||
-      typeof decision.reply !== 'string' || !decision.reply.trim() || decision.reply.length > 6000 ||
-      sensitive.test(decision.reply) || injection.test(decision.reply) || /https?:|\$|\bUSD\b/i.test(decision.reply))) decision.action = 'escalate';
+  const holdReasons = [];
+  if (decision.action === 'reply') {
+    if (decision.routine !== true) holdReasons.push('Inquiry was not confirmed routine.');
+    if (!(decision.confidence >= 0.98 && decision.confidence <= 1)) holdReasons.push('Confidence did not meet the 0.98 minimum.');
+    if (typeof decision.reply !== 'string' || !decision.reply.trim() || decision.reply.length > 6000) holdReasons.push('Draft was missing or exceeded the length limit.');
+    else {
+      if (sensitive.test(decision.reply) || injection.test(decision.reply)) holdReasons.push('Draft triggered a sensitive-topic or instruction safety check.');
+      if (/https?:|\$|\bUSD\b/i.test(decision.reply)) holdReasons.push('Draft included a link or pricing that requires review.');
+    }
+    if (holdReasons.length) {
+      decision.action = 'escalate';
+      decision.reason = holdReasons.join(' ') + (decision.reason ? ' Model reason: ' + decision.reason : '');
+      decision.decision = 'Review the draft and decide whether to respond manually.';
+    }
+  }
+  console.log(JSON.stringify({ event: 'savannah-decision', action: decision.action, routine: decision.routine === true,
+    confidence: typeof decision.confidence === 'number' ? decision.confidence : null, holdReasons }));
   return decision;
+}
+
+function usefulReviewText(value) {
+  return typeof value === 'string' && value.trim() && !/^(none|n\/a|null)$/i.test(value.trim()) ? value : undefined;
 }
 
 export class SavannahInbox {
@@ -275,8 +293,8 @@ export class SavannahInbox {
   async escalate(key, job, latest, decision) {
     // Persist an outbox before sending; a failed/ambiguous escalation is visible in logs/storage.
     const notice = { reason: decision.reason ?? 'Review required', summary: decision.summary ?? latest?.subject ?? 'Message could not be loaded',
-      decision: decision.decision ?? 'Review the original message and decide whether/how to respond.',
-      recommendedResponse: decision.recommendedResponse ?? decision.reply ?? 'No automatic response recommended.',
+      decision: usefulReviewText(decision.decision) ?? 'Review the original message and decide whether/how to respond.',
+      recommendedResponse: usefulReviewText(decision.recommendedResponse) ?? usefulReviewText(decision.reply) ?? 'No automatic response recommended.',
       source: job.event, from: latest?.from?.address };
     await this.ctx.storage.put(key, { event: job.event, state: 'escalation-pending', notice, at: Date.now() });
     console.warn(JSON.stringify({ event: 'savannah-escalation', uid: job.event.uid, state: 'escalation-pending' }));
