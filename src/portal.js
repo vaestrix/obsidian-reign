@@ -362,6 +362,13 @@ export async function portal(request, env) {
     if (path === '/api/portal/me' && request.method === 'GET') { const user = await session(request, env); return json({ user }); }
     const user = await session(request, env);
     if (!user) return json({ error: 'Sign in to view your projects.' }, 401);
+    if(path === '/api/portal/delivery-files' && request.method === 'GET') {
+      const projectId=text(url.searchParams.get('projectId'),80),versionId=text(url.searchParams.get('versionId'),80);
+      if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId))return json({error:'Invalid delivery request.'},400);
+      const result=await call(env,'delivery-client-manifest',{projectId,versionId,owner:user.id});
+      if(result.error)return json(result,403);
+      return json({files:result.files,versionId});
+    }
     if (path === '/api/portal/projects' && request.method === 'GET') { const data = await call(env, 'projects', { owner: user.id }); return json({projects:data.projects.map(clientProject)}); }
     if (path === '/api/portal/review' && request.method === 'POST') {
       const data = await body(request), action = data.action, message = text(data.message);
@@ -435,6 +442,18 @@ export class ProjectHub {
         }
         const record={...validated,projectId,updatedAt:new Date(now).toISOString(),recordedBy:'owner'};
         await store.put('production-method:'+projectId,record);return {method:record};
+      }
+      if(operation==='delivery-client-manifest') {
+        const {projectId,versionId,owner}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof versionId!=='string'||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId))return {error:'Invalid delivery request.'};
+        const project=await store.get('project:'+projectId);
+        if(!project||project.owner!==owner)return {error:'Access denied.'};
+        if(!currentCustomerApproval(project,versionId))return {error:'Current approval required.'};
+        const authorization=await store.get('delivery-authorization:'+projectId+':'+versionId);
+        if(!authorization||authorization.status!=='authorized_not_delivered')return {error:'Delivery not authorized.'};
+        const manifest=await store.get('delivery-manifest:'+projectId+':'+versionId);
+        if(!manifest||manifest.status!=='manifest_pending_file_verification')return {error:'Delivery not available.'};
+        return {files:manifest.files.map(f=>({name:f.name,mimeType:f.mimeType,sizeBytes:f.sizeBytes})),versionId};
       }
       if(operation==='delivery-manifest-get') {
         const {projectId,versionId}=data;
