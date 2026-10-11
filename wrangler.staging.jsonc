@@ -10,7 +10,7 @@
     {"name": "PROJECT_HUB", "class_name": "ProjectHub"}
   ]},
   "migrations": [
-    {"tag": "v1", "new_classes": ["CommandStore"]},
+    {"tag": "v1", "new_sqlite_classes": ["CommandStore"]},
     {"tag": "savannah-v1", "new_sqlite_classes": ["SavannahInbox"]},
     {"tag": "projects-v1", "new_sqlite_classes": ["ProjectHub"]}
   ],
