@@ -1,3 +1,5 @@
+import {authorizeAgentMessage} from './agent-policy.js';
+import {authorizeOrderTransition} from './agent-workflow.js';
 import {adminAuthorized} from './legacy-worker.js';
 import { validateLead, readJson, studioOperation } from './studio.js';
 import {concepts,validatePortfolio} from './portfolio.js';
@@ -117,6 +119,12 @@ export async function portal(request, env) {
       if (path === '/admin/projects' || path === '/project-admin.html' || path === '/project-admin') {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));
         const headers = new Headers(response.headers); headers.set('Cache-Control', 'no-store'); headers.set('X-Robots-Tag', 'noindex'); return new Response(response.body, { status: response.status, headers });
+      }
+      if(path === '/api/portal/admin/agent-policy' && request.method === 'POST') {
+        const data = await body(request);
+        if (data.kind === 'message') return json({allowed:authorizeAgentMessage({from:data.from,to:data.to,channel:data.channel})});
+        if (data.kind === 'transition') return json({allowed:authorizeOrderTransition({from:data.from,to:data.to,actor:data.actor,approvalEvidence:data.approvalEvidence})});
+        return json({error:'Unknown policy check.'},400);
       }
       if(path === '/api/portal/admin/portfolio' && request.method === 'GET') return json(await call(env,'portfolio-list'));
       if(path === '/api/portal/admin/portfolio' && request.method === 'POST') {
