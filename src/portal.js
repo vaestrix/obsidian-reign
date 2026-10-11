@@ -1,3 +1,4 @@
+import {validateProductionMethod,authorizeProductionMethod} from './production-method.js';
 import {planCreativeProduction} from './creative-planner.js';
 import {authorizeAgentMessage} from './agent-policy.js';
 import {authenticateAgent,validateAgentEnvelope} from './agent-auth.js';
@@ -164,6 +165,11 @@ export async function portal(request, env) {
       if (path === '/admin/projects' || path === '/project-admin.html' || path === '/project-admin') {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));
         const headers = new Headers(response.headers); headers.set('Cache-Control', 'no-store'); headers.set('X-Robots-Tag', 'noindex'); return new Response(response.body, { status: response.status, headers });
+      }
+      if(path === '/api/portal/admin/production-method' && request.method === 'POST') {
+        const data=await body(request),projectId=text(data.projectId,80),method=validateProductionMethod(data);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!method)return json({error:'Invalid production method.'},400);
+        const result=await call(env,'production-method-save',{projectId,method});return json(result,result.error?409:200);
       }
       if(path === '/api/portal/admin/creative-task' && request.method === 'POST') {
         const data=await body(request);
@@ -387,10 +393,21 @@ export class ProjectHub {
         escalation.status='resolved';escalation.resolution=data.resolution.trim();escalation.resolvedAt=new Date(now).toISOString();
         await store.put(key,escalation);return {escalation};
       }
+      if(operation==='production-method-save') {
+        const {projectId,method}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!await store.get('project:'+projectId))return {error:'Project not found.'};
+        const validated=validateProductionMethod(method);
+        if(!validated)return {error:'Invalid production method.'};
+        const record={...validated,projectId,updatedAt:new Date(now).toISOString(),recordedBy:'owner'};
+        await store.put('production-method:'+projectId,record);return {method:record};
+      }
       if(operation==='creative-task-create') {
         const {projectId,planId,approvalEvidence}=data;
         if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof planId!=='string'||!/^[a-f0-9-]{36}$/.test(planId)||typeof approvalEvidence!=='string'||approvalEvidence.trim().length<8)return {error:'Invalid creative task request.'};
         if(!await store.get('project:'+projectId))return {error:'Project not found.'};
+        const productionMethod=await store.get('production-method:'+projectId);
+        const readiness=authorizeProductionMethod(productionMethod);
+        if(!readiness.allowed)return {error:'Production method not authorized: '+readiness.reason};
         const plans=await store.list({prefix:'creative-plan:'+projectId+':',limit:101});
         const plan=[...plans.values()].find(p=>p.id===planId);
         if(!plan)return {error:'Creative plan not found.'};
@@ -398,7 +415,7 @@ export class ProjectHub {
         const existing=await store.get(uniqueKey);
         if(existing)return {taskId:existing.taskId,reused:true};
         const id=crypto.randomUUID(),at=new Date(now).toISOString();
-        const task={id,projectId,assignedTo:'vesper',title:'Produce '+plan.brief.assetType+' for '+plan.brief.platform,instructions:plan.brief.description,status:'queued',createdAt:at,updatedAt:at,planId,approvalEvidence:approvalEvidence.trim(),history:[{status:'queued',at,by:'owner',note:'Created from approved creative plan'}]};
+        const task={id,projectId,assignedTo:'vesper',title:'Produce '+plan.brief.assetType+' for '+plan.brief.platform,instructions:plan.brief.description,status:'queued',createdAt:at,updatedAt:at,planId,productionMethod:productionMethod.method,approvalEvidence:approvalEvidence.trim(),history:[{status:'queued',at,by:'owner',note:'Created from approved creative plan'}]};
         await store.put('agent-task:'+projectId+':'+id,task);
         await store.put(uniqueKey,{taskId:id,createdAt:at});
         return {taskId:id,reused:false};
