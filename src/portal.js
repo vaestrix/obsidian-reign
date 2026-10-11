@@ -120,6 +120,23 @@ export async function portal(request, env) {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));
         const headers = new Headers(response.headers); headers.set('Cache-Control', 'no-store'); headers.set('X-Robots-Tag', 'noindex'); return new Response(response.body, { status: response.status, headers });
       }
+      if(path === '/api/portal/admin/agent-tasks' && request.method === 'GET') {
+        const projectId=text(url.searchParams.get('projectId'),80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
+        const result=await call(env,'agent-task-list',{projectId});return json(result,result.error?404:200);
+      }
+      if(path === '/api/portal/admin/agent-tasks' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),assignedTo=text(data.assignedTo,30),title=text(data.title,160),instructions=text(data.instructions,3000);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!title||!instructions||!['savannah','vesper','anna','atlas','forge','mercury','sentinel','nova'].includes(assignedTo))return json({error:'Invalid task.'},400);
+        const result=await call(env,'agent-task-create',{projectId,assignedTo,title,instructions});return json(result,result.error?400:201);
+      }
+      if(path === '/api/portal/admin/agent-task-update' && request.method === 'POST') {
+        const data=await body(request),projectId=text(data.projectId,80),taskId=text(data.taskId,80),status=text(data.status,30);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!taskId||!['queued','in_progress','blocked','ready_for_review','completed','cancelled'].includes(status))return json({error:'Invalid task update.'},400);
+        const result=await call(env,'agent-task-update',{projectId,taskId,status,expectedStatus:text(data.expectedStatus,30),note:text(data.note,1000)});
+        return json(result,result.error?409:200);
+      }
       if(path === '/api/portal/admin/agent-messages' && request.method === 'GET') {
         const projectId=text(url.searchParams.get('projectId'),80);
         if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
@@ -243,6 +260,29 @@ export class ProjectHub {
       }
       const studio = await studioOperation(operation, data, store, now);
       if(studio !== null) return studio;
+      if(operation==='agent-task-create'||operation==='agent-task-list'||operation==='agent-task-update') {
+        const projectId=data.projectId;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return {error:'Invalid project ID.'};
+        if(!await store.get('project:'+projectId))return {error:'Project not found.'};
+        const prefix='agent-task:'+projectId+':';
+        if(operation==='agent-task-list'){
+          const rows=await store.list({prefix,limit:101,reverse:true});
+          return {tasks:[...rows.values()].slice(0,100),hasMore:rows.size>100};
+        }
+        if(operation==='agent-task-create'){
+          if(!['anna','savannah','vesper','atlas','forge','mercury','sentinel','nova'].includes(data.assignedTo)||typeof data.title!=='string'||!data.title.trim()||data.title.length>160||typeof data.instructions!=='string'||!data.instructions.trim()||data.instructions.length>3000)return {error:'Invalid task.'};
+          const task={id:crypto.randomUUID(),projectId,assignedTo:data.assignedTo,title:data.title.trim(),instructions:data.instructions.trim(),status:'queued',createdAt:new Date(now).toISOString(),updatedAt:new Date(now).toISOString(),history:[{status:'queued',at:new Date(now).toISOString(),by:'owner'}]};
+          await store.put(prefix+task.id,task);return {task};
+        }
+        if(typeof data.taskId!=='string'||!/^[a-f0-9-]{36}$/.test(data.taskId))return {error:'Invalid task ID.'};
+        const key=prefix+data.taskId,task=await store.get(key);
+        if(!task)return {error:'Task not found.'};
+        if(task.status!==data.expectedStatus)return {error:'Task changed. Refresh before updating.'};
+        const allowed={queued:['in_progress','cancelled'],in_progress:['blocked','ready_for_review','cancelled'],blocked:['queued','cancelled'],ready_for_review:['completed','in_progress','cancelled'],completed:[],cancelled:[]};
+        if(!allowed[task.status]?.includes(data.status))return {error:'Invalid task transition.'};
+        task.status=data.status;task.updatedAt=new Date(now).toISOString();task.history=[...task.history,{status:data.status,at:task.updatedAt,by:'owner',note:typeof data.note==='string'?data.note.slice(0,1000):''}].slice(-50);
+        await store.put(key,task);return {task};
+      }
       if(operation==='agent-message-create'||operation==='agent-message-list') {
         const projectId=data.projectId;
         if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return {error:'Invalid project ID.'};
