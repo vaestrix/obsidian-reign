@@ -164,6 +164,12 @@ export async function portal(request, env) {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));
         const headers = new Headers(response.headers); headers.set('Cache-Control', 'no-store'); headers.set('X-Robots-Tag', 'noindex'); return new Response(response.body, { status: response.status, headers });
       }
+      if(path === '/api/portal/admin/generation-approval' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),requestKey=text(data.requestKey,80),decision=text(data.decision,20);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9_-]{20,80}$/.test(requestKey)||!['approve','reject'].includes(decision))return json({error:'Invalid approval request.'},400);
+        const result=await call(env,'generation-approval',{projectId,requestKey,decision});return json(result,result.error?409:200);
+      }
       if(path === '/api/portal/admin/generation-reservations' && request.method === 'POST') {
         const data=await body(request);
         const projectId=text(data.projectId,80),taskId=text(data.taskId,80),requestKey=text(data.requestKey,80),estimatedCents=data.estimatedCents;
@@ -356,6 +362,15 @@ export class ProjectHub {
         if(typeof data.resolution!=='string'||!data.resolution.trim()||data.resolution.length>1000)return {error:'Resolution required.'};
         escalation.status='resolved';escalation.resolution=data.resolution.trim();escalation.resolvedAt=new Date(now).toISOString();
         await store.put(key,escalation);return {escalation};
+      }
+      if(operation==='generation-approval') {
+        const {projectId,requestKey,decision}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof requestKey!=='string'||!/^[a-zA-Z0-9_-]{20,80}$/.test(requestKey)||!['approve','reject'].includes(decision))return {error:'Invalid approval request.'};
+        const key='generation-reservation:'+projectId+':'+requestKey,reservation=await store.get(key);
+        if(!reservation)return {error:'Reservation not found.'};
+        if(reservation.status!=='pending_owner_approval')return {error:'Decision already recorded.'};
+        reservation.status=decision==='approve'?'approved_not_submitted':'rejected';reservation.decidedAt=new Date(now).toISOString();reservation.decidedBy='owner';
+        await store.put(key,reservation);return {reservation};
       }
       if(operation==='generation-reserve') {
         const {projectId,taskId,requestKey,estimatedCents}=data;
