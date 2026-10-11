@@ -1,3 +1,4 @@
+import {planCreativeProduction} from './creative-planner.js';
 import {authorizeAgentMessage} from './agent-policy.js';
 import {authenticateAgent,validateAgentEnvelope} from './agent-auth.js';
 import {authorizeOrderTransition} from './agent-workflow.js';
@@ -163,6 +164,17 @@ export async function portal(request, env) {
       if (path === '/admin/projects' || path === '/project-admin.html' || path === '/project-admin') {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));
         const headers = new Headers(response.headers); headers.set('Cache-Control', 'no-store'); headers.set('X-Robots-Tag', 'noindex'); return new Response(response.body, { status: response.status, headers });
+      }
+      if(path === '/api/portal/admin/creative-plan' && request.method === 'POST') {
+        const data=await body(request);
+        const plan=planCreativeProduction(data);
+        if(!plan)return json({error:'Invalid creative brief.'},400);
+        const result=await call(env,'creative-plan-save',{plan});return json(result,result.error?409:201);
+      }
+      if(path === '/api/portal/admin/creative-plans' && request.method === 'GET') {
+        const projectId=text(url.searchParams.get('projectId'),80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
+        const result=await call(env,'creative-plan-list',{projectId});return json(result,result.error?404:200);
       }
       if(path === '/api/portal/admin/generation-provider-state' && request.method === 'POST') {
         const data=await body(request);
@@ -368,6 +380,20 @@ export class ProjectHub {
         if(typeof data.resolution!=='string'||!data.resolution.trim()||data.resolution.length>1000)return {error:'Resolution required.'};
         escalation.status='resolved';escalation.resolution=data.resolution.trim();escalation.resolvedAt=new Date(now).toISOString();
         await store.put(key,escalation);return {escalation};
+      }
+      if(operation==='creative-plan-save'||operation==='creative-plan-list') {
+        const projectId=operation==='creative-plan-save'?data.plan?.brief?.projectId:data.projectId;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return {error:'Invalid project ID.'};
+        if(!await store.get('project:'+projectId))return {error:'Project not found.'};
+        const prefix='creative-plan:'+projectId+':';
+        if(operation==='creative-plan-list'){
+          const rows=await store.list({prefix,limit:101,reverse:true});
+          return {plans:[...rows.values()].slice(0,100),hasMore:rows.size>100};
+        }
+        const plan={...data.plan,id:crypto.randomUUID(),createdAt:new Date(now).toISOString()};
+        if(plan.status!=='planning_only'||plan.producer!=='vesper'||plan.customerContact!=='savannah')return {error:'Invalid plan.'};
+        await store.put(prefix+String(now).padStart(13,'0')+':'+plan.id,plan);
+        return {plan};
       }
       if(operation==='generation-provider-state') {
         const {projectId,requestKey,status,providerJobId}=data;
