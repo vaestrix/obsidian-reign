@@ -385,7 +385,18 @@ export async function portal(request, env) {
       const projectId=text(url.searchParams.get('projectId'),80),versionId=text(url.searchParams.get('versionId'),80),fileName=text(url.searchParams.get('file'),160);
       if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId)||!fileName)return json({error:'Invalid download request.'},400);
       if(!env.DELIVERY_BUCKET)return json({error:'Delivery storage unavailable.'},503);
-      const result=await call(env,'delivery-client-file',{projectId,versionId,owner:user.id,fileName});
+      let result=await call(env,'delivery-client-file',{projectId,versionId,owner:user.id,fileName});
+      if(result.error==='Delivery access denied: fresh_verification_required') {
+        const state=await call(env,'delivery-refresh-state',{projectId,versionId,owner:user.id});
+        if(state.error)return json({error:'Delivery unavailable.'},403);
+        const decision=canRefreshDelivery({...state,owner:user.id,versionId});
+        if(!decision.allowed)return json({error:'Delivery unavailable.'},403);
+        const checked=await verifyDeliveryFiles(env.DELIVERY_BUCKET,state.manifest);
+        if(!checked.verified||!unchangedR2Snapshot(state.verification.files,checked.files))return json({error:'File verification requires review.'},409);
+        const renewed=await call(env,'delivery-refresh-commit',{projectId,versionId,owner:user.id,previousVerifiedAt:state.verification.verifiedAt,files:checked.files});
+        if(renewed.error)return json({error:'Delivery verification changed. Please retry.'},409);
+        result=await call(env,'delivery-client-file',{projectId,versionId,owner:user.id,fileName});
+      }
       if(result.error)return json(result,403);
       const file=result.file;
       let object;try{object=await env.DELIVERY_BUCKET.get(file.storageKey);}catch{return json({error:'File temporarily unavailable.'},503);}
