@@ -120,6 +120,17 @@ export async function portal(request, env) {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));
         const headers = new Headers(response.headers); headers.set('Cache-Control', 'no-store'); headers.set('X-Robots-Tag', 'noindex'); return new Response(response.body, { status: response.status, headers });
       }
+      if(path === '/api/portal/admin/agent-messages' && request.method === 'GET') {
+        const projectId=text(url.searchParams.get('projectId'),80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
+        const result=await call(env,'agent-message-list',{projectId});return json(result,result.error?404:200);
+      }
+      if(path === '/api/portal/admin/agent-messages' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),from=text(data.from,30),to=text(data.to,30),message=text(data.message,3000);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!message||!authorizeAgentMessage({from,to,channel:'internal'}))return json({error:'Invalid internal message.'},400);
+        const result=await call(env,'agent-message-create',{projectId,from,to,message});return json(result,result.error?400:201);
+      }
       if(path === '/api/portal/admin/agent-policy' && request.method === 'POST') {
         const data = await body(request);
         if (data.kind === 'message') return json({allowed:authorizeAgentMessage({from:data.from,to:data.to,channel:data.channel})});
@@ -232,6 +243,21 @@ export class ProjectHub {
       }
       const studio = await studioOperation(operation, data, store, now);
       if(studio !== null) return studio;
+      if(operation==='agent-message-create'||operation==='agent-message-list') {
+        const projectId=data.projectId;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return {error:'Invalid project ID.'};
+        const project=await store.get('project:'+projectId);
+        if(!project)return {error:'Project not found.'};
+        const prefix='agent-message:'+projectId+':';
+        if(operation==='agent-message-list'){
+          const rows=await store.list({prefix,limit:101,reverse:true});
+          return {messages:[...rows.values()].slice(0,100),hasMore:rows.size>100};
+        }
+        if(!authorizeAgentMessage({from:data.from,to:data.to,channel:'internal'})||typeof data.message!=='string'||!data.message.trim()||data.message.length>3000)return {error:'Internal message denied.'};
+        const message={id:crypto.randomUUID(),projectId,from:data.from,to:data.to,body:data.message.trim(),createdAt:new Date(now).toISOString()};
+        await store.put(prefix+String(now).padStart(13,'0')+':'+message.id,message);
+        return {message};
+      }
       if (operation === 'login') { await store.put('session:' + data.key, { user: data.user, expiresAt: now + (data.duration === 3600000 ? 3600000 : 7 * DAY) }); return { ok: true }; }
       if (operation === 'session') { const s = await store.get('session:' + data.key); return s && s.expiresAt > now ? s.user : null; }
       if (operation === 'logout') { await store.delete('session:' + data.key); return { ok: true }; }
