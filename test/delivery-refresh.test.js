@@ -14,3 +14,13 @@ test('changed ETags cannot silently refresh approval',()=>{
  assert.equal(unchangedR2Snapshot([file],[file]),true);
 });
 test('missing original verification cannot be self-approved',()=>assert.equal(canRefreshDelivery({...args,verification:null}).allowed,false));
+
+test('duplicate R2 object keys cannot satisfy snapshot identity',()=>{
+ const original=[file,{...file,storageKey:'deliveries/p1/v1/alert.webm',etag:'xyz'}];
+ const duplicated=[file,{...file}];
+ assert.equal(unchangedR2Snapshot(original,duplicated),false);
+});
+test('refresh rejects duplicate manifest keys',()=>{
+ const duplicate={...args,manifest:{...args.manifest,files:[file,{...file}]},verification:{...args.verification,files:[file,{...file}]}};
+ assert.equal(canRefreshDelivery(duplicate).reason,'file_set_changed');
+});
