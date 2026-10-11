@@ -8,6 +8,7 @@ export function validateDeliveryManifest(input){
  for(const file of files){
   if(!file||typeof file!=='object'||typeof file.name!=='string'||file.name.length<1||file.name.length>160||!formats.has(file.mimeType)||!Number.isSafeInteger(file.sizeBytes)||file.sizeBytes<1||file.sizeBytes>2_000_000_000)return null;
   if(typeof file.storageKey!=='string'||!/^deliveries\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_./-]{1,400}$/.test(file.storageKey)||file.storageKey.includes('..'))return null;
+  if(!file.storageKey.startsWith('deliveries/'+projectId+'/'+versionId+'/'))return null;
   normalized.push({name:file.name,mimeType:file.mimeType,sizeBytes:file.sizeBytes,storageKey:file.storageKey});
  }
  return {projectId,versionId,files:normalized,status:'manifest_pending_file_verification'};
