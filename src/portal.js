@@ -164,6 +164,12 @@ export async function portal(request, env) {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));
         const headers = new Headers(response.headers); headers.set('Cache-Control', 'no-store'); headers.set('X-Robots-Tag', 'noindex'); return new Response(response.body, { status: response.status, headers });
       }
+      if(path === '/api/portal/admin/generation-provider-state' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),requestKey=text(data.requestKey,80),status=text(data.status,30),providerJobId=text(data.providerJobId,160);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9_-]{20,80}$/.test(requestKey)||!['submission_uncertain','submitted','completed','failed'].includes(status)||(['submitted','completed'].includes(status)&&!providerJobId))return json({error:'Invalid provider state.'},400);
+        const result=await call(env,'generation-provider-state',{projectId,requestKey,status,providerJobId});return json(result,result.error?409:200);
+      }
       if(path === '/api/portal/admin/generation-approval' && request.method === 'POST') {
         const data=await body(request);
         const projectId=text(data.projectId,80),requestKey=text(data.requestKey,80),decision=text(data.decision,20);
@@ -362,6 +368,18 @@ export class ProjectHub {
         if(typeof data.resolution!=='string'||!data.resolution.trim()||data.resolution.length>1000)return {error:'Resolution required.'};
         escalation.status='resolved';escalation.resolution=data.resolution.trim();escalation.resolvedAt=new Date(now).toISOString();
         await store.put(key,escalation);return {escalation};
+      }
+      if(operation==='generation-provider-state') {
+        const {projectId,requestKey,status,providerJobId}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof requestKey!=='string'||!/^[a-zA-Z0-9_-]{20,80}$/.test(requestKey)||!['submission_uncertain','submitted','completed','failed'].includes(status))return {error:'Invalid provider state.'};
+        const key='generation-reservation:'+projectId+':'+requestKey,reservation=await store.get(key);
+        if(!reservation)return {error:'Reservation not found.'};
+        const allowed={approved_not_submitted:['submission_uncertain','submitted'],submission_uncertain:['submitted','failed'],submitted:['completed','failed'],completed:[],failed:[],rejected:[],pending_owner_approval:[]};
+        if(!allowed[reservation.status]?.includes(status))return {error:'Invalid provider transition.'};
+        if(['submitted','completed'].includes(status)&&(!providerJobId||typeof providerJobId!=='string'||providerJobId.length>160))return {error:'Provider job ID required.'};
+        if(reservation.providerJobId&&providerJobId&&reservation.providerJobId!==providerJobId)return {error:'Provider job ID mismatch.'};
+        reservation.status=status;reservation.providerJobId=providerJobId||reservation.providerJobId;reservation.updatedAt=new Date(now).toISOString();
+        await store.put(key,reservation);return {reservation};
       }
       if(operation==='generation-approval') {
         const {projectId,requestKey,decision}=data;
