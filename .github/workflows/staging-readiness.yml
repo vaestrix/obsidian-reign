@@ -1,0 +1,28 @@
+name: Staging Readiness (No Deploy)
+on:
+  pull_request:
+    paths:
+      - 'wrangler.staging.jsonc'
+      - 'src/**'
+      - 'test/**'
+      - '.github/workflows/staging-readiness.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: npm run build
+      - name: Validate isolated staging configuration
+        run: |
+          node -e "const fs=require('node:fs');const s=JSON.parse(fs.readFileSync('wrangler.staging.jsonc'));const p=JSON.parse(fs.readFileSync('wrangler.jsonc'));if(s.name===p.name||s.vars?.SAVANNAH_AUTO_SEND!=='false'||s.vars?.STAGING!=='true'||!s.r2_buckets?.some(b=>b.binding==='DELIVERY_BUCKET'&&b.bucket_name==='obsidian-reign-delivery-staging'))process.exit(1);"
+      - name: Bundle staging Worker without deploying
+        run: npx wrangler deploy --config wrangler.staging.jsonc --dry-run --outdir /tmp/obsidian-staging-bundle
