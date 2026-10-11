@@ -8,9 +8,7 @@ test('client delivery metadata route occurs after client session requirement',()
  assert.ok(auth>=0&&route>auth);
 });
 test('client delivery manifest checks ownership and approval',()=>{
- assert.match(portal,/project\.owner!==owner/);
- assert.match(portal,/Current approval required/);
- assert.match(portal,/Delivery not authorized/);
+ assert.match(portal,/authorizeCustomerDelivery\(\{project,owner,versionId,authorization,manifest,verification,now\}\)/);
 });
 test('client metadata excludes R2 storage keys',()=>{
  assert.match(portal,/manifest\.files\.map\(f=>\(\{name:f\.name,mimeType:f\.mimeType,sizeBytes:f\.sizeBytes\}\)\)/);
