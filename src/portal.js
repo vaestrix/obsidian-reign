@@ -398,6 +398,13 @@ export class ProjectHub {
         if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!await store.get('project:'+projectId))return {error:'Project not found.'};
         const validated=validateProductionMethod(method);
         if(!validated)return {error:'Invalid production method.'};
+        const previous=await store.get('production-method:'+projectId);
+        if(previous&&previous.method!==validated.method){
+          const tasks=await store.list({prefix:'agent-task:'+projectId+':',limit:101});
+          if(tasks.size>100)return {error:'Task history exceeds review limit. Owner reconciliation required.'};
+          const active=[...tasks.values()].some(t=>t.productionMethod&&['queued','in_progress','blocked','ready_for_review','completed'].includes(t.status));
+          if(active)return {error:'Production method locked after task creation. Cancel or complete work and create a new approved project scope.'};
+        }
         const record={...validated,projectId,updatedAt:new Date(now).toISOString(),recordedBy:'owner'};
         await store.put('production-method:'+projectId,record);return {method:record};
       }
