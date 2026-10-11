@@ -1,3 +1,4 @@
+import {validateDeliveryManifest} from './delivery-manifest.js';
 import {currentCustomerApproval} from './customer-approval-guard.js';
 import {validateApprovalEvidence,authorizesInitialCreativeTask} from './approval-evidence.js';
 import {validateProductionMethod,authorizeProductionMethod} from './production-method.js';
@@ -172,6 +173,11 @@ export async function portal(request, env) {
         const data=await body(request),projectId=text(data.projectId,80),method=validateProductionMethod(data);
         if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!method)return json({error:'Invalid production method.'},400);
         const result=await call(env,'production-method-save',{projectId,method});return json(result,result.error?409:200);
+      }
+      if(path === '/api/portal/admin/delivery-manifest' && request.method === 'POST') {
+        const data=await body(request),manifest=validateDeliveryManifest(data);
+        if(!manifest)return json({error:'Invalid delivery manifest.'},400);
+        const result=await call(env,'delivery-manifest-save',{manifest});return json(result,result.error?409:201);
       }
       if(path === '/api/portal/admin/delivery-authorization' && request.method === 'POST') {
         const data=await body(request),projectId=text(data.projectId,80),versionId=text(data.versionId,80);
@@ -419,6 +425,19 @@ export class ProjectHub {
         }
         const record={...validated,projectId,updatedAt:new Date(now).toISOString(),recordedBy:'owner'};
         await store.put('production-method:'+projectId,record);return {method:record};
+      }
+      if(operation==='delivery-manifest-save') {
+        const manifest=validateDeliveryManifest(data.manifest);
+        if(!manifest)return {error:'Invalid delivery manifest.'};
+        const {projectId,versionId}=manifest;
+        const project=await store.get('project:'+projectId);
+        if(!project||!currentCustomerApproval(project,versionId))return {error:'Current customer approval required.'};
+        const authorization=await store.get('delivery-authorization:'+projectId+':'+versionId);
+        if(!authorization||authorization.status!=='authorized_not_delivered')return {error:'Owner delivery authorization required.'};
+        const key='delivery-manifest:'+projectId+':'+versionId;
+        if(await store.get(key))return {error:'Manifest already exists; owner review required for changes.'};
+        const saved={...manifest,id:crypto.randomUUID(),createdAt:new Date(now).toISOString()};
+        await store.put(key,saved);return {manifest:saved};
       }
       if(operation==='delivery-authorize') {
         const {projectId,versionId}=data;
