@@ -11,6 +11,7 @@ test('download interface uses authenticated portal metadata and same-origin refr
  assert.match(script,/\/api\/portal\/delivery-files\?/);
  assert.match(script,/\/api\/portal\/delivery-refresh-check/);
  assert.match(script,/credentials:'same-origin'/);
+ assert.match(script,/issue\?\.error!=='Delivery access denied: fresh_verification_required'/);
 });
 test('browser helper is bundled and uses a single retry after refresh',()=>{
  assert.match(script,/import\('\/assets\/js\/client-delivery\.js'\)/);
