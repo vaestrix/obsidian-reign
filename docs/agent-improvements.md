@@ -18,3 +18,7 @@ Sources reviewed October 10, 2026:
 
 Remaining: evaluate JSON-mode decisions on synthetic routine, escalation, spam and banter cases before any adoption; improve privacy-safe queue reporting so morning summaries can verify pending/ambiguous state. No new paid provider or model migration applied.
 
+## Continued October 10 — private operational reporting
+
+Added scoped GET /api/anna/status and scripts/anna-status.mjs with aggregate-only durable-state counts. Pagination regression tests cover more than 1,000 stored records and prevent contact/content leakage. 53 combined tests pass. Live verified: outreach sent=4, no other outreach states; inbox escalation-pending=4, escalated=1, replied=4. These are retained/current states and include setup jobs; they are not customer/day totals. Both switches true; site/portal 200 and unauthorized status 401. No messages sent by this update. Production modules/assets/bindings preserved; rollback retained privately. Pending escalation notices remain flagged for source-aware investigation, not blindly retried.
+

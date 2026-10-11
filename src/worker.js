@@ -11,6 +11,11 @@ export default {
     if (new URL(request.url).pathname === '/webhooks/hostinger/anna') return receiveWebhook(request, { ...env,
       HOSTINGER_WEBHOOK_SECRET: env.ANNA_WEBHOOK_SECRET, HOSTINGER_MAILBOX_ID: env.ANNA_MAILBOX_ID,
       SAVANNAH_REGISTRY_ID: env.HOSTINGER_MAILBOX_ID, INBOUND_MAILBOX_ADDRESS: 'anna@obsidianreign.gg' });
+    if (new URL(request.url).pathname === '/api/anna/status') {
+      if (request.method !== 'GET') return Response.json({error:'method-not-allowed'},{status:405});
+      if (!await authenticate(request,env.ANNA_AGENT_TOKEN)) return Response.json({error:'unauthorized'},{status:401});
+      return env.SAVANNAH_INBOX.get(env.SAVANNAH_INBOX.idFromName(env.HOSTINGER_MAILBOX_ID)).fetch(new Request('https://internal/status',{method:'POST',body:JSON.stringify({inboxStatus:true})}));
+    }
     if (new URL(request.url).pathname === '/api/anna/prospects') {
       if (request.method !== 'POST') return Response.json({ error:'method-not-allowed' }, { status:405 });
       if (!await authenticate(request, env.ANNA_AGENT_TOKEN)) return Response.json({error:'unauthorized'},{status:401});

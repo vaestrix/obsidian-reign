@@ -1,3 +1,4 @@
+import { inboxStatus } from './inbox-status.js';
 import { queueProspect, dispatchProspects } from './anna-runtime.js';
 export const NAME = 'Savannah | Obsidian Reign Studios';
 const ADDRESS = 'savannah@obsidianreign.gg';
@@ -277,6 +278,7 @@ export class SavannahInbox {
   constructor(ctx, env) { this.ctx = ctx; this.env = env; }
   async fetch(request) {
     const event = await request.json();
+    if (event.inboxStatus === true) return json(await inboxStatus(this.ctx.storage, this.env));
     if (event.annaLead) return queueProspect(this.ctx, this.env, event.annaLead);
     const key = event.messageId ? `job:message:${event.messageId}` : `job:${event.mailbox === 'anna' ? 'anna:' : ''}${event.folder}:${event.uid}`;
     return this.ctx.blockConcurrencyWhile(async () => {

@@ -37,3 +37,8 @@ The legacy scripts/anna-agent.mjs preparation/fingerprint utility does not contr
 46 combined Anna, Savannah and portal checks passed. Real inbound handoff and first outbound introduction were confirmed in Sent. Public site/portal returned 200; unauthorized prospect and webhook requests returned 401; authenticated webhook configuration verification returned 200. Temporary authenticated inspection/setup routes were removed.
 
 Current production uses an Anna inbox module integrated into the existing Worker. Deployment helpers preserve all current modules, assets, text variables, secrets and Durable Object bindings. Do not upload an old single-module snapshot or old static-site assets. The repository source imports the same Anna runtime directly for future normal builds. Keep Wrangler's campaign switch synchronized with production.
+
+## Aggregate operational status
+
+Run node scripts/anna-status.mjs for read-only live counts via authenticated GET /api/anna/status using the existing scoped Anna token. Response includes enabled switches and current durable states for outreach/outbound jobs and inbox jobs. It paginates storage and returns no addresses, subjects, contents or contact keys. These are current/all-retained state counts, not daily activity totals. Morning reports must still reconcile full previous-day mailbox pagination for dated activity, separating owner tests. Pending and uncertain counts can now be verified without installing temporary hooks. A pending escalation notice is not proof of a new customer escalation; source context still needs private review.
+
