@@ -9,7 +9,7 @@ test('creative task creation is owner-gated',()=>{
  assert.ok(a>=0&&b>a&&b<z);
 });
 test('creative tasks require approval evidence and existing plan',()=>{
- assert.match(portal,/approvalEvidence\.trim\(\)\.length<8/);
+ assert.match(portal,/authorizesInitialCreativeTask\(validateApprovalEvidence\(approvalEvidence\)\)/);
  assert.match(portal,/Creative plan not found/);
 });
 test('creative plan task links prevent duplicate task creation',()=>{
