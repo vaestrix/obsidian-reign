@@ -77,6 +77,17 @@ export async function portal(request, env) {
     const result=await call(env,'agent-task-assigned',{projectId,agent});
     return json(result,result.error?404:200);
   }
+  if (path === '/api/portal/internal/agent-task-claim') {
+    if(request.method!=='POST')return json({error:'Method not allowed.'},405);
+    if(!env.PROJECT_HUB)return json({error:'Project access is temporarily unavailable.'},503);
+    const agent=await authenticateAgent(request,env);
+    if(!agent)return json({error:'Agent authentication required.'},401);
+    let data;try{data=await body(request);}catch{return json({error:'Invalid request body.'},400);}
+    const projectId=text(data.projectId,80),taskId=text(data.taskId,80);
+    if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-f0-9-]{36}$/.test(taskId))return json({error:'Invalid claim.'},400);
+    const result=await call(env,'agent-task-claim',{projectId,taskId,agent});
+    return json(result,result.error?409:200);
+  }
   if (path === '/api/portal/internal/agent-task-status') {
     if(request.method!=='POST')return json({error:'Method not allowed.'},405);
     if(!env.PROJECT_HUB)return json({error:'Project access is temporarily unavailable.'},503);
@@ -338,6 +349,18 @@ export class ProjectHub {
         if(typeof data.resolution!=='string'||!data.resolution.trim()||data.resolution.length>1000)return {error:'Resolution required.'};
         escalation.status='resolved';escalation.resolution=data.resolution.trim();escalation.resolvedAt=new Date(now).toISOString();
         await store.put(key,escalation);return {escalation};
+      }
+      if(operation==='agent-task-claim') {
+        const {projectId,taskId,agent}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof taskId!=='string'||!/^[a-f0-9-]{36}$/.test(taskId))return {error:'Invalid claim.'};
+        const key='agent-task:'+projectId+':'+taskId,task=await store.get(key);
+        if(!task||task.assignedTo!==agent)return {error:'Task unavailable.'};
+        if(task.status!=='queued')return {error:'Task already claimed or unavailable.'};
+        task.status='in_progress';task.attempts=(task.attempts||0)+1;
+        if(task.attempts>3)return {error:'Retry limit reached. Owner review required.'};
+        task.claimedAt=new Date(now).toISOString();task.updatedAt=task.claimedAt;
+        task.history=[...task.history,{status:'in_progress',at:task.claimedAt,by:agent,note:'Task claimed'}].slice(-50);
+        await store.put(key,task);return {task};
       }
       if(operation==='agent-task-assigned') {
         const projectId=data.projectId,agent=data.agent;
