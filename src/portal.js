@@ -362,6 +362,18 @@ export async function portal(request, env) {
     if (path === '/api/portal/me' && request.method === 'GET') { const user = await session(request, env); return json({ user }); }
     const user = await session(request, env);
     if (!user) return json({ error: 'Sign in to view your projects.' }, 401);
+    if(path === '/api/portal/delivery-download' && request.method === 'GET') {
+      const projectId=text(url.searchParams.get('projectId'),80),versionId=text(url.searchParams.get('versionId'),80),fileName=text(url.searchParams.get('file'),160);
+      if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId)||!fileName)return json({error:'Invalid download request.'},400);
+      if(!env.DELIVERY_BUCKET)return json({error:'Delivery storage unavailable.'},503);
+      const result=await call(env,'delivery-client-file',{projectId,versionId,owner:user.id,fileName});
+      if(result.error)return json(result,403);
+      const file=result.file;
+      let object;try{object=await env.DELIVERY_BUCKET.get(file.storageKey);}catch{return json({error:'File temporarily unavailable.'},503);}
+      if(!object||object.size!==file.sizeBytes||object.httpMetadata?.contentType?.toLowerCase()!==file.mimeType.toLowerCase())return json({error:'File verification failed.'},409);
+      const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+      return new Response(object.body,{headers:{'Content-Type':file.mimeType,'Content-Disposition':'attachment; filename="'+safeName+'"','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex, nofollow'}});
+    }
     if(path === '/api/portal/delivery-files' && request.method === 'GET') {
       const projectId=text(url.searchParams.get('projectId'),80),versionId=text(url.searchParams.get('versionId'),80);
       if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId))return json({error:'Invalid delivery request.'},400);
@@ -442,6 +454,19 @@ export class ProjectHub {
         }
         const record={...validated,projectId,updatedAt:new Date(now).toISOString(),recordedBy:'owner'};
         await store.put('production-method:'+projectId,record);return {method:record};
+      }
+      if(operation==='delivery-client-file') {
+        const {projectId,versionId,owner,fileName}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof versionId!=='string'||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId)||typeof fileName!=='string'||!fileName||fileName.length>160)return {error:'Invalid download request.'};
+        const project=await store.get('project:'+projectId);
+        if(!project||project.owner!==owner||!currentCustomerApproval(project,versionId))return {error:'Access denied.'};
+        const authorization=await store.get('delivery-authorization:'+projectId+':'+versionId);
+        if(!authorization||authorization.status!=='authorized_not_delivered')return {error:'Delivery not authorized.'};
+        const manifest=await store.get('delivery-manifest:'+projectId+':'+versionId);
+        if(!manifest)return {error:'Delivery manifest missing.'};
+        const matches=manifest.files.filter(f=>f.name===fileName);
+        if(matches.length!==1)return {error:'File unavailable or ambiguous.'};
+        return {file:matches[0]};
       }
       if(operation==='delivery-client-manifest') {
         const {projectId,versionId,owner}=data;
