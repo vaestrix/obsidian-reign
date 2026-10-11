@@ -16,3 +16,13 @@ test('refresh only commits after R2 identity comparison',()=>{
  assert.match(portal,/prior\.verifiedAt!==previousVerifiedAt/);
  assert.match(portal,/unchangedR2Snapshot\(prior\.files,files\)/);
 });
+
+test('fresh verification avoids redundant R2 calls',()=>{
+ const start=portal.indexOf("if(path === '/api/portal/delivery-refresh-check'");
+ const end=portal.indexOf("if(path === '/api/portal/delivery-download'",start);
+ const route=portal.slice(start,end);
+ const early=route.indexOf('if(!decision.requiresR2Recheck)');
+ const r2=route.indexOf('verifyDeliveryFiles(env.DELIVERY_BUCKET,state.manifest)');
+ assert.ok(early>=0&&r2>early);
+ assert.match(route,/stillFresh:true/);
+});
