@@ -13,6 +13,6 @@ test('download uses private R2 and no-store headers',()=>{
  assert.match(portal,/Content-Disposition':'attachment;/);
 });
 test('download rechecks project ownership and latest approval',()=>{
- assert.match(portal,/project\.owner!==owner\|\|!currentCustomerApproval\(project,versionId\)/);
+ assert.match(portal,/authorizeCustomerDelivery\(\{project,owner,versionId,authorization,manifest,verification:verified,now\}\)/);
  assert.match(portal,/File unavailable or ambiguous/);
 });
