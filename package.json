@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build-assets.js",
-    "deploy": "node scripts/build-assets.js && wrangler deploy",
+    "deploy": "node scripts/check-agent-deployment.mjs && node scripts/build-assets.js && wrangler deploy",
     "preview": "node scripts/build-assets.js && wrangler dev",
     "test": "node --test test/*.test.js"
   },
@@ -13,3 +13,4 @@
     "wrangler": "4.143.0"
   }
 }
+
