@@ -172,6 +172,11 @@ export async function portal(request, env) {
         if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!method)return json({error:'Invalid production method.'},400);
         const result=await call(env,'production-method-save',{projectId,method});return json(result,result.error?409:200);
       }
+      if(path === '/api/portal/admin/customer-approvals' && request.method === 'GET') {
+        const projectId=text(url.searchParams.get('projectId'),80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
+        const result=await call(env,'customer-approvals',{projectId});return json(result,result.error?404:200);
+      }
       if(path === '/api/portal/admin/creative-task' && request.method === 'POST') {
         const data=await body(request);
         const projectId=text(data.projectId,80),planId=text(data.planId,80),approvalEvidence=validateApprovalEvidence(data.approvalEvidence);
@@ -408,6 +413,13 @@ export class ProjectHub {
         }
         const record={...validated,projectId,updatedAt:new Date(now).toISOString(),recordedBy:'owner'};
         await store.put('production-method:'+projectId,record);return {method:record};
+      }
+      if(operation==='customer-approvals') {
+        const projectId=data.projectId;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return {error:'Invalid project ID.'};
+        const project=await store.get('project:'+projectId);
+        if(!project)return {error:'Project not found.'};
+        return {approvals:(project.reviews||[]).filter(v=>v.status==='approved'&&v.decidedAt).map(v=>({versionId:v.id,number:v.number,approvedAt:v.decidedAt,source:'authenticated_client_portal'}))};
       }
       if(operation==='creative-task-create') {
         const {projectId,planId,approvalEvidence}=data;
