@@ -1,3 +1,4 @@
+import {validateApprovalEvidence,authorizesInitialCreativeTask} from './approval-evidence.js';
 import {validateProductionMethod,authorizeProductionMethod} from './production-method.js';
 import {planCreativeProduction} from './creative-planner.js';
 import {authorizeAgentMessage} from './agent-policy.js';
@@ -173,8 +174,8 @@ export async function portal(request, env) {
       }
       if(path === '/api/portal/admin/creative-task' && request.method === 'POST') {
         const data=await body(request);
-        const projectId=text(data.projectId,80),planId=text(data.planId,80),approvalEvidence=text(data.approvalEvidence,500);
-        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-f0-9-]{36}$/.test(planId)||approvalEvidence.length<8)return json({error:'Valid plan and approval evidence required.'},400);
+        const projectId=text(data.projectId,80),planId=text(data.planId,80),approvalEvidence=validateApprovalEvidence(data.approvalEvidence);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-f0-9-]{36}$/.test(planId)||!authorizesInitialCreativeTask(approvalEvidence))return json({error:'Valid plan and owner scope authorization required.'},400);
         const result=await call(env,'creative-task-create',{projectId,planId,approvalEvidence});return json(result,result.error?409:201);
       }
       if(path === '/api/portal/admin/creative-plan' && request.method === 'POST') {
@@ -410,7 +411,7 @@ export class ProjectHub {
       }
       if(operation==='creative-task-create') {
         const {projectId,planId,approvalEvidence}=data;
-        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof planId!=='string'||!/^[a-f0-9-]{36}$/.test(planId)||typeof approvalEvidence!=='string'||approvalEvidence.trim().length<8)return {error:'Invalid creative task request.'};
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof planId!=='string'||!/^[a-f0-9-]{36}$/.test(planId)||!authorizesInitialCreativeTask(validateApprovalEvidence(approvalEvidence)))return {error:'Invalid creative task request.'};
         if(!await store.get('project:'+projectId))return {error:'Project not found.'};
         const productionMethod=await store.get('production-method:'+projectId);
         const readiness=authorizeProductionMethod(productionMethod);
@@ -422,7 +423,7 @@ export class ProjectHub {
         const existing=await store.get(uniqueKey);
         if(existing)return {taskId:existing.taskId,reused:true};
         const id=crypto.randomUUID(),at=new Date(now).toISOString();
-        const task={id,projectId,assignedTo:'vesper',title:'Produce '+plan.brief.assetType+' for '+plan.brief.platform,instructions:plan.brief.description,status:'queued',createdAt:at,updatedAt:at,planId,productionMethod:productionMethod.method,approvalEvidence:approvalEvidence.trim(),history:[{status:'queued',at,by:'owner',note:'Created from approved creative plan'}]};
+        const task={id,projectId,assignedTo:'vesper',title:'Produce '+plan.brief.assetType+' for '+plan.brief.platform,instructions:plan.brief.description,status:'queued',createdAt:at,updatedAt:at,planId,productionMethod:productionMethod.method,approvalEvidence:validateApprovalEvidence(approvalEvidence),history:[{status:'queued',at,by:'owner',note:'Created from approved creative plan'}]};
         await store.put('agent-task:'+projectId+':'+id,task);
         await store.put(uniqueKey,{taskId:id,createdAt:at});
         return {taskId:id,reused:false};
