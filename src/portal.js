@@ -367,6 +367,10 @@ export async function portal(request, env) {
     const user = await session(request, env);
     if (!user) return json({ error: 'Sign in to view your projects.' }, 401);
     if(path === '/api/portal/delivery-refresh-check' && request.method === 'POST') {
+      const origin=request.headers.get('Origin');
+      if(!origin||origin!==url.origin)return json({error:'Same-origin request required.'},403);
+      const site=request.headers.get('Sec-Fetch-Site');
+      if(site&&site!=='same-origin')return json({error:'Cross-site request denied.'},403);
       const data=await body(request),projectId=text(data.projectId,80),versionId=text(data.versionId,80);
       if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId))return json({error:'Invalid refresh request.'},400);
       const state=await call(env,'delivery-refresh-state',{projectId,versionId,owner:user.id});
