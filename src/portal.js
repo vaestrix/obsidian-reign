@@ -164,6 +164,13 @@ export async function portal(request, env) {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));
         const headers = new Headers(response.headers); headers.set('Cache-Control', 'no-store'); headers.set('X-Robots-Tag', 'noindex'); return new Response(response.body, { status: response.status, headers });
       }
+      if(path === '/api/portal/admin/generation-reservations' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),taskId=text(data.taskId,80),requestKey=text(data.requestKey,80),estimatedCents=data.estimatedCents;
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-f0-9-]{36}$/.test(taskId)||!/^[a-zA-Z0-9_-]{20,80}$/.test(requestKey)||!Number.isSafeInteger(estimatedCents)||estimatedCents<0||estimatedCents>100000)return json({error:'Invalid reservation.'},400);
+        const result=await call(env,'generation-reserve',{projectId,taskId,requestKey,estimatedCents});
+        return json(result,result.error?409:200);
+      }
       if(path === '/api/portal/admin/agent-alerts' && request.method === 'GET') {
         const projectId=text(url.searchParams.get('projectId'),80);
         if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
@@ -349,6 +356,17 @@ export class ProjectHub {
         if(typeof data.resolution!=='string'||!data.resolution.trim()||data.resolution.length>1000)return {error:'Resolution required.'};
         escalation.status='resolved';escalation.resolution=data.resolution.trim();escalation.resolvedAt=new Date(now).toISOString();
         await store.put(key,escalation);return {escalation};
+      }
+      if(operation==='generation-reserve') {
+        const {projectId,taskId,requestKey,estimatedCents}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof taskId!=='string'||!/^[a-f0-9-]{36}$/.test(taskId)||typeof requestKey!=='string'||!/^[a-zA-Z0-9_-]{20,80}$/.test(requestKey)||!Number.isSafeInteger(estimatedCents)||estimatedCents<0||estimatedCents>100000)return {error:'Invalid reservation.'};
+        const task=await store.get('agent-task:'+projectId+':'+taskId);
+        if(!task||task.assignedTo!=='vesper'||task.status!=='in_progress')return {error:'Active Vesper task required.'};
+        const key='generation-reservation:'+projectId+':'+requestKey;
+        const existing=await store.get(key);
+        if(existing)return existing.taskId===taskId&&existing.estimatedCents===estimatedCents?{reservation:existing,reused:true}:{error:'Idempotency key conflict.'};
+        const reservation={id:crypto.randomUUID(),projectId,taskId,requestKey,estimatedCents,status:'pending_owner_approval',providerJobId:null,createdAt:new Date(now).toISOString()};
+        await store.put(key,reservation);return {reservation,reused:false};
       }
       if(operation==='agent-task-claim') {
         const {projectId,taskId,agent}=data;
