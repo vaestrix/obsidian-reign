@@ -1,4 +1,6 @@
-import legacyWorker from './legacy-worker.js';
+import {adminAuthorized} from './legacy-worker.js';
+import { validateLead, readJson, studioOperation } from './studio.js';
+import {concepts,validatePortfolio} from './portfolio.js';
 
 const DAY = 86400000;
 const SESSION = '__Host-or_client';
@@ -60,13 +62,25 @@ async function agentAuthorized(request, env) {
 const clientProject = p => Object.fromEntries(['id','title','stage','due','summary','nextStep','fileUrl','timeline','createdAt','updatedAt','nextUpdateDate','revisionsIncluded','revisionsUsed','reviews'].map(k=>[k,p[k]]));
 
 export async function portal(request, env) {
-  const url = new URL(request.url), path = decodeURIComponent(url.pathname);
-  if (!(path.startsWith('/api/portal/') || path.startsWith('/auth/client/') || path.startsWith('/auth/admin/') || path === '/admin/projects' || path === '/project-admin.html' || path === '/project-admin')) return null;
+  const url = new URL(request.url), path = decodeURIComponent(url.pathname).replace(/\/+$/, '') || '/';
+  if (!(path === '/api/studio/inquiries' || path.startsWith('/api/portal/') || path.startsWith('/auth/client/') || path.startsWith('/auth/admin/') || path === '/admin/projects' || path === '/project-admin.html' || path === '/project-admin')) return null;
   if (!env.PROJECT_HUB) return json({ error: 'Project access is temporarily unavailable.' }, 503);
   const origin = env.PUBLIC_ORIGIN || url.origin;
   const isAgent = path.startsWith('/api/portal/agent/');
   if (request.method === 'POST' && !isAgent && request.headers.get('Origin') !== origin) return json({ error: 'Please submit this request from the studio website.' }, 403);
   try {
+    if (path === '/api/studio/inquiries') {
+      if(request.method !== 'POST') return json({error:'Use POST to submit an inquiry.'},405);
+      const rate=await call(env,'rate',{key:'inquiry:'+await hash(request.headers.get('CF-Connecting-IP')||'unknown')});
+      if(!rate.allowed)return json({error:'Too many requests. Please wait a minute and retry.'},429);
+      const data=await readJson(request);
+      if(data.website)return json({error:'Unable to accept this request.'},400);
+      const key=request.headers.get('Idempotency-Key')||'';
+      if(!/^[a-zA-Z0-9-]{20,80}$/.test(key))return json({error:'A submission identifier is required. Reload and try again.'},400);
+      const lead=validateLead(data), fingerprint=await hash(JSON.stringify(lead));
+      const result=await call(env,'lead-create',{key:await hash(key),fingerprint,lead:{...data,...lead}});
+      return json(result,result.error?409:201);
+    }
     if (isAgent) {
       if (!await agentAuthorized(request, env)) return json({ error: 'Agent authentication required.' }, 401);
       if(path === '/api/portal/agent/projects' && request.method === 'GET') return json(await call(env, 'all'));
@@ -84,8 +98,8 @@ export async function portal(request, env) {
       if (!rate.allowed) return json({ error: 'Too many attempts. Please wait a minute.' }, 429);
       const data = await body(request);
       const headers = new Headers(); headers.set('Authorization', 'Basic ' + btoa('admin:' + String(data.password || '')));
-      const check = await legacyWorker.fetch(new Request(origin + '/api/admin/state', { headers }), env);
-      if (!check.ok) return json({ error: 'That admin password was not accepted.' }, 401);
+      const validPassword = await adminAuthorized(new Request(origin + '/api/admin/state', { headers }), env);
+      if (!validPassword) return json({ error: 'That admin password was not accepted.' }, 401);
       const token = random(); await call(env, 'login', { key: await hash(token), user: { id: 'studio:admin', authVersion: env.ADMIN_PASSWORD_SHA256 }, duration: 3600000 });
       const response = json({ ok: true }); response.headers.append('Set-Cookie', cookie('__Host-or_admin', token, 3600)); return response;
     }
@@ -95,14 +109,27 @@ export async function portal(request, env) {
     }
     if (path === '/api/portal/providers' && request.method === 'GET') return json({ providers: Object.entries(providers).map(([id, p]) => ({ id, label: p.label, enabled: enabled(env, id) })) });
     if (path.startsWith('/admin/') || path.startsWith('/project-admin') || path.startsWith('/api/portal/admin/')) {
-      const check = await legacyWorker.fetch(new Request(origin + '/api/admin/state', { headers: request.headers }), env);
+      const validPassword = await adminAuthorized(request, env);
       const token = readCookie(request, '__Host-or_admin');
       const admin = token ? await call(env, 'session', { key: await hash(token) }) : null;
       const validSession = admin?.id === 'studio:admin' && admin.authVersion && admin.authVersion === env.ADMIN_PASSWORD_SHA256;
-      if (!check.ok && !validSession) return path.startsWith('/api/') ? json({ error: 'Admin sign-in required.' }, 401) : redirect('/admin-login.html');
+      if (!validPassword && !validSession) return path.startsWith('/api/') ? json({ error: 'Admin sign-in required.' }, 401) : redirect('/admin-login.html');
       if (path === '/admin/projects' || path === '/project-admin.html' || path === '/project-admin') {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));
         const headers = new Headers(response.headers); headers.set('Cache-Control', 'no-store'); headers.set('X-Robots-Tag', 'noindex'); return new Response(response.body, { status: response.status, headers });
+      }
+      if(path === '/api/portal/admin/portfolio' && request.method === 'GET') return json(await call(env,'portfolio-list'));
+      if(path === '/api/portal/admin/portfolio' && request.method === 'POST') {
+        const data=await readJson(request), item=validatePortfolio(data);
+        for(const asset of [item.media,item.poster]){const r=await env.ASSETS.fetch(new Request(origin+asset,{method:'HEAD'}));if(!r.ok)return json({error:'The referenced public media file was not found.'},400);}
+        const result=await call(env,'portfolio-save',{item,expectedUpdatedAt:data.expectedUpdatedAt||null});
+        return json(result,result.error?409:200);
+      }
+      if(path === '/api/portal/admin/inquiries' && request.method === 'GET') return json(await call(env,'lead-list'));
+      if(path === '/api/portal/admin/inquiries' && request.method === 'POST') {
+        const data=await readJson(request);
+        const result=await call(env,'lead-update',{id:text(data.id,80),stage:data.stage,notes:data.notes,expectedUpdatedAt:data.expectedUpdatedAt});
+        return json(result,result.error?(result.conflict?409:404):200);
       }
       if (path === '/api/portal/admin/projects' && request.method === 'GET') return json(await call(env, 'all'));
       if (path === '/api/portal/admin/projects' && request.method === 'POST') {
@@ -181,6 +208,22 @@ export class ProjectHub {
   async fetch(request) {
     const operation = new URL(request.url).pathname.slice(1), data = await request.json(), now = Date.now();
     const result = await this.ctx.storage.transaction(async store => {
+      if(operation==='portfolio-list'||operation==='portfolio-public') {
+        const saved=await store.list({prefix:'portfolio:',limit:201});
+        const merged=new Map(concepts.map(x=>[x.slug,x]));for(const item of saved.values())merged.set(item.slug,item);
+        return {items:[...merged.values()].filter(x=>operation==='portfolio-list'||x.published),hasMore:saved.size>200};
+      }
+      if(operation==='portfolio-save') {
+        const old=await store.get('portfolio:'+data.item.slug);
+        if(!old && (await store.list({prefix:'portfolio:',limit:200})).size>=200)return {error:'Portfolio capacity reached. Archive or extend the collection before adding projects.'};
+        if((old?.updatedAt||null)!==data.expectedUpdatedAt)return {error:'This portfolio entry changed. Reload before saving.'};
+        const item={...data.item,updatedAt:new Date(Math.max(now,old?Date.parse(old.updatedAt)+1:0)).toISOString()};
+        await store.put('portfolio:'+item.slug,item);
+        await store.put('portfolio-audit:'+now+':'+crypto.randomUUID(),{slug:item.slug,action:item.published?'Published':'Unpublished',actor:'Studio admin',at:item.updatedAt});
+        return {item};
+      }
+      const studio = await studioOperation(operation, data, store, now);
+      if(studio !== null) return studio;
       if (operation === 'login') { await store.put('session:' + data.key, { user: data.user, expiresAt: now + (data.duration === 3600000 ? 3600000 : 7 * DAY) }); return { ok: true }; }
       if (operation === 'session') { const s = await store.get('session:' + data.key); return s && s.expiresAt > now ? s.user : null; }
       if (operation === 'logout') { await store.delete('session:' + data.key); return { ok: true }; }
@@ -222,5 +265,5 @@ export class ProjectHub {
     if (!(await this.ctx.storage.getAlarm())) await this.ctx.storage.setAlarm(now + DAY);
     return json(result);
   }
-  async alarm() { for (const prefix of ['session:', 'oauth:', 'invite:', 'rate:']) { const rows = await this.ctx.storage.list({ prefix }); for (const [key, value] of rows) if (value.expiresAt <= Date.now()) await this.ctx.storage.delete(key); } await this.ctx.storage.setAlarm(Date.now() + DAY); }
+  async alarm() { for (const prefix of ['session:', 'oauth:', 'invite:', 'rate:', 'lead-request:']) { const rows = await this.ctx.storage.list({ prefix }); for (const [key, value] of rows) if (value.expiresAt <= Date.now()) await this.ctx.storage.delete(key); } await this.ctx.storage.setAlarm(Date.now() + DAY); }
 }
