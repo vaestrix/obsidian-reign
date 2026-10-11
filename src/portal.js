@@ -1,4 +1,5 @@
 import {authorizeAgentMessage} from './agent-policy.js';
+import {authenticateAgent,validateAgentEnvelope} from './agent-auth.js';
 import {authorizeOrderTransition} from './agent-workflow.js';
 import {adminAuthorized} from './legacy-worker.js';
 import { validateLead, readJson, studioOperation } from './studio.js';
@@ -66,6 +67,17 @@ const clientProject = p => Object.fromEntries(['id','title','stage','due','summa
 export async function portal(request, env) {
   const url = new URL(request.url), path = decodeURIComponent(url.pathname).replace(/\/+$/, '') || '/';
   if (!(path === '/api/studio/inquiries' || path.startsWith('/api/portal/') || path.startsWith('/auth/client/') || path.startsWith('/auth/admin/') || path === '/admin/projects' || path === '/project-admin.html' || path === '/project-admin')) return null;
+  if (path === '/api/portal/internal/agent-message') {
+    if(request.method!=='POST')return json({error:'Method not allowed.'},405);
+    if(!env.PROJECT_HUB)return json({error:'Project access is temporarily unavailable.'},503);
+    const agent=await authenticateAgent(request,env);
+    if(!agent)return json({error:'Agent authentication required.'},401);
+    let data;try{data=await body(request);}catch{return json({error:'Invalid request body.'},400);}
+    const envelope=validateAgentEnvelope(agent,data);
+    if(!envelope)return json({error:'Internal message denied.'},403);
+    const result=await call(env,'agent-message-create',envelope);
+    return json(result,result.error?400:201);
+  }
   if (!env.PROJECT_HUB) return json({ error: 'Project access is temporarily unavailable.' }, 503);
   const origin = env.PUBLIC_ORIGIN || url.origin;
   const isAgent = path.startsWith('/api/portal/agent/');
