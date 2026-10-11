@@ -11,9 +11,8 @@ test('refresh precheck compares live private R2 metadata with approved snapshot'
  assert.match(portal,/verifyDeliveryFiles\(env\.DELIVERY_BUCKET,state\.manifest\)/);
  assert.match(portal,/unchangedR2Snapshot\(state\.verification\.files,checked\.files\)/);
 });
-test('refresh precheck does not renew verification or bypass download gate',()=>{
- assert.match(portal,/Read-only verification\. Existing approval timestamp is not renewed/);
- const start=portal.indexOf("if(path === '/api/portal/delivery-refresh-check'");
- const end=portal.indexOf("if(path === '/api/portal/delivery-download'",start);
- assert.ok(!portal.slice(start,end).includes("'delivery-verification-record'"));
+test('refresh only commits after R2 identity comparison',()=>{
+ assert.match(portal,/delivery-refresh-commit/);
+ assert.match(portal,/prior\.verifiedAt!==previousVerifiedAt/);
+ assert.match(portal,/unchangedR2Snapshot\(prior\.files,files\)/);
 });
