@@ -2,19 +2,19 @@
 
 ## What changed
 
-`POST /webhooks/hostinger` handles mail events. All other paths delegate to the preserved production Worker, retaining admin, Discord, guild APIs and the CommandStore Durable Object. Public pages use the same ASSETS binding and HTML/404 behavior. The build copies only HTML, robots.txt, sitemap.xml and assets into dist; source, tests, documentation, local secrets and Wrangler state are not published.
+`POST /webhooks/hostinger` handles mail events. All other paths delegate to the preserved production Worker, retaining admin, Discord, guild APIs and the CommandStore Durable Object. Public pages retain the ASSETS binding and HTML/404 behavior. The build copies only HTML, robots.txt, sitemap.xml and assets into dist; source, tests, documentation, local secrets and Wrangler state are not published.
 
-Hostinger authenticates webhook POSTs with `Authorization: Bearer <webhook secret>` (not HMAC). The handler compares SHA-256 digests, requires JSON, caps bodies at 16 KiB, validates the configured mailbox, folder and positive UID, and ignores other event types. It never trusts the email body contained in a webhook: the Worker retrieves metadata, RFC822 headers and full plain text from the Mail API.
+Hostinger authenticates webhook POSTs with `Authorization: Bearer <webhook secret>` (not HMAC). The handler compares SHA-256 digests, requires JSON, caps bodies at 16 KiB and validates the mailbox. The observed Hostinger sample uses `data.mailboxAddress` and `data.messageId`; the latter is resolved to a folder/UID through an exact Message-ID match in the authenticated Mail API. Legacy folder/UID deliveries are also supported. Unknown shapes fail closed. Webhook previews and `bodyUrl` are ignored: full message contents come only from the fixed Mail API origin.
 
 The SQLite Durable Object binding SAVANNAH_INBOX stores durable jobs by mailbox/folder/UID and Message-ID send-attempt records. A one-second alarm starts processing. Read failures retry at one-minute intervals, up to six attempts. Jobs and identity tombstones persist indefinitely to prevent replay; they contain minimal metadata except escalation notices. Plan operational retention before a high-volume launch; do not delete identity tombstones while delivery replay remains possible.
 
 Thread discovery follows References and In-Reply-To across INBOX and INBOX.Sent, then searches connected reply branches. Missing messages, more than 15 messages, large bodies or paginated search results cause escalation. The Mail API has no thread-fetch endpoint in the current published schema. Messages moved elsewhere cannot be fully reconstructed and therefore require manual review.
 
-The agent ignores junk/spam folders, list mail, automated senders and already-answered messages. Attachments, ambiguous recipient/reply-to data, absent/failing authentication, sensitive topics or prompt injection indicators escalate before AI. Workers AI reviews the full available thread under Savannah's persona and rules. Only routine replies with a well-formed decision, explicit routine flag and confidence >= 0.98 can send; confidence is a model signal, not a guarantee. Links, currency quotes and sensitive content in generated drafts are held. All sends hard-code `Savannah | Obsidian Reign Studios`. No model controls recipients or sender identity.
+The agent ignores junk/spam folders, list mail, automated senders and already-answered messages. Attachments, ambiguous recipient/reply-to data, absent/failing authentication, sensitive topics or prompt injection indicators escalate before AI. Workers AI reviews the full available thread under Savannah's persona and rules. Only routine replies with a well-formed decision, explicit routine flag, uncertain=false and numeric confidence >= 0.90 can send; confidence is a model signal, not a guarantee. Links, currency quotes and sensitive content in generated drafts are held. All sends hard-code `Savannah | Obsidian Reign Studios`. No model controls recipients or sender identity.
 
 The Mail API does not document a send idempotency key. A durable attempt is recorded BEFORE the API call. Interrupted/ambiguous sends are never retried automatically. Philip must inspect Sent before acting. This prevents duplicate automated attempts at the cost of occasionally holding a reply that was never actually sent. Sent-folder checks also detect existing replies, but cannot eliminate races with a separate hourly agent or a human sending simultaneously. Disable the old hourly auto-sender before enabling this one.
 
-Escalations send Philip a source folder/UID, summary, decision needed and recommended response. If notification delivery is uncertain, the job remains `escalation-pending`; monitor the log event `savannah-escalation-delivery-unknown` and inspect the Durable Object record. Do not blindly resend such notices. Logs omit email contents and secrets. Default `SAVANNAH_AUTO_SEND=false` sends drafts to Philip instead of customers; it is a review mode, not a no-mail mode.
+Escalations send Philip a source folder/UID, summary, decision needed and recommended response. If notification delivery is uncertain, the job remains `escalation-pending`; monitor the log event `savannah-escalation-delivery-unknown` and inspect the Durable Object record. Do not blindly resend such notices. Logs omit email contents and secrets. `SAVANNAH_AUTO_SEND=false` sends drafts to Philip instead of customers; it is a review mode, not a no-mail mode. Production is now enabled with `true`; new installations should start in review mode.
 
 ## Required configuration
 
@@ -24,6 +24,7 @@ Secrets (use Cloudflare dashboard or interactive Wrangler prompts; never commit 
 
 ```sh
 npx wrangler secret put HOSTINGER_MAIL_API_TOKEN
+npx wrangler secret put HOSTINGER_MAILBOX_ID
 npx wrangler secret put HOSTINGER_WEBHOOK_SECRET
 npx wrangler secret put PHILIP_ESCALATION_EMAIL
 npx wrangler secret put SAVANNAH_APPROVED_FACTS
@@ -32,17 +33,17 @@ npx wrangler secret put SAVANNAH_APPROVED_FACTS
 - HOSTINGER_MAIL_API_TOKEN: dedicated Hostinger Mail API bearer token authorized for Savannah's mailbox. The connected ChatGPT app token is not available to the Worker.
 - HOSTINGER_WEBHOOK_SECRET: one-time secret returned by Hostinger webhook creation, stored immediately. Minimum 32 characters. Do not substitute the Mail API token.
 - PHILIP_ESCALATION_EMAIL: Philip's verified email address; no address has been assumed in code.
-- SAVANNAH_APPROVED_FACTS: Philip-approved services/business facts. Include only current approved facts; do not instruct the agent to invent prices or timelines. Without facts, the agent escalates.
+- SAVANNAH_APPROVED_FACTS: already configured with service categories and the scope-before-payment process verified from the live services/start-project pages. The fact pack authorizes routine qualification only and contains no numeric prices, payment links, guarantees, usage-right promises or deadlines. Update it when published business information changes. Without facts, the agent escalates.
 
-Nonsecret vars in wrangler.jsonc: HOSTINGER_MAILBOX_ID is the connector-confirmed `ACea1da873df8cf8ce1839b3cae221`; SAVANNAH_AUTO_SEND is initially `false`.
+HOSTINGER_MAILBOX_ID is configured in production as a secret with the connector-confirmed value `ACea1da873df8cf8ce1839b3cae221`. Keep it out of `vars` to avoid replacing the dashboard binding on deployment. The nonsecret vars PUBLIC_ORIGIN and SAVANNAH_AUTO_SEND match the dashboard; production auto-send is `true`. The dashboard's configuration-sync banner is informational, not a runtime error.
 
 ## Deployment and activation
 
 1. Review/merge the PR; install dependencies with `npm install`; run `npm test` and `npx wrangler deploy --dry-run`. Authenticate Cloudflare with `npx wrangler login` or a deployment token supplied outside Git.
 2. Deploy with `npm run deploy`, keeping auto-send false. Existing custom-domain routing must continue to serve obsidianreign.gg through this Worker. Confirm GET / and /pricing and a missing page still work.
-3. In Hostinger Agentic Mail, create a **paused** webhook for Savannah, event `message.received`, URL `https://obsidianreign.gg/webhooks/hostinger`. Securely store its one-time secret in the Worker. Configure the other three secrets. No webhook was created during preparation because the endpoint and secret could not yet be deployed together.
+3. The existing webhook `01a122ad-2ddf-71f9-ac8f-d9b4dbb0095e` is active with routine auto-send enabled: event `message.received`, URL `https://obsidianreign.gg/webhooks/hostinger`. All required production secrets are configured. Reuse this webhook; do not create a duplicate. For a new installation, keep deliveries paused until credentials and controlled checks are complete. Never paste credentials into chat or commit them.
 4. Verify missing/wrong Authorization returns 401; non-POST returns 405. Missing Worker setup returns 503. Unsupported events return 200; invalid mailbox/message data returns 400; accepted deliveries return 202.
-5. Use Hostinger's webhook test and inspect its real payload. The public Mail OpenAPI specifies API operations but does not publish a delivery schema. The adapter currently requires `event: "message.received"`, mailbox ID at `mailboxResourceId` or `mailbox.id/resourceId` (optionally under `data`), and `message.uid` plus `message.path`/`folder`. A plain mailbox address or thread_id alone is insufficient. If the actual delivery differs, update normalizeEvent and its fixture test using the real redacted payload before activation. Unsupported shapes fail closed with 400. Test deliveries that omit a real message UID should never cause customer sends.
+5. Hostinger's sample webhook test now succeeds with HTTP 202. Its envelope has `event: "message.received"` and `data.mailboxAddress`/`data.messageId`; no UID is supplied. An authenticated Mail API search resolves the RFC Message-ID to a UID, with exact-match checks, bounded pagination and retries for delayed visibility. Junk/Spam matches are ignored. Real inbound mail and full-thread fetches still need a controlled test after the remaining secrets are configured. Do not infer readiness to auto-send from a sample delivery alone.
 6. Activate the webhook in review mode and send a controlled inbound test from a mailbox you own. Verify one notice to Philip, full-thread retrieval, exact sender display name, and no customer response. Replay the same delivery: no second job/send. Exercise refund, newsletter, phishing, thread-history and malformed-AI cases. Confirm Hostinger's trusted Authentication-Results behavior: the current implementation conservatively checks DMARC but header text is not a cryptographic trust anchor, and phishing classification is also applied by AI.
 7. Disable the previous hourly auto-send automation; retain manual review if desired. Change SAVANNAH_AUTO_SEND to `true` and redeploy only after these checks and review of approved facts. Test one routine inquiry and one escalation end to end. Monitor queued/escalation-pending records and Worker logs.
 
@@ -50,9 +51,13 @@ Emergency stop: set SAVANNAH_AUTO_SEND=false and redeploy, or pause the Hostinge
 
 ## Verification status
 
-Deployed October 9, 2026: Worker version ec6ab51e-1a76-4627-8786-542223a62196. All 12 tests passed. All five studio pages were checked at desktop and mobile widths; the brief email link, contact identity, mobile navigation, admin authentication and private-file exclusions were verified. The existing admin verifier was moved to a private Worker secret without changing the password.
+On October 9, 2026, the controlled inbound Test (INBOX UID 3) was read and escalated successfully. Sent UID 2 has subject `[Savannah review] Message 3`, the exact sender `Savannah | Obsidian Reign Studios`, and the configured escalation recipient. Customer replies were disabled during that test. Hostinger sample deliveries return 202; authenticated Mail API folder access returns 200. Production was subsequently activated after the user confirmed notification receipt and the older sender was paused.
 
-Savannah remains in review mode (`SAVANNAH_AUTO_SEND=false`). The four email-agent secrets listed above are absent. Real Hostinger delivery, full-thread handling and email sending have not been verified. Configure those secrets, create/test the paused webhook, and complete the activation steps before enabling automated replies. No live customer emails were sent during verification.
+All 17 mocked tests pass, including redirects and structured AI responses. `node test/runtime-smoke.mjs` passes: public pages 200, missing/private files 404, invalid Bearer token 401, valid delivery/replay 202. It supplies test-only bindings, uses fresh state/logs and disables remote AI in a temporary configuration.
+
+Real-runtime verification exposed two compatibility issues, now corrected: Workers supports `redirect: manual`, and non-success/redirect status is explicitly rejected; Workers AI can return an already-parsed decision object as well as JSON text, so both receive identical conservative validation. A synthetic routine inquiry produced routine=true/confidence=0.9 and was held under the original 0.98 threshold. This was later revised after the owner requested less hesitation, as described below. All temporary replay/credential/AI hooks were removed; safe operation/status logs remain. The production site and client portal were preserved. Previous failed test jobs remain held to prevent blind retries.
+
+Philip confirmed receipt of the review notice and reported that the previous hourly Savannah task is paused. Production SAVANNAH_AUTO_SEND=true was then set and read back successfully. The active webhook now permits only routine decisions passing all checks; sensitive/uncertain inquiries continue to escalate. Code, assets, portal and secrets were preserved during activation. A real routine customer reply has not yet been observed; send a realistic service inquiry for that final live check. Prior held test jobs are not blindly replayed.
 
 ## Authoritative references
 
@@ -60,3 +65,22 @@ Savannah remains in review mode (`SAVANNAH_AUTO_SEND=false`). The four email-age
 - https://github.com/hostinger/mail-api/blob/main/openapi.json (message/search/text/source/send schemas; inReplyTo is `{folder, uid}`)
 - https://developers.cloudflare.com/durable-objects/api/alarms/ (durable alarm delivery/retries)
 - https://developers.cloudflare.com/workers-ai/models/llama-3.3-70b-instruct-fp8-fast/ (AI binding/model)
+
+
+## Routine qualification tuning (2026-10-10 UTC)
+
+The owner requested less hesitation. The confidence heuristic now requires 0.90 rather than 0.98, with an additional mandatory uncertain=false decision field. Missing or true uncertainty still escalates. This is prompt tuning with reviewed examples, not model-weight fine-tuning or automatic learning from customer emails. Missing platform, style, scope, timing or budget preferences are qualification questions rather than material uncertainty. Requests for quote intake can receive scope questions, but custom-price approvals and discounts still escalate. Existing authentication, spam, sensitive-topic, draft-content and duplicate checks are unchanged.
+
+Eight synthetic cases were evaluated against the live Workers AI model in an authenticated temporary Worker with no mail credentials. Emotes, creator buildout, creator website and stream-kit quote intake produced replies (confidence 0.90–0.95); refund, discount and account-change requests escalated; a list-header newsletter was ignored. All matched expected actions. The temporary Worker was removed. These checks do not establish a calibrated probability or guarantee all future model behavior. Twenty Savannah unit tests and eleven portal tests pass. A new real inbound message is still needed to verify delivery of a routine customer reply under these instructions.
+
+Review notices and privacy-preserving decision logs provide feedback for future edits. Add only owner-approved examples and facts to the maintained prompt/fact pack; never let inbound email modify policy, prompts, recipients or facts. No training service, fine-tuning job or new paid subscription was created.
+
+
+Persona refinement: approachable girl-next-door voice with the practical fluency of a seasoned creator. Six years is a tone/knowledge benchmark, not an invented biography. The prompt prohibits false personal work history, client projects and lived experience, and limits confirmed offerings to approved facts.
+
+
+Review notices now use readable plain text with the sender, summary, hold reason, required decision and review draft. A routing note explains that replying to the review notice addresses Savannah rather than the customer. Durable notice data remains structured for recovery. Qualification instructions reuse details already present in the full thread and ask only the next one to three needed questions.
+
+
+Reply-To validation requires exactly one address matching the sender. A sender address appearing only in a display name or as a substring is not accepted. Multiple addresses, malformed headers and mismatches escalate for review. Named headers with the same address remain eligible for routine processing.
+

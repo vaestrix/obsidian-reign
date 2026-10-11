@@ -25,7 +25,7 @@ function setup(overrides = {}) {
   const storage = new Storage();
   const env = { HOSTINGER_MAILBOX_ID: 'mailbox', HOSTINGER_MAIL_API_TOKEN: 'test-only',
     PHILIP_ESCALATION_EMAIL: 'philip@example.com', SAVANNAH_APPROVED_FACTS: 'We provide website design.', SAVANNAH_AUTO_SEND: 'true',
-    AI: { run: async () => ({ response: JSON.stringify({ action: 'reply', routine: true, confidence: 0.99, reply: 'Hi! Happy to help. What kind of website do you have in mind?' }) }) }, ...overrides };
+    AI: { run: async () => ({ response: JSON.stringify({ action: 'reply', routine: true, uncertain: false, confidence: 0.99, reply: 'Hi! Happy to help. What kind of website do you have in mind?' }) }) }, ...overrides };
   const object = new SavannahInbox({ storage, blockConcurrencyWhile: fn => fn() }, env);
   return { storage, env, object };
 }
@@ -37,10 +37,17 @@ function mockMail(t, options = {}) {
     if (url.endsWith('/send')) {
       const body = JSON.parse(init.body); sends.push(body);
       if (options.timeout && body.to[0] === 'customer@example.com') throw new Error('timeout');
+      if (options.emptySend) return new Response(null, { status: 204 });
       return Response.json({ data: { messageId: '<sent@example.com>' } });
     }
     if (options.readFailure) return new Response('', { status: 503 });
-    if (url.includes('/search')) return Response.json({ data: options.alreadyAnswered ? [{ inReplyTo: message.messageId }] : [], pagination: { totalPages: 1 } });
+    if (options.redirectRead) return new Response('', { status: 302, headers: { location: 'https://attacker.example/' } });
+    if (url.includes('/search')) {
+      const query = JSON.parse(init.body);
+      if (options.resolveFolder && query.header === `Message-ID:${message.messageId}` && url.includes(`/folders/${encodeURIComponent(options.resolveFolder)}/`))
+        return Response.json({ data: [{ ...message, path: options.resolveFolder }], pagination: { totalPages: 1 } });
+      return Response.json({ data: options.alreadyAnswered ? [{ inReplyTo: message.messageId }] : [], pagination: { totalPages: 1 } });
+    }
     if (url.endsWith('/source')) return new Response('Authentication-Results: mx; dmarc=pass\r\n\r\nbody');
     if (url.endsWith('/text')) return Response.json({ data: { text: options.text ?? message.text } });
     return Response.json({ data: { ...message, headers: undefined, text: undefined, ...(options.message ?? {}) } });
@@ -49,6 +56,31 @@ function mockMail(t, options = {}) {
   return { sends, calls };
 }
 async function enqueue(object) { return object.fetch(new Request('https://internal', { method: 'POST', body: JSON.stringify({ uid: 12, folder: 'INBOX' }) })); }
+
+test('successful empty send responses finish replies and escalations without repeat sends', async t => {
+  const { sends } = mockMail(t, { emptySend: true });
+  const reply = setup(); await enqueue(reply.object); await reply.object.alarm(); await reply.object.alarm();
+  assert.equal((await reply.storage.get('job:INBOX:12')).state, 'replied');
+  const review = setup({ SAVANNAH_AUTO_SEND: 'false' }); await enqueue(review.object); await review.object.alarm(); await review.object.alarm();
+  assert.equal((await review.storage.get('job:INBOX:12')).state, 'escalated');
+  assert.equal(sends.length, 2);
+});
+
+test('Mail API redirects are held without forwarding credentials to the redirect target', async t => {
+  const { object, storage } = setup(); const { calls, sends } = mockMail(t, { redirectRead: true });
+  await enqueue(object);
+  for (let i = 0; i < 6; i++) await object.alarm();
+  assert.equal((await storage.get('job:INBOX:12')).state, 'escalated');
+  assert.equal(sends.length, 1); assert.equal(sends[0].to[0], 'philip@example.com');
+  assert.ok(calls.every(c => c.init.redirect === 'manual' && c.url.startsWith('https://api.mail.hostinger.com/')));
+});
+
+test('Workers AI structured response receives the same conservative reply checks', async t => {
+  const { object } = setup({ AI: { run: async () => ({ response: { action: 'reply', routine: true, uncertain: false, confidence: 0.99, reply: 'Hi! What kind of creator website do you have in mind?' } }) } });
+  const { sends } = mockMail(t); await enqueue(object); await object.alarm();
+  assert.equal(sends.length, 1); assert.equal(sends[0].to[0], 'customer@example.com');
+  assert.equal(sends[0].displayName, NAME);
+});
 
 test('static requests retain asset behavior; webhook never falls back to assets', async () => {
   let count = 0; const env = { ASSETS: { fetch: () => { count++; return new Response('site'); } } };
@@ -74,6 +106,13 @@ test('authenticated webhook checks mailbox, UID, event, JSON and size', async ()
   assert.throws(() => normalizeEvent({ ...event, message: { uid: 0, path: 'INBOX' } }, 'mailbox'));
   assert.equal(normalizeEvent({ event: 'message.sent' }, 'mailbox'), null);
 });
+test('observed Hostinger payload uses mailboxAddress and Message-ID; bodyUrl is ignored', () => {
+  const payload = { event: 'message.received', data: { mailboxAddress: 'savannah@obsidianreign.gg', messageId: '<in@example.com>',
+    plainBody: 'Untrusted preview', bodyUrl: 'https://attacker.example/' } };
+  assert.deepEqual(normalizeEvent(payload, 'mailbox'), { messageId: '<in@example.com>' });
+  assert.throws(() => normalizeEvent({ ...payload, data: { ...payload.data, mailboxAddress: 'other@example.com' } }, 'mailbox'));
+  assert.throws(() => normalizeEvent({ ...payload, data: { ...payload.data, messageId: 'id\r\nInjected: value' } }, 'mailbox'));
+});
 test('spam, lists, automated mail and self messages ignored', () => {
   for (const patch of [{ path: 'INBOX.Junk' }, { from: { address: 'savannah@obsidianreign.gg' } },
     { headers: { 'list-unsubscribe': '<https://example.com>' } }, { headers: { 'auto-submitted': 'auto-replied' } },
@@ -96,6 +135,17 @@ test('routine inquiry replies with exact identity and source reference, once', a
   assert.equal(sends[0].to[0], 'customer@example.com');
   assert.equal((await storage.get('job:INBOX:12')).state, 'replied');
 });
+test('real delivery Message-ID resolves to API UID before reply and replay is suppressed', async t => {
+  const { sends } = mockMail(t, { resolveFolder: 'INBOX' }); const { object } = setup();
+  const deliver = () => object.fetch(new Request('https://internal', { method: 'POST', body: JSON.stringify({ messageId: message.messageId }) }));
+  await deliver(); await object.alarm(); await deliver(); await object.alarm();
+  assert.equal(sends.length, 1); assert.deepEqual(sends[0].inReplyTo, { folder: 'INBOX', uid: 12 });
+});
+test('real delivery resolving to Junk is ignored', async t => {
+  const { sends } = mockMail(t, { resolveFolder: 'INBOX.Junk' }); const { object } = setup();
+  await object.fetch(new Request('https://internal', { method: 'POST', body: JSON.stringify({ messageId: message.messageId }) }));
+  await object.alarm(); assert.equal(sends.length, 0);
+});
 test('refund escalates only to Philip', async t => {
   const { sends } = mockMail(t, { text: 'I want a refund' }); const { object } = setup();
   await enqueue(object); await object.alarm();
@@ -104,7 +154,7 @@ test('refund escalates only to Philip', async t => {
 test('dry run, malformed AI and low confidence never reply to customer', async t => {
   const { sends } = mockMail(t);
   for (const env of [{ SAVANNAH_AUTO_SEND: 'false' }, { AI: { run: async () => ({ response: 'broken' }) } },
-    { AI: { run: async () => ({ response: JSON.stringify({ action: 'reply', routine: true, confidence: 0.7, reply: 'Hi' }) }) } }]) {
+    { AI: { run: async () => ({ response: JSON.stringify({ action: 'reply', routine: true, uncertain: false, confidence: 0.7, reply: 'Hi' }) }) } }]) {
     const { object } = setup(env); await enqueue(object); await object.alarm();
   }
   assert.equal(sends.length, 3); assert.ok(sends.every(s => s.to[0] === 'philip@example.com'));
@@ -128,3 +178,87 @@ test('read failure retries then creates escalation', async t => {
 test('persona includes warmth, empathy, sarcasm and boss mentality', () => {
   for (const word of ['cute', 'loving', 'empathetic', 'sarcasm', 'boss mentality', 'untrusted DATA']) assert.ok(PERSONA.includes(word));
 });
+
+ test('held reply explains confidence check and replaces empty review placeholders', async t => {
+  const { sends } = mockMail(t);
+  const { object, storage } = setup({ AI: { run: async () => ({ response: { action: 'reply', routine: true, uncertain: false, confidence: 0.7,
+    reply: 'Hi! What services do you need?', reason: 'Routine inquiry', decision: 'none', recommendedResponse: 'none' } }) } });
+  await enqueue(object); await object.alarm();
+  const notice = (await storage.get('job:INBOX:12')).notice;
+  assert.match(sends[0].text, /Why I held it:/);
+  assert.match(sends[0].text, /Replying to this notice sends to Savannah, not the customer/);
+  assert.match(notice.reason, /0.90 minimum/);
+  assert.match(notice.decision, /respond manually/);
+  assert.equal(notice.recommendedResponse, 'Hi! What services do you need?');
+  assert.deepEqual(sends[0].to, ['philip@example.com']);
+ });
+
+test('routine qualification at 0.90 replies while explicit uncertainty still escalates', async t => {
+  const { sends } = mockMail(t);
+  for (const uncertain of [false, true, undefined]) {
+    const { object } = setup({ AI: { run: async () => ({ response: { action: 'reply', routine: true, uncertain, confidence: 0.9, reply: 'Hi! Which platform and emote style do you have in mind?' } }) } });
+    await enqueue(object); await object.alarm();
+  }
+  assert.deepEqual(sends.map(s => s.to[0]), ['customer@example.com', 'philip@example.com', 'philip@example.com']);
+});
+
+test('seasoned girl-next-door persona remains honest about personal experience', () => {
+ assert.match(PERSONA, /girl next door/);
+ assert.match(PERSONA, /six or more years/);
+ assert.match(PERSONA, /never a claim that you personally have six years/);
+});
+
+test('reply address must exactly match the sender, including named headers', () => {
+ const check = value => preflight({ ...message, headers: { ...message.headers, 'reply-to': value } });
+ for (const value of ['customer@example.com', 'Customer <CUSTOMER@example.com>']) assert.equal(check(value), 'review');
+ for (const value of ['customer@example.com.attacker.test', 'customer@example.com <attacker@example.com>',
+  'customer@example.com, attacker@example.com', 'attacker@example.com', 'Customer <customer@example.com>; attacker@example.com']) assert.equal(check(value), 'escalate');
+});
+
+test('Anna opt-out is durably suppressed without AI or reply', async t => {
+ const { sends } = mockMail(t, { text: 'Please stop outreach.' });
+ let aiCalls=0; const { object, storage } = setup({ AI: { run: async () => { aiCalls++; throw Error('Must not run'); } } });
+ await enqueue(object); await object.alarm(); await object.alarm();
+ assert.equal(aiCalls,0); assert.equal(sends.length,0);
+ assert.equal((await storage.get('job:INBOX:12')).state, 'opted-out');
+ const contacts=await storage.list({prefix:'anna:contact:'});
+ assert.equal(contacts.size,1); assert.equal([...contacts.values()][0].state,'suppressed');
+});
+
+test('Anna alias inquiries reach Savannah while own alias mail is ignored', async t => {
+ const aliasMessage = { ...message, to: [{ address: 'anna@obsidianreign.gg' }] };
+ assert.equal(preflight(aliasMessage), 'review');
+ assert.equal(preflight({ ...aliasMessage, from: { address: 'anna@obsidianreign.gg' } }), 'ignore');
+ const { sends } = mockMail(t, { message: aliasMessage }); const { object } = setup();
+ await enqueue(object); await object.alarm();
+ assert.equal(sends.length, 1); assert.equal(sends[0].displayName, NAME); assert.deepEqual(sends[0].to, ['customer@example.com']);
+ assert.equal(preflight({ ...message, to: [{ address: 'other@obsidianreign.gg' }] }), 'escalate');
+});
+
+test('Anna mailbox inquiry uses Anna API credentials with Savannah response identity', async t => {
+  const { sends, calls } = mockMail(t, { message: { ...message, to: [{ address: 'anna@obsidianreign.gg' }] } });
+  const { object } = setup({ ANNA_MAIL_API_TOKEN:'anna-test-only', ANNA_MAILBOX_ID:'anna-mailbox' });
+  await object.fetch(new Request('https://internal/enqueue',{method:'POST',body:JSON.stringify({folder:'INBOX',uid:12,mailbox:'anna'})}));
+  await object.alarm();
+  assert.equal(sends.length,1); assert.equal(sends[0].displayName,NAME);
+  assert.ok(calls.every(c=>c.url.includes('/mailboxes/anna-mailbox/')));
+  assert.ok(calls.every(c=>c.init.headers.Authorization==='Bearer anna-test-only'));
+});
+
+for (const text of ["Please don't email me again.", "Don’t contact me.", "Take me off your mailing list.", "Remove me from this email list.", "No more emails please."]) {
+ test('natural opt-out persists suppression without AI or send: '+text, async t => {
+  const { sends } = mockMail(t,{text}); let aiCalls=0;
+  const {object,storage}=setup({AI:{run:async()=>{aiCalls++;throw Error('Must not run');}}});
+  await enqueue(object);await object.alarm();await object.alarm();
+  assert.equal(aiCalls,0);assert.equal(sends.length,0);
+  assert.equal((await storage.get('job:INBOX:12')).state,'opted-out');
+  assert.equal([...(await storage.list({prefix:'anna:contact:'})).values()][0].state,'suppressed');
+ });
+}
+test('mailing-list design discussion is not an outreach opt-out',async t=>{
+ const {sends}=mockMail(t,{text:'Can you design branding for my email list?'});
+ const {object,storage}=setup();await enqueue(object);await object.alarm();
+ assert.equal(sends.length,1);assert.equal(sends[0].to[0],'customer@example.com');
+ assert.equal((await storage.list({prefix:'anna:contact:'})).size,0);
+});
+

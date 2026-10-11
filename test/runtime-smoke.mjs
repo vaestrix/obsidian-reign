@@ -1,15 +1,34 @@
 // Local-only runtime check. No Mail API token or remote AI request is used.
 import { spawn } from 'node:child_process';
 import assert from 'node:assert/strict';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 const secret = 'local-test-only-'.repeat(3);
+// Keep runtime logs/state outside the watched asset root. Disable remote AI only
+// in this generated test configuration; production config stays unchanged.
+const temporary = await mkdtemp(join(tmpdir(), 'savannah-smoke-'));
+const config = JSON.parse(await readFile('wrangler.jsonc', 'utf8'));
+config.main = resolve(config.main);
+config.assets.directory = resolve(config.assets.directory);
+config.compatibility_date = '2026-10-03';
+config.vars.HOSTINGER_WEBHOOK_SECRET = secret;
+config.vars.HOSTINGER_MAILBOX_ID = 'ACea1da873df8cf8ce1839b3cae221';
+delete config.ai;
+const configPath = join(temporary, 'wrangler.json');
+await writeFile(configPath, JSON.stringify(config));
 const child = spawn(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'dev', '--local', '--port', '8789',
-  '--compatibility-date', '2026-10-03', '--var', `HOSTINGER_WEBHOOK_SECRET:${secret}`], { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+  '--ip', '127.0.0.1', '--config', configPath, '--persist-to', join(temporary, 'state')], {
+  stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true,
+  env: { ...process.env, WRANGLER_LOG_PATH: join(temporary, 'logs'), WRANGLER_SEND_METRICS: 'false' }
+});
 let output = '';
 child.stdout.on('data', b => { output += b; }); child.stderr.on('data', b => { output += b; });
 try {
   const until = Date.now() + 90000;
   let ready = false;
   while (Date.now() < until) {
+    if (child.exitCode !== null) throw new Error('Runtime exited: ' + output.slice(-3000));
     try { await fetch('http://127.0.0.1:8789/webhooks/hostinger', { signal: AbortSignal.timeout(1000) }); ready = true; break; }
     catch { await new Promise(resolve => setTimeout(resolve, 500)); }
   }
@@ -28,3 +47,4 @@ try {
   const duplicate = await post(secret); assert.equal(duplicate.status, 202); assert.equal((await duplicate.json()).duplicate, true);
   console.log('Webhook: wrong token 401; accepted 202; duplicate 202');
 } finally { child.kill(); }
+

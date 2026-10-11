@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "id": "anna-streamers-initial",
+  "name": "Anna",
+  "target": {
+    "language": "English",
+    "segment": "smaller growing streamers",
+    "expansion": "Gradually test larger streamers in small batches when results are weak; do not increase send volume automatically."
+  },
+  "dailyLimit": 5,
+  "approvalMode": "campaign",
+  "businessAddress": "Obsidian Reign Studios\n834-F S Perry Street #1258\nCastle Rock, CO 80104",
+  "businessAddressConfirmed": true,
+  "contactName": "Obsidian Reign Studios",
+  "handoffEmail": "savannah@obsidianreign.gg",
+  "status": "active",
+  "automaticSending": true,
+  "aliasAddress": "anna@obsidianreign.gg",
+  "aliasApiSendingVerified": false,
+  "senderAddress": "anna@obsidianreign.gg",
+  "mailboxId": "AC087f44100a23d1b44998ca5baa35",
+  "senderMode": "separate-mailbox",
+  "mailApiVerified": true,
+  "focus": [
+    "emotes",
+    "stream branding",
+    "stream kits"
+  ],
+  "tone": "warm, casual, professional, brief and personalized",
+  "approval": {
+    "approvedBy": "Philip",
+    "approvedAt": "2026-10-10T03:16:55.15Z",
+    "scope": "One campaign, five emails per day",
+    "evidence": "Direct user approval in this chat",
+    "messageApproach": "I’m Anna with Obsidian Reign Studios. We help creators with emotes, stream branding, and stream kits. If you’re considering a refresh, Savannah can help you explore what fits your channel."
+  },
+  "liveReplyTest": {
+    "senderDisplayName": "Savannah | Obsidian Reign Studios",
+    "testedAt": "2026-10-10T03:46:14Z",
+    "senderAddress": "anna@obsidianreign.gg",
+    "passed": true
+  },
+  "discoverySchedule": {
+    "time": "09:00",
+    "timezone": "America/Chicago",
+    "reviewAfterDays": 14,
+    "automationId": "anna-streamer-prospecting"
+  }
+}
