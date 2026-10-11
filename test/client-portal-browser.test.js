@@ -15,7 +15,7 @@ async function setup(handler){
   return handler(String(url),opts,calls);
  };
  dom.window.eval(script);
- await new Promise(resolve=>setTimeout(resolve,25));
+ await new Promise(resolve=>setTimeout(resolve,60));
  return {dom,calls};
 }
 test('approved customer sees delivery action',async()=>{
