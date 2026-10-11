@@ -165,6 +165,12 @@ export async function portal(request, env) {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));
         const headers = new Headers(response.headers); headers.set('Cache-Control', 'no-store'); headers.set('X-Robots-Tag', 'noindex'); return new Response(response.body, { status: response.status, headers });
       }
+      if(path === '/api/portal/admin/creative-task' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),planId=text(data.planId,80),approvalEvidence=text(data.approvalEvidence,500);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-f0-9-]{36}$/.test(planId)||approvalEvidence.length<8)return json({error:'Valid plan and approval evidence required.'},400);
+        const result=await call(env,'creative-task-create',{projectId,planId,approvalEvidence});return json(result,result.error?409:201);
+      }
       if(path === '/api/portal/admin/creative-plan' && request.method === 'POST') {
         const data=await body(request);
         const plan=planCreativeProduction(data);
@@ -380,6 +386,22 @@ export class ProjectHub {
         if(typeof data.resolution!=='string'||!data.resolution.trim()||data.resolution.length>1000)return {error:'Resolution required.'};
         escalation.status='resolved';escalation.resolution=data.resolution.trim();escalation.resolvedAt=new Date(now).toISOString();
         await store.put(key,escalation);return {escalation};
+      }
+      if(operation==='creative-task-create') {
+        const {projectId,planId,approvalEvidence}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof planId!=='string'||!/^[a-f0-9-]{36}$/.test(planId)||typeof approvalEvidence!=='string'||approvalEvidence.trim().length<8)return {error:'Invalid creative task request.'};
+        if(!await store.get('project:'+projectId))return {error:'Project not found.'};
+        const plans=await store.list({prefix:'creative-plan:'+projectId+':',limit:101});
+        const plan=[...plans.values()].find(p=>p.id===planId);
+        if(!plan)return {error:'Creative plan not found.'};
+        const uniqueKey='creative-task-link:'+projectId+':'+planId;
+        const existing=await store.get(uniqueKey);
+        if(existing)return {taskId:existing.taskId,reused:true};
+        const id=crypto.randomUUID(),at=new Date(now).toISOString();
+        const task={id,projectId,assignedTo:'vesper',title:'Produce '+plan.brief.assetType+' for '+plan.brief.platform,instructions:plan.brief.description,status:'queued',createdAt:at,updatedAt:at,planId,approvalEvidence:approvalEvidence.trim(),history:[{status:'queued',at,by:'owner',note:'Created from approved creative plan'}]};
+        await store.put('agent-task:'+projectId+':'+id,task);
+        await store.put(uniqueKey,{taskId:id,createdAt:at});
+        return {taskId:id,reused:false};
       }
       if(operation==='creative-plan-save'||operation==='creative-plan-list') {
         const projectId=operation==='creative-plan-save'?data.plan?.brief?.projectId:data.projectId;
