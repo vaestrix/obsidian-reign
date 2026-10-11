@@ -7,3 +7,12 @@
 @media(max-width:900px){.service-layout{grid-template-columns:1fr;gap:32px}.service-hero{padding-top:48px}.case-grid{gap:20px}.main-nav{gap:12px}.metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.case-grid{grid-template-columns:1fr}.case-card-copy,.service-aside{padding:22px}.service-hero h1{font-size:38px}.hero-actions .btn{width:100%}.metrics-grid{grid-template-columns:1fr 1fr}.metric{padding:14px}.metric strong{font-size:23px}.service-layout h2{font-size:27px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.reveal{opacity:1!important;transform:none!important}}
+
+/* Consistent expressive type and breathing room on service and work pages. */
+body .service-hero h1,body .service-layout h2,body .case-card h2,body .privacy-body h2{font-family:var(--font-display);font-weight:600;line-height:1.15;letter-spacing:-.02em;}
+body .service-aside h2{font-size:clamp(28px,3vw,38px);margin:18px 0;}
+body .service-aside .btn,body .service-aside .text-link{display:flex;width:fit-content;max-width:100%;margin-top:20px;}
+body .service-aside .text-link{margin-top:16px;padding:8px 0;font-weight:700;}
+body .service-layout{gap:clamp(28px,5vw,64px);}body .service-layout>div,body .service-aside{min-width:0;}
+body .service-layout p{max-width:65ch;}body .eyebrow{line-height:1.5;}
+@media(max-width:600px){body .service-aside .btn{width:100%;}body .service-layout h2{font-size:28px;}body .service-aside{padding:24px;}}
