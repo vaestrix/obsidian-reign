@@ -377,6 +377,7 @@ export async function portal(request, env) {
       if(state.error)return json({error:'Delivery unavailable.'},403);
       const decision=canRefreshDelivery({...state,owner:user.id,versionId});
       if(!decision.allowed)return json({error:'Delivery unavailable.',reason:decision.reason},403);
+      if(!decision.requiresR2Recheck)return json({verified:true,refreshed:false,stillFresh:true});
       if(!env.DELIVERY_BUCKET)return json({error:'Delivery storage unavailable.'},503);
       const checked=await verifyDeliveryFiles(env.DELIVERY_BUCKET,state.manifest);
       if(!checked.verified||!unchangedR2Snapshot(state.verification.files,checked.files))return json({error:'File verification requires owner review.'},409);
