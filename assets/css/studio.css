@@ -1023,3 +1023,6 @@ body [data-vibe-preview] .selection-film figcaption{display:none;}
 .selection-film[hidden]{display:none;}
 
 .cinema-frame:has([data-ad-video]){aspect-ratio:16 / 9;} [data-ad-video]{object-fit:contain;} .scene-title .btn{margin:16px 8px 0 0;}
+
+/* Keep project questions comfortable to read and independently expandable. */
+body .faq-grid{align-items:start;} body .faq-item summary{font-family:Nunito,system-ui,sans-serif;font-size:16px;line-height:1.45;} body .faq-item p{color:#b9adc7;font-size:14px;line-height:1.75;}
