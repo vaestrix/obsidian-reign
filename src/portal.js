@@ -1,3 +1,4 @@
+import {verifyDeliveryFiles} from './delivery-storage.js';
 import {validateDeliveryManifest} from './delivery-manifest.js';
 import {currentCustomerApproval} from './customer-approval-guard.js';
 import {validateApprovalEvidence,authorizesInitialCreativeTask} from './approval-evidence.js';
@@ -173,6 +174,15 @@ export async function portal(request, env) {
         const data=await body(request),projectId=text(data.projectId,80),method=validateProductionMethod(data);
         if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!method)return json({error:'Invalid production method.'},400);
         const result=await call(env,'production-method-save',{projectId,method});return json(result,result.error?409:200);
+      }
+      if(path === '/api/portal/admin/delivery-verify' && request.method === 'POST') {
+        const data=await body(request),projectId=text(data.projectId,80),versionId=text(data.versionId,80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId))return json({error:'Invalid delivery verification request.'},400);
+        const result=await call(env,'delivery-manifest-get',{projectId,versionId});
+        if(result.error)return json(result,404);
+        const check=await verifyDeliveryFiles(env.DELIVERY_BUCKET,result.manifest);
+        if(!check.verified)return json({verified:false,reason:check.reason},409);
+        return json({verified:true,projectId,versionId,files:check.files});
       }
       if(path === '/api/portal/admin/delivery-manifest' && request.method === 'POST') {
         const data=await body(request),manifest=validateDeliveryManifest(data);
@@ -425,6 +435,16 @@ export class ProjectHub {
         }
         const record={...validated,projectId,updatedAt:new Date(now).toISOString(),recordedBy:'owner'};
         await store.put('production-method:'+projectId,record);return {method:record};
+      }
+      if(operation==='delivery-manifest-get') {
+        const {projectId,versionId}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof versionId!=='string'||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId))return {error:'Invalid delivery request.'};
+        const project=await store.get('project:'+projectId);
+        if(!project||!currentCustomerApproval(project,versionId))return {error:'Current customer approval required.'};
+        const authorization=await store.get('delivery-authorization:'+projectId+':'+versionId);
+        if(!authorization||authorization.status!=='authorized_not_delivered')return {error:'Owner delivery authorization required.'};
+        const manifest=await store.get('delivery-manifest:'+projectId+':'+versionId);
+        return manifest?{manifest}:{error:'Delivery manifest not found.'};
       }
       if(operation==='delivery-manifest-save') {
         const manifest=validateDeliveryManifest(data.manifest);
