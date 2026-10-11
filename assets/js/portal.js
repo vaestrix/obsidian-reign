@@ -18,6 +18,10 @@
       if(!latest||latest.status!=='approved')throw new Error('Your latest preview is awaiting approval.');
       const params=new URLSearchParams({projectId:project.id,versionId:latest.id});
       let response=await fetch('/api/portal/delivery-files?'+params,{credentials:'same-origin',cache:'no-store'});
+      if(response.status===403){
+        let issue=null;try{issue=await response.clone().json();}catch{}
+        if(issue?.error!=='Delivery access denied: fresh_verification_required')throw new Error('Your approved files are not available yet. Please contact Savannah.');
+      }
       if(!response.ok){
         // Only an existing, approved package can pass this protected refresh endpoint.
         const refresh=await fetch('/api/portal/delivery-refresh-check',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({projectId:project.id,versionId:latest.id})});
