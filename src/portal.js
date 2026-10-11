@@ -1,3 +1,4 @@
+import {authorizeCustomerDelivery} from './delivery-access.js';
 import {verifyDeliveryFiles} from './delivery-storage.js';
 import {validateDeliveryManifest} from './delivery-manifest.js';
 import {currentCustomerApproval} from './customer-approval-guard.js';
@@ -475,14 +476,11 @@ export class ProjectHub {
         const {projectId,versionId,owner,fileName}=data;
         if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof versionId!=='string'||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId)||typeof fileName!=='string'||!fileName||fileName.length>160)return {error:'Invalid download request.'};
         const project=await store.get('project:'+projectId);
-        if(!project||project.owner!==owner||!currentCustomerApproval(project,versionId))return {error:'Access denied.'};
         const authorization=await store.get('delivery-authorization:'+projectId+':'+versionId);
-        if(!authorization||authorization.status!=='authorized_not_delivered')return {error:'Delivery not authorized.'};
         const manifest=await store.get('delivery-manifest:'+projectId+':'+versionId);
-        if(!manifest)return {error:'Delivery manifest missing.'};
         const verified=await store.get('delivery-verified:'+projectId+':'+versionId);
-        if(!verified)return {error:'File verification required.'};
-        if(Date.now()-Date.parse(verified.verifiedAt)>15*60*1000)return {error:'File verification expired. Owner must reverify.'};
+        const access=authorizeCustomerDelivery({project,owner,versionId,authorization,manifest,verification:verified,now});
+        if(!access.allowed)return {error:'Delivery access denied: '+access.reason};
         const matches=manifest.files.filter(f=>f.name===fileName);
         if(matches.length!==1)return {error:'File unavailable or ambiguous.'};
         const verifiedFile=verified.files.find(f=>f.storageKey===matches[0].storageKey);
@@ -493,14 +491,11 @@ export class ProjectHub {
         const {projectId,versionId,owner}=data;
         if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof versionId!=='string'||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId))return {error:'Invalid delivery request.'};
         const project=await store.get('project:'+projectId);
-        if(!project||project.owner!==owner)return {error:'Access denied.'};
-        if(!currentCustomerApproval(project,versionId))return {error:'Current approval required.'};
         const authorization=await store.get('delivery-authorization:'+projectId+':'+versionId);
-        if(!authorization||authorization.status!=='authorized_not_delivered')return {error:'Delivery not authorized.'};
         const manifest=await store.get('delivery-manifest:'+projectId+':'+versionId);
-        if(!manifest||manifest.status!=='manifest_pending_file_verification')return {error:'Delivery not available.'};
         const verification=await store.get('delivery-verified:'+projectId+':'+versionId);
-        if(!verification||Date.now()-Date.parse(verification.verifiedAt)>15*60*1000)return {error:'Fresh file verification required.'};
+        const access=authorizeCustomerDelivery({project,owner,versionId,authorization,manifest,verification,now});
+        if(!access.allowed)return {error:'Delivery access denied: '+access.reason};
         return {files:manifest.files.map(f=>({name:f.name,mimeType:f.mimeType,sizeBytes:f.sizeBytes})),versionId};
       }
       if(operation==='delivery-manifest-get') {
