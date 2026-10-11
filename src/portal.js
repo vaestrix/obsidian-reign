@@ -153,6 +153,13 @@ export async function portal(request, env) {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));
         const headers = new Headers(response.headers); headers.set('Cache-Control', 'no-store'); headers.set('X-Robots-Tag', 'noindex'); return new Response(response.body, { status: response.status, headers });
       }
+      if(path === '/api/portal/admin/agent-alerts' && request.method === 'GET') {
+        const projectId=text(url.searchParams.get('projectId'),80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
+        const result=await call(env,'agent-escalation-list',{projectId});
+        if(result.error)return json(result,404);
+        return json({alerts:result.escalations.filter(x=>x.status==='open'&&['high','critical'].includes(x.severity)),delivery:'dashboard_only'});
+      }
       if(path === '/api/portal/admin/agent-escalations' && request.method === 'GET') {
         const projectId=text(url.searchParams.get('projectId'),80);
         if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
