@@ -480,6 +480,7 @@ export class ProjectHub {
         if(!manifest)return {error:'Delivery manifest missing.'};
         const verified=await store.get('delivery-verified:'+projectId+':'+versionId);
         if(!verified)return {error:'File verification required.'};
+        if(Date.now()-Date.parse(verified.verifiedAt)>15*60*1000)return {error:'File verification expired. Owner must reverify.'};
         const matches=manifest.files.filter(f=>f.name===fileName);
         if(matches.length!==1)return {error:'File unavailable or ambiguous.'};
         const verifiedFile=verified.files.find(f=>f.storageKey===matches[0].storageKey);
@@ -496,7 +497,8 @@ export class ProjectHub {
         if(!authorization||authorization.status!=='authorized_not_delivered')return {error:'Delivery not authorized.'};
         const manifest=await store.get('delivery-manifest:'+projectId+':'+versionId);
         if(!manifest||manifest.status!=='manifest_pending_file_verification')return {error:'Delivery not available.'};
-        if(!await store.get('delivery-verified:'+projectId+':'+versionId))return {error:'File verification required.'};
+        const verification=await store.get('delivery-verified:'+projectId+':'+versionId);
+        if(!verification||Date.now()-Date.parse(verification.verifiedAt)>15*60*1000)return {error:'Fresh file verification required.'};
         return {files:manifest.files.map(f=>({name:f.name,mimeType:f.mimeType,sizeBytes:f.sizeBytes})),versionId};
       }
       if(operation==='delivery-manifest-get') {
