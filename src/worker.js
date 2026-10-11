@@ -34,7 +34,7 @@ const application = {
       if(['GET','HEAD'].includes(request.method)){
         let target=migrations[name];
         if(path==='/index.html'||path==='/index')target='/';
-        if(publicPages.has(name) && path!=='/'+name)target='/'+name;
+        if((publicPages.has(name)||services.some(service=>name==='services/'+service.slug)||/^work\/[a-z0-9-]+$/.test(name)) && path!=='/'+name)target='/'+name;
         if(target)return secured(new Response(null,{status:301,headers:{Location:target+new URL(request.url).search}}),path);
       }
       if(['GET','HEAD'].includes(request.method) && (path==='/sitemap.xml'||path==='/portfolio'||/^\/work\/[a-z0-9-]+$/.test(path))){
