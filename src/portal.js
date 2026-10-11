@@ -364,6 +364,7 @@ export async function portal(request, env) {
     if (path === '/api/portal/me' && request.method === 'GET') { const user = await session(request, env); return json({ user }); }
     const user = await session(request, env);
     if (!user) return json({ error: 'Sign in to view your projects.' }, 401);
+    if(path === '/api/portal/delivery-download' && request.method === 'HEAD')return json({error:'Method not allowed.'},405);
     if(path === '/api/portal/delivery-download' && request.method === 'GET') {
       const projectId=text(url.searchParams.get('projectId'),80),versionId=text(url.searchParams.get('versionId'),80),fileName=text(url.searchParams.get('file'),160);
       if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId)||!fileName)return json({error:'Invalid download request.'},400);
@@ -373,7 +374,8 @@ export async function portal(request, env) {
       const file=result.file;
       let object;try{object=await env.DELIVERY_BUCKET.get(file.storageKey);}catch{return json({error:'File temporarily unavailable.'},503);}
       if(!object||object.etag!==result.verifiedEtag||object.size!==file.sizeBytes||object.httpMetadata?.contentType?.toLowerCase()!==file.mimeType.toLowerCase())return json({error:'File verification failed.'},409);
-      const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+      const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_').replace(/^\.+/,'_').slice(0,160);
+      if(!safeName)return json({error:'Invalid filename.'},400);
       return new Response(object.body,{headers:{'Content-Type':file.mimeType,'Content-Disposition':'attachment; filename="'+safeName+'"','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex, nofollow'}});
     }
     if(path === '/api/portal/delivery-files' && request.method === 'GET') {
