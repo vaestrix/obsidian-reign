@@ -120,6 +120,23 @@ export async function portal(request, env) {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));
         const headers = new Headers(response.headers); headers.set('Cache-Control', 'no-store'); headers.set('X-Robots-Tag', 'noindex'); return new Response(response.body, { status: response.status, headers });
       }
+      if(path === '/api/portal/admin/agent-escalations' && request.method === 'GET') {
+        const projectId=text(url.searchParams.get('projectId'),80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
+        const result=await call(env,'agent-escalation-list',{projectId});return json(result,result.error?404:200);
+      }
+      if(path === '/api/portal/admin/agent-escalations' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),reporter=text(data.reporter,30),severity=text(data.severity,20),summary=text(data.summary,1000);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!['savannah','vesper'].includes(reporter)||!['low','medium','high','critical'].includes(severity)||!summary)return json({error:'Invalid escalation.'},400);
+        const result=await call(env,'agent-escalation-create',{projectId,reporter,severity,summary});return json(result,result.error?400:201);
+      }
+      if(path === '/api/portal/admin/agent-escalation-resolve' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),escalationId=text(data.escalationId,80),resolution=text(data.resolution,1000);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!escalationId||!resolution)return json({error:'Invalid resolution.'},400);
+        const result=await call(env,'agent-escalation-resolve',{projectId,escalationId,resolution});return json(result,result.error?409:200);
+      }
       if(path === '/api/portal/admin/agent-tasks' && request.method === 'GET') {
         const projectId=text(url.searchParams.get('projectId'),80);
         if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
@@ -260,6 +277,28 @@ export class ProjectHub {
       }
       const studio = await studioOperation(operation, data, store, now);
       if(studio !== null) return studio;
+      if(operation==='agent-escalation-create'||operation==='agent-escalation-list'||operation==='agent-escalation-resolve') {
+        const projectId=data.projectId;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return {error:'Invalid project ID.'};
+        if(!await store.get('project:'+projectId))return {error:'Project not found.'};
+        const prefix='agent-escalation:'+projectId+':';
+        if(operation==='agent-escalation-list'){
+          const rows=await store.list({prefix,limit:101,reverse:true});
+          return {escalations:[...rows.values()].slice(0,100),hasMore:rows.size>100};
+        }
+        if(operation==='agent-escalation-create'){
+          if(!['savannah','vesper'].includes(data.reporter)||!['low','medium','high','critical'].includes(data.severity)||typeof data.summary!=='string'||!data.summary.trim()||data.summary.length>1000)return {error:'Invalid escalation.'};
+          const escalation={id:crypto.randomUUID(),projectId,reporter:data.reporter,severity:data.severity,summary:data.summary.trim(),status:'open',createdAt:new Date(now).toISOString(),resolvedAt:null};
+          await store.put(prefix+escalation.id,escalation);return {escalation};
+        }
+        if(typeof data.escalationId!=='string'||!/^[a-f0-9-]{36}$/.test(data.escalationId))return {error:'Invalid escalation ID.'};
+        const key=prefix+data.escalationId,escalation=await store.get(key);
+        if(!escalation)return {error:'Escalation not found.'};
+        if(escalation.status!=='open')return {error:'Escalation already resolved.'};
+        if(typeof data.resolution!=='string'||!data.resolution.trim()||data.resolution.length>1000)return {error:'Resolution required.'};
+        escalation.status='resolved';escalation.resolution=data.resolution.trim();escalation.resolvedAt=new Date(now).toISOString();
+        await store.put(key,escalation);return {escalation};
+      }
       if(operation==='agent-task-create'||operation==='agent-task-list'||operation==='agent-task-update') {
         const projectId=data.projectId;
         if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return {error:'Invalid project ID.'};
