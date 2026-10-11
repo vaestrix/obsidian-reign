@@ -16,3 +16,15 @@ test('changed manifest files are rejected even with a fresh verification timesta
  const changed={...base,manifest:{...base.manifest,files:[{storageKey:'deliveries/p1/v2/other.png',sizeBytes:100,mimeType:'image/png'}]}};
  assert.equal(authorizeCustomerDelivery(changed).reason,'verification_mismatch');
 });
+
+test('duplicate verification entries cannot satisfy multiple files',()=>{
+ const file=base.manifest.files[0];
+ const other={...file,storageKey:'deliveries/p1/v2/alert.png'};
+ const invalid={...base,manifest:{...base.manifest,files:[file,other]},verification:{...base.verification,files:[base.verification.files[0],base.verification.files[0]]}};
+ assert.equal(authorizeCustomerDelivery(invalid).reason,'verification_mismatch');
+});
+test('duplicate manifest keys fail closed even with matching repeated verification',()=>{
+ const file=base.manifest.files[0],verified=base.verification.files[0];
+ const invalid={...base,manifest:{...base.manifest,files:[file,file]},verification:{...base.verification,files:[verified,verified]}};
+ assert.equal(authorizeCustomerDelivery(invalid).reason,'verification_mismatch');
+});
