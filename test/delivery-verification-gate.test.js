@@ -9,7 +9,7 @@ test('verification is persisted only after successful private R2 checks',()=>{
 });
 test('customer metadata and downloads both require recorded verification',()=>{
  assert.match(portal,/if\(!verified\)return \{error:'File verification required\.'/);
- assert.match(portal,/if\(!await store\.get\('delivery-verified:'\+projectId\+':'\+versionId\)\)/);
+ assert.match(portal,/const verification=await store\.get\('delivery-verified:'\+projectId\+':'\+versionId\)/);
 });
 test('download checks R2 object ETag against verified record',()=>{
  assert.match(portal,/object\.etag!==result\.verifiedEtag/);
