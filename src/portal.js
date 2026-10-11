@@ -376,7 +376,9 @@ export async function portal(request, env) {
       if(!env.DELIVERY_BUCKET)return json({error:'Delivery storage unavailable.'},503);
       const checked=await verifyDeliveryFiles(env.DELIVERY_BUCKET,state.manifest);
       if(!checked.verified||!unchangedR2Snapshot(state.verification.files,checked.files))return json({error:'File verification requires owner review.'},409);
-      return json({verified:true,unchanged:true,refreshAvailable:true,notice:'Read-only verification. Existing approval timestamp is not renewed.'});
+      const renewal=await call(env,'delivery-refresh-commit',{projectId,versionId,owner:user.id,previousVerifiedAt:state.verification.verifiedAt,files:checked.files});
+      if(renewal.error)return json({error:'Delivery changed during revalidation.'},409);
+      return json({verified:true,unchanged:true,refreshed:true});
     }
     if(path === '/api/portal/delivery-download' && request.method === 'HEAD')return json({error:'Method not allowed.'},405);
     if(path === '/api/portal/delivery-download' && request.method === 'GET') {
@@ -484,6 +486,18 @@ export class ProjectHub {
         const verified={projectId,versionId,files,verifiedAt:new Date(now).toISOString()};
         await store.put('delivery-verified:'+projectId+':'+versionId,verified);
         return {verified:true};
+      }
+      if(operation==='delivery-refresh-commit') {
+        const {projectId,versionId,owner,previousVerifiedAt,files}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof versionId!=='string'||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId)||!Array.isArray(files))return {error:'Invalid refresh.'};
+        const project=await store.get('project:'+projectId);
+        const authorization=await store.get('delivery-authorization:'+projectId+':'+versionId);
+        const manifest=await store.get('delivery-manifest:'+projectId+':'+versionId);
+        const prior=await store.get('delivery-verified:'+projectId+':'+versionId);
+        const decision=canRefreshDelivery({project,owner,versionId,authorization,manifest,verification:prior,now});
+        if(!decision.allowed||prior.verifiedAt!==previousVerifiedAt||!unchangedR2Snapshot(prior.files,files))return {error:'Refresh not authorized.'};
+        await store.put('delivery-verified:'+projectId+':'+versionId,{...prior,files,verifiedAt:new Date(now).toISOString()});
+        return {refreshed:true};
       }
       if(operation==='delivery-refresh-state') {
         const {projectId,versionId,owner}=data;
