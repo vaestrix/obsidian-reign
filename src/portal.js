@@ -1,3 +1,4 @@
+import {currentCustomerApproval} from './customer-approval-guard.js';
 import {validateApprovalEvidence,authorizesInitialCreativeTask} from './approval-evidence.js';
 import {validateProductionMethod,authorizeProductionMethod} from './production-method.js';
 import {planCreativeProduction} from './creative-planner.js';
@@ -171,6 +172,11 @@ export async function portal(request, env) {
         const data=await body(request),projectId=text(data.projectId,80),method=validateProductionMethod(data);
         if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!method)return json({error:'Invalid production method.'},400);
         const result=await call(env,'production-method-save',{projectId,method});return json(result,result.error?409:200);
+      }
+      if(path === '/api/portal/admin/delivery-authorization' && request.method === 'POST') {
+        const data=await body(request),projectId=text(data.projectId,80),versionId=text(data.versionId,80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!versionId)return json({error:'Project and preview version required.'},400);
+        const result=await call(env,'delivery-authorize',{projectId,versionId});return json(result,result.error?409:200);
       }
       if(path === '/api/portal/admin/customer-approvals' && request.method === 'GET') {
         const projectId=text(url.searchParams.get('projectId'),80);
@@ -413,6 +419,19 @@ export class ProjectHub {
         }
         const record={...validated,projectId,updatedAt:new Date(now).toISOString(),recordedBy:'owner'};
         await store.put('production-method:'+projectId,record);return {method:record};
+      }
+      if(operation==='delivery-authorize') {
+        const {projectId,versionId}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof versionId!=='string'||versionId.length>80)return {error:'Invalid delivery request.'};
+        const project=await store.get('project:'+projectId);
+        if(!project)return {error:'Project not found.'};
+        const approval=currentCustomerApproval(project,versionId);
+        if(!approval)return {error:'Current customer approval required.'};
+        const key='delivery-authorization:'+projectId+':'+versionId;
+        const existing=await store.get(key);
+        if(existing)return {authorization:existing,reused:true};
+        const authorization={id:crypto.randomUUID(),projectId,versionId,approval,authorizedBy:'owner',authorizedAt:new Date(now).toISOString(),status:'authorized_not_delivered'};
+        await store.put(key,authorization);return {authorization,reused:false};
       }
       if(operation==='customer-approvals') {
         const projectId=data.projectId;
