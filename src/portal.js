@@ -67,6 +67,27 @@ const clientProject = p => Object.fromEntries(['id','title','stage','due','summa
 export async function portal(request, env) {
   const url = new URL(request.url), path = decodeURIComponent(url.pathname).replace(/\/+$/, '') || '/';
   if (!(path === '/api/studio/inquiries' || path.startsWith('/api/portal/') || path.startsWith('/auth/client/') || path.startsWith('/auth/admin/') || path === '/admin/projects' || path === '/project-admin.html' || path === '/project-admin')) return null;
+  if (path === '/api/portal/internal/agent-tasks') {
+    if(request.method!=='GET')return json({error:'Method not allowed.'},405);
+    if(!env.PROJECT_HUB)return json({error:'Project access is temporarily unavailable.'},503);
+    const agent=await authenticateAgent(request,env);
+    if(!agent)return json({error:'Agent authentication required.'},401);
+    const projectId=text(url.searchParams.get('projectId'),80);
+    if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
+    const result=await call(env,'agent-task-assigned',{projectId,agent});
+    return json(result,result.error?404:200);
+  }
+  if (path === '/api/portal/internal/agent-task-status') {
+    if(request.method!=='POST')return json({error:'Method not allowed.'},405);
+    if(!env.PROJECT_HUB)return json({error:'Project access is temporarily unavailable.'},503);
+    const agent=await authenticateAgent(request,env);
+    if(!agent)return json({error:'Agent authentication required.'},401);
+    let data;try{data=await body(request);}catch{return json({error:'Invalid request body.'},400);}
+    const projectId=text(data.projectId,80),taskId=text(data.taskId,80),status=text(data.status,30),expectedStatus=text(data.expectedStatus,30);
+    if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!taskId||!['in_progress','blocked','ready_for_review'].includes(status))return json({error:'Invalid task update.'},400);
+    const result=await call(env,'agent-task-update',{projectId,taskId,status,expectedStatus,note:text(data.note,1000),actor:agent});
+    return json(result,result.error?409:200);
+  }
   if (path === '/api/portal/internal/agent-message') {
     if(request.method!=='POST')return json({error:'Method not allowed.'},405);
     if(!env.PROJECT_HUB)return json({error:'Project access is temporarily unavailable.'},503);
@@ -311,6 +332,13 @@ export class ProjectHub {
         escalation.status='resolved';escalation.resolution=data.resolution.trim();escalation.resolvedAt=new Date(now).toISOString();
         await store.put(key,escalation);return {escalation};
       }
+      if(operation==='agent-task-assigned') {
+        const projectId=data.projectId,agent=data.agent;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!['anna','savannah','vesper','atlas','forge','mercury','sentinel','nova'].includes(agent))return {error:'Invalid request.'};
+        if(!await store.get('project:'+projectId))return {error:'Project not found.'};
+        const rows=await store.list({prefix:'agent-task:'+projectId+':',limit:101});
+        return {tasks:[...rows.values()].filter(t=>t.assignedTo===agent&&['queued','in_progress','blocked'].includes(t.status)).slice(0,100),hasMore:rows.size>100};
+      }
       if(operation==='agent-task-create'||operation==='agent-task-list'||operation==='agent-task-update') {
         const projectId=data.projectId;
         if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return {error:'Invalid project ID.'};
@@ -328,10 +356,11 @@ export class ProjectHub {
         if(typeof data.taskId!=='string'||!/^[a-f0-9-]{36}$/.test(data.taskId))return {error:'Invalid task ID.'};
         const key=prefix+data.taskId,task=await store.get(key);
         if(!task)return {error:'Task not found.'};
+        if(data.actor && (task.assignedTo!==data.actor||!['in_progress','blocked','ready_for_review'].includes(data.status)))return {error:'Agent cannot update this task.'};
         if(task.status!==data.expectedStatus)return {error:'Task changed. Refresh before updating.'};
         const allowed={queued:['in_progress','cancelled'],in_progress:['blocked','ready_for_review','cancelled'],blocked:['queued','cancelled'],ready_for_review:['completed','in_progress','cancelled'],completed:[],cancelled:[]};
         if(!allowed[task.status]?.includes(data.status))return {error:'Invalid task transition.'};
-        task.status=data.status;task.updatedAt=new Date(now).toISOString();task.history=[...task.history,{status:data.status,at:task.updatedAt,by:'owner',note:typeof data.note==='string'?data.note.slice(0,1000):''}].slice(-50);
+        task.status=data.status;task.updatedAt=new Date(now).toISOString();task.history=[...task.history,{status:data.status,at:task.updatedAt,by:data.actor||'owner',note:typeof data.note==='string'?data.note.slice(0,1000):''}].slice(-50);
         await store.put(key,task);return {task};
       }
       if(operation==='agent-message-create'||operation==='agent-message-list') {
