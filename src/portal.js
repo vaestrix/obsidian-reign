@@ -1,3 +1,4 @@
+import {canRefreshDelivery,unchangedR2Snapshot} from './delivery-refresh.js';
 import {authorizeCustomerDelivery} from './delivery-access.js';
 import {verifyDeliveryFiles} from './delivery-storage.js';
 import {validateDeliveryManifest} from './delivery-manifest.js';
@@ -365,6 +366,18 @@ export async function portal(request, env) {
     if (path === '/api/portal/me' && request.method === 'GET') { const user = await session(request, env); return json({ user }); }
     const user = await session(request, env);
     if (!user) return json({ error: 'Sign in to view your projects.' }, 401);
+    if(path === '/api/portal/delivery-refresh-check' && request.method === 'POST') {
+      const data=await body(request),projectId=text(data.projectId,80),versionId=text(data.versionId,80);
+      if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId))return json({error:'Invalid refresh request.'},400);
+      const state=await call(env,'delivery-refresh-state',{projectId,versionId,owner:user.id});
+      if(state.error)return json({error:'Delivery unavailable.'},403);
+      const decision=canRefreshDelivery({...state,owner:user.id,versionId});
+      if(!decision.allowed)return json({error:'Delivery unavailable.',reason:decision.reason},403);
+      if(!env.DELIVERY_BUCKET)return json({error:'Delivery storage unavailable.'},503);
+      const checked=await verifyDeliveryFiles(env.DELIVERY_BUCKET,state.manifest);
+      if(!checked.verified||!unchangedR2Snapshot(state.verification.files,checked.files))return json({error:'File verification requires owner review.'},409);
+      return json({verified:true,unchanged:true,refreshAvailable:true,notice:'Read-only verification. Existing approval timestamp is not renewed.'});
+    }
     if(path === '/api/portal/delivery-download' && request.method === 'HEAD')return json({error:'Method not allowed.'},405);
     if(path === '/api/portal/delivery-download' && request.method === 'GET') {
       const projectId=text(url.searchParams.get('projectId'),80),versionId=text(url.searchParams.get('versionId'),80),fileName=text(url.searchParams.get('file'),160);
@@ -471,6 +484,16 @@ export class ProjectHub {
         const verified={projectId,versionId,files,verifiedAt:new Date(now).toISOString()};
         await store.put('delivery-verified:'+projectId+':'+versionId,verified);
         return {verified:true};
+      }
+      if(operation==='delivery-refresh-state') {
+        const {projectId,versionId,owner}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof versionId!=='string'||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId))return {error:'Invalid request.'};
+        const project=await store.get('project:'+projectId);
+        if(!project||project.owner!==owner)return {error:'Access denied.'};
+        const authorization=await store.get('delivery-authorization:'+projectId+':'+versionId);
+        const manifest=await store.get('delivery-manifest:'+projectId+':'+versionId);
+        const verification=await store.get('delivery-verified:'+projectId+':'+versionId);
+        return {project,authorization,manifest,verification};
       }
       if(operation==='delivery-client-file') {
         const {projectId,versionId,owner,fileName}=data;
