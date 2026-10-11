@@ -11,7 +11,7 @@ export const AGENTS = Object.freeze({
 });
 const internalRecipients = new Set(['savannah','owner']);
 export function authorizeAgentMessage({from,to,channel}) {
-  if (!Object.hasOwn(AGENTS,from)) return false;
+  if (from !== 'owner' && !Object.hasOwn(AGENTS,from)) return false;
   if (typeof to !== 'string' || typeof channel !== 'string') return false;
   if (from === 'vesper') return channel === 'internal' && internalRecipients.has(to);
   if (to === 'vesper') return channel === 'internal' && internalRecipients.has(from);
