@@ -12,6 +12,12 @@ const makeRequest = (body = event, token = secret, method = 'POST') => new Reque
   method, headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
   ...(method === 'POST' ? { body: typeof body === 'string' ? body : JSON.stringify(body) } : {}) });
 
+test('After Dark sensitive requests always escalate before automated drafting', () => {
+  for (const text of ['I want a suggestive overlay', 'Can you make nude art?', 'The character is underage', 'I am under 18']) {
+    assert.equal(preflight({ ...message, text }), 'escalate');
+  }
+});
+
 class Storage {
   data = new Map(); time = null;
   async get(k) { return structuredClone(this.data.get(k)); }

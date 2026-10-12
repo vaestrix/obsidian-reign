@@ -31,6 +31,6 @@ test('Black Rose camera prototype is transparent, sized and linked from the demo
   const html = await readFile(new URL('../after-dark.html', import.meta.url), 'utf8');
   assert.match(svg, /viewBox="0 0 1920 1080"/);
   assert.doesNotMatch(svg, /<rect[^>]*width="1920"[^>]*height="1080"/);
-  assert.match(html, /href="\\/assets\\/img\\/after-dark-black-rose-camera-frame\\.svg" download=/);
+  assert.match(html, /href="\/assets\/img\/after-dark-black-rose-camera-frame\.svg" download=/);
   assert.match(html, /transparent center/i);
 });
