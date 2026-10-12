@@ -8,7 +8,7 @@ test('rendered alert stays behind the age prompt and starts only on request', as
   const dom=new JSDOM(html,{runScripts:'dangerously'});
   dom.window.scrollTo=()=>{};
   const doc=dom.window.document,videos=[...doc.querySelectorAll('video')];
-  assert.equal(videos.length,3);
+  assert.equal(videos.length,5);
   assert.equal(doc.getElementById('content').hidden,true);
   assert.equal(doc.getElementById('age-gate').hidden,false);
   doc.getElementById('enter').click();
@@ -112,7 +112,7 @@ test('Velvet Muse leads the adult boudoir collection and selectors stay independ
   const suites=[...doc.querySelectorAll('[data-after-dark-suite]')];assert.equal(suites.length,2);
   const [velvet,rose]=suites;
   assert.equal(velvet.closest('section').getAttribute('aria-labelledby'),'velvet-title');
-  assert.equal(velvet.querySelector('[data-asset-play]').hidden,true);
+  assert.equal(velvet.querySelector('[data-asset-play]').hidden,false);
   velvet.querySelector('[data-asset-option="alert"]').click();
   assert.equal(velvet.querySelector('[data-asset-panel="alert"]').hidden,false);
   assert.equal(rose.querySelector('[data-asset-panel="scene"]').hidden,false);
@@ -135,5 +135,28 @@ test('switching collections cancels a pending play request in the other collecti
   const before=pauses;complete();await new Promise(resolve=>setImmediate(resolve));
   assert.equal(pauses,before+1);
   assert.equal(doc.querySelector('.ad-suite-velvet [data-asset-panel="camera"]').hidden,false);
+  dom.window.close();
+});
+
+test('starting a different collection pauses the previously playing preview',async()=>{
+  const html=await readFile(new URL('../after-dark.html',import.meta.url),'utf8');
+  const script=await readFile(new URL('../assets/js/after-dark-showcase.js',import.meta.url),'utf8');
+  const dom=new JSDOM(html,{runScripts:'dangerously'}),doc=dom.window.document;
+  const states=new Map();
+  for(const video of doc.querySelectorAll('video')){
+    const state={paused:true};states.set(video,state);
+    Object.defineProperty(video,'paused',{get:()=>state.paused});
+    video.pause=()=>{state.paused=true;video.dispatchEvent(new dom.window.Event('pause'));};
+    video.play=async()=>{state.paused=false;video.dispatchEvent(new dom.window.Event('play'));};
+  }
+  dom.window.eval(script);
+  const rose=doc.querySelector('[aria-labelledby="demo-title"] [data-after-dark-suite]');
+  const velvet=doc.querySelector('.ad-suite-velvet');
+  rose.querySelector('[data-asset-play]').click();await Promise.resolve();
+  const roseVideo=rose.querySelector('[data-asset-panel="scene"] video');
+  assert.equal(states.get(roseVideo).paused,false);
+  velvet.querySelector('[data-asset-play]').click();await Promise.resolve();
+  assert.equal(states.get(roseVideo).paused,true);
+  assert.equal(states.get(velvet.querySelector('[data-asset-panel="scene"] video')).paused,false);
   dom.window.close();
 });

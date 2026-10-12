@@ -32,8 +32,10 @@
   play.addEventListener('click', async () => {
     const video = activeVideo();
     if (!video) return;
-    const currentVersion = selectionVersion;
     if (!video.paused) { video.pause(); return; }
+    selectionVersion++;
+    pauseAll();
+    const currentVersion = selectionVersion;
     if (video.ended) video.currentTime = 0;
     try {
       await video.play();
