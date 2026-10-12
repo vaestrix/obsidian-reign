@@ -2,9 +2,12 @@ name: AI Workforce Checks
 on:
   pull_request:
     paths:
-      - 'src/agent-*.js'
-      - 'src/portal.js'
-      - 'test/agent-*.test.js'
+      - 'src/**'
+      - 'assets/js/**'
+      - 'client-portal.html'
+      - 'test/**'
+      - 'scripts/**'
+      - 'wrangler*.jsonc'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/ai-workforce-checks.yml'
