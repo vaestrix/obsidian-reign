@@ -11,12 +11,57 @@
     p.reviews.forEach((v,index)=>{const item=el('article',undefined,'review-version');item.append(el('strong','v'+v.number+' · '+v.label),el('small',(v.status==='approved'?'Approved':v.status==='changes-requested'?'Changes requested':index===0?(client?'Waiting for your review':'Waiting for client review'):'Superseded')+' · '+format(v.createdAt),'portal-note'));const a=el('a','Open preview','btn btn-gold');a.href=v.url;a.target='_blank';a.rel='noopener noreferrer';item.append(a);if(v.message)item.append(el('p',v.message));if(v.decidedAt)item.append(el('small','Decision recorded '+format(v.decidedAt),'portal-note'));
     if(client && index===0 && v.status==='pending'){const form=el('form',undefined,'portal-feedback');const label=el('label','Feedback for this version');const note=el('textarea');note.rows=3;note.maxLength=2000;note.setAttribute('aria-label','Preview feedback for '+p.title);label.append(note);const actions=el('div',undefined,'account-actions');for(const [value,title]of [['approved','Approve this version'],['changes-requested','Request changes']]){const b=el('button',title,'btn btn-gold');b.type='submit';b.value=value;actions.append(b);}const status=el('p','','portal-note');status.setAttribute('role','status');form.append(label,el('p','Approval records your decision on this preview. It does not change billing or approve future versions. Revision usage is confirmed by the studio.','portal-note'),actions,status);form.addEventListener('submit',async e=>{e.preventDefault();const action=e.submitter?.value;if(!action)return;if(action==='changes-requested'&&!note.value.trim()){status.textContent='Please describe the changes you need.';note.focus();return;}const buttons=[...actions.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);try{await api('/api/portal/review',{id:p.id,versionId:v.id,action,message:note.value});await loadProjects();$('#portal-status').textContent=action==='approved'?'Preview approved. Your decision is saved.':'Change request saved for the studio.';}catch(err){status.textContent=err.message;}finally{buttons.forEach(b=>b.disabled=false);}});item.append(form);}section.append(item);});return section;
   }
+  async function showApprovedDownloads(project,host,button,status){
+    button.disabled=true;status.textContent='Checking your approved files…';
+    try{
+      const latest=project.reviews?.[0];
+      if(!latest||latest.status!=='approved')throw new Error('Your latest preview is awaiting approval.');
+      const params=new URLSearchParams({projectId:project.id,versionId:latest.id});
+      let response=await fetch('/api/portal/delivery-files?'+params,{credentials:'same-origin',cache:'no-store'});
+      if(response.status===403){
+        let issue=null;try{issue=await response.clone().json();}catch{}
+        if(issue?.error!=='Delivery access denied: fresh_verification_required')throw new Error('Your approved files are not available yet. Please contact Savannah.');
+      }
+      if(!response.ok){
+        // Only an existing, approved package can pass this protected refresh endpoint.
+        const refresh=await fetch('/api/portal/delivery-refresh-check',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({projectId:project.id,versionId:latest.id})});
+        if(!refresh.ok)throw new Error('Your approved files are not available yet. Please contact Savannah.');
+        response=await fetch('/api/portal/delivery-files?'+params,{credentials:'same-origin',cache:'no-store'});
+      }
+      if(!response.ok)throw new Error('Your files are not ready for download yet.');
+      const data=await response.json();
+      if(!Array.isArray(data.files)||!data.files.length)throw new Error('No delivery files are available yet.');
+      host.replaceChildren();
+      for(const file of data.files){
+        const download=el('button','Download '+file.name,'btn btn-gold');download.type='button';
+        download.addEventListener('click',async()=>{
+          download.disabled=true;status.textContent='Preparing your download…';
+          try{
+            const {downloadApprovedAsset}=await import('/assets/js/client-delivery.js');
+            await downloadApprovedAsset({projectId:project.id,versionId:latest.id,fileName:file.name,saveFile:async(response,name)=>{
+              const blob=await response.blob();const href=URL.createObjectURL(blob);
+              try{const a=document.createElement('a');a.href=href;a.download=name;document.body.append(a);a.click();a.remove();}finally{setTimeout(()=>URL.revokeObjectURL(href),60000);}
+            }});
+            status.textContent='Download prepared.';
+          }catch(error){status.textContent=error.message;}finally{download.disabled=false;}
+        });host.append(download);
+      }
+      status.textContent='Your approved files are ready.';
+    }catch(error){status.textContent=error.message;}finally{button.disabled=false;}
+  }
   function renderProject(p) {
     const card=el('article',undefined,'card project-record'); const header=el('header'); header.append(el('h2',p.title),el('span',stages[p.stage],'stage-badge')); card.append(header,el('p',p.summary));
     const steps=el('ol',undefined,'project-stages'); steps.setAttribute('aria-label','Project milestones'); stages.forEach((s,i)=>{const n=el('li',s,i<p.stage?'complete':i===p.stage?'current':''); if(i===p.stage)n.setAttribute('aria-current','step');steps.append(n);});card.append(steps);
     card.append(el('p','Target delivery: '+format(p.due?p.due+'T12:00:00':null),'portal-note'));
     if(p.nextStep){const next=el('div',undefined,'project-next');next.append(el('strong','NEXT STEP'),el('p',p.nextStep));card.append(next);}
     if(p.fileUrl){const a=el('a',p.stage===4?'Open delivery files':'Open review files','btn btn-gold');a.href=p.fileUrl;a.target='_blank';a.rel='noopener noreferrer';card.append(a);}
+    if(p.reviews?.[0]?.status==='approved'){
+      const area=el('section',undefined,'portal-delivery');area.append(el('h3','Approved downloads'));
+      const button=el('button','View approved files','btn btn-gold');button.type='button';
+      const files=el('div',undefined,'account-actions');const status=el('p','','portal-note');status.setAttribute('role','status');
+      button.addEventListener('click',()=>showApprovedDownloads(p,files,button,status));
+      area.append(button,files,status);card.append(area);
+    }
     if(p.nextUpdateDate)card.append(el('p','Next studio update: '+format(p.nextUpdateDate+'T12:00:00'),'portal-note'));if(p.revisionsIncluded!=null)card.append(el('p','Revision rounds: '+(p.revisionsUsed??0)+' used / '+p.revisionsIncluded+' included. Additional scope is confirmed before work.','portal-note'));card.append(reviewHistory(p,true));card.append(el('h3','Project updates'));const timeline=el('ol',undefined,'project-updates');p.timeline.forEach(t=>{const item=el('li');item.append(el('small',t.author+' · '+format(t.at)),el('p',t.message));timeline.append(item);});card.append(timeline);
     const form=el('form',undefined,'portal-feedback');const label=el('label','Your feedback or question');const input=el('textarea');input.required=true;input.maxLength=2000;input.rows=3;input.setAttribute('aria-label','Feedback for '+p.title);input.style.width='100%';input.style.padding='13px';label.append(input);const button=el('button','Send project feedback','btn btn-primary');button.type='submit';const status=el('p','','portal-feedback-status');status.setAttribute('role','status');form.append(label,button,status);form.addEventListener('submit',async e=>{e.preventDefault();button.disabled=true;status.textContent='Sending…';try{await api('/api/portal/feedback',{id:p.id,message:input.value});document.querySelector('#portal-status').textContent='Feedback saved to your project. The studio can review it here.';input.value='';await loadProjects();}catch(err){status.textContent=err.message;}finally{button.disabled=false;}});card.append(form);return card;
   }

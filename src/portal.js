@@ -1,3 +1,14 @@
+import {canRefreshDelivery,unchangedR2Snapshot} from './delivery-refresh.js';
+import {authorizeCustomerDelivery} from './delivery-access.js';
+import {verifyDeliveryFiles} from './delivery-storage.js';
+import {validateDeliveryManifest} from './delivery-manifest.js';
+import {currentCustomerApproval} from './customer-approval-guard.js';
+import {validateApprovalEvidence,authorizesInitialCreativeTask} from './approval-evidence.js';
+import {validateProductionMethod,authorizeProductionMethod} from './production-method.js';
+import {planCreativeProduction} from './creative-planner.js';
+import {authorizeAgentMessage} from './agent-policy.js';
+import {authenticateAgent,validateAgentEnvelope} from './agent-auth.js';
+import {authorizeOrderTransition} from './agent-workflow.js';
 import {adminAuthorized} from './legacy-worker.js';
 import { validateLead, readJson, studioOperation } from './studio.js';
 import {concepts,validatePortfolio} from './portfolio.js';
@@ -64,6 +75,49 @@ const clientProject = p => Object.fromEntries(['id','title','stage','due','summa
 export async function portal(request, env) {
   const url = new URL(request.url), path = decodeURIComponent(url.pathname).replace(/\/+$/, '') || '/';
   if (!(path === '/api/studio/inquiries' || path.startsWith('/api/portal/') || path.startsWith('/auth/client/') || path.startsWith('/auth/admin/') || path === '/admin/projects' || path === '/project-admin.html' || path === '/project-admin')) return null;
+  if (path === '/api/portal/internal/agent-tasks') {
+    if(request.method!=='GET')return json({error:'Method not allowed.'},405);
+    if(!env.PROJECT_HUB)return json({error:'Project access is temporarily unavailable.'},503);
+    const agent=await authenticateAgent(request,env);
+    if(!agent)return json({error:'Agent authentication required.'},401);
+    const projectId=text(url.searchParams.get('projectId'),80);
+    if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
+    const result=await call(env,'agent-task-assigned',{projectId,agent});
+    return json(result,result.error?404:200);
+  }
+  if (path === '/api/portal/internal/agent-task-claim') {
+    if(request.method!=='POST')return json({error:'Method not allowed.'},405);
+    if(!env.PROJECT_HUB)return json({error:'Project access is temporarily unavailable.'},503);
+    const agent=await authenticateAgent(request,env);
+    if(!agent)return json({error:'Agent authentication required.'},401);
+    let data;try{data=await body(request);}catch{return json({error:'Invalid request body.'},400);}
+    const projectId=text(data.projectId,80),taskId=text(data.taskId,80);
+    if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-f0-9-]{36}$/.test(taskId))return json({error:'Invalid claim.'},400);
+    const result=await call(env,'agent-task-claim',{projectId,taskId,agent});
+    return json(result,result.error?409:200);
+  }
+  if (path === '/api/portal/internal/agent-task-status') {
+    if(request.method!=='POST')return json({error:'Method not allowed.'},405);
+    if(!env.PROJECT_HUB)return json({error:'Project access is temporarily unavailable.'},503);
+    const agent=await authenticateAgent(request,env);
+    if(!agent)return json({error:'Agent authentication required.'},401);
+    let data;try{data=await body(request);}catch{return json({error:'Invalid request body.'},400);}
+    const projectId=text(data.projectId,80),taskId=text(data.taskId,80),status=text(data.status,30),expectedStatus=text(data.expectedStatus,30);
+    if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!taskId||!['in_progress','blocked','ready_for_review'].includes(status))return json({error:'Invalid task update.'},400);
+    const result=await call(env,'agent-task-update',{projectId,taskId,status,expectedStatus,note:text(data.note,1000),actor:agent});
+    return json(result,result.error?409:200);
+  }
+  if (path === '/api/portal/internal/agent-message') {
+    if(request.method!=='POST')return json({error:'Method not allowed.'},405);
+    if(!env.PROJECT_HUB)return json({error:'Project access is temporarily unavailable.'},503);
+    const agent=await authenticateAgent(request,env);
+    if(!agent)return json({error:'Agent authentication required.'},401);
+    let data;try{data=await body(request);}catch{return json({error:'Invalid request body.'},400);}
+    const envelope=validateAgentEnvelope(agent,data);
+    if(!envelope)return json({error:'Internal message denied.'},403);
+    const result=await call(env,'agent-message-create',envelope);
+    return json(result,result.error?400:201);
+  }
   if (!env.PROJECT_HUB) return json({ error: 'Project access is temporarily unavailable.' }, 503);
   const origin = env.PUBLIC_ORIGIN || url.origin;
   const isAgent = path.startsWith('/api/portal/agent/');
@@ -117,6 +171,131 @@ export async function portal(request, env) {
       if (path === '/admin/projects' || path === '/project-admin.html' || path === '/project-admin') {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));
         const headers = new Headers(response.headers); headers.set('Cache-Control', 'no-store'); headers.set('X-Robots-Tag', 'noindex'); return new Response(response.body, { status: response.status, headers });
+      }
+      if(path === '/api/portal/admin/production-method' && request.method === 'POST') {
+        const data=await body(request),projectId=text(data.projectId,80),method=validateProductionMethod(data);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!method)return json({error:'Invalid production method.'},400);
+        const result=await call(env,'production-method-save',{projectId,method});return json(result,result.error?409:200);
+      }
+      if(path === '/api/portal/admin/delivery-verify' && request.method === 'POST') {
+        const data=await body(request),projectId=text(data.projectId,80),versionId=text(data.versionId,80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId))return json({error:'Invalid delivery verification request.'},400);
+        const result=await call(env,'delivery-manifest-get',{projectId,versionId});
+        if(result.error)return json(result,404);
+        const check=await verifyDeliveryFiles(env.DELIVERY_BUCKET,result.manifest);
+        if(!check.verified)return json({verified:false,reason:check.reason},409);
+        const recorded=await call(env,'delivery-verification-record',{projectId,versionId,files:check.files});
+        if(recorded.error)return json(recorded,409);
+        return json({verified:true,projectId,versionId,files:check.files});
+      }
+      if(path === '/api/portal/admin/delivery-manifest' && request.method === 'POST') {
+        const data=await body(request),manifest=validateDeliveryManifest(data);
+        if(!manifest)return json({error:'Invalid delivery manifest.'},400);
+        const result=await call(env,'delivery-manifest-save',{manifest});return json(result,result.error?409:201);
+      }
+      if(path === '/api/portal/admin/delivery-authorization' && request.method === 'POST') {
+        const data=await body(request),projectId=text(data.projectId,80),versionId=text(data.versionId,80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!versionId)return json({error:'Project and preview version required.'},400);
+        const result=await call(env,'delivery-authorize',{projectId,versionId});return json(result,result.error?409:200);
+      }
+      if(path === '/api/portal/admin/customer-approvals' && request.method === 'GET') {
+        const projectId=text(url.searchParams.get('projectId'),80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
+        const result=await call(env,'customer-approvals',{projectId});return json(result,result.error?404:200);
+      }
+      if(path === '/api/portal/admin/creative-task' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),planId=text(data.planId,80),approvalEvidence=validateApprovalEvidence(data.approvalEvidence);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-f0-9-]{36}$/.test(planId)||!authorizesInitialCreativeTask(approvalEvidence))return json({error:'Valid plan and owner scope authorization required.'},400);
+        const result=await call(env,'creative-task-create',{projectId,planId,approvalEvidence});return json(result,result.error?409:201);
+      }
+      if(path === '/api/portal/admin/creative-plan' && request.method === 'POST') {
+        const data=await body(request);
+        const plan=planCreativeProduction(data);
+        if(!plan)return json({error:'Invalid creative brief.'},400);
+        const result=await call(env,'creative-plan-save',{plan});return json(result,result.error?409:201);
+      }
+      if(path === '/api/portal/admin/creative-plans' && request.method === 'GET') {
+        const projectId=text(url.searchParams.get('projectId'),80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
+        const result=await call(env,'creative-plan-list',{projectId});return json(result,result.error?404:200);
+      }
+      if(path === '/api/portal/admin/generation-provider-state' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),requestKey=text(data.requestKey,80),status=text(data.status,30),providerJobId=text(data.providerJobId,160);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9_-]{20,80}$/.test(requestKey)||!['submission_uncertain','submitted','completed','failed'].includes(status)||(['submitted','completed'].includes(status)&&!providerJobId))return json({error:'Invalid provider state.'},400);
+        const result=await call(env,'generation-provider-state',{projectId,requestKey,status,providerJobId});return json(result,result.error?409:200);
+      }
+      if(path === '/api/portal/admin/generation-approval' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),requestKey=text(data.requestKey,80),decision=text(data.decision,20);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9_-]{20,80}$/.test(requestKey)||!['approve','reject'].includes(decision))return json({error:'Invalid approval request.'},400);
+        const result=await call(env,'generation-approval',{projectId,requestKey,decision});return json(result,result.error?409:200);
+      }
+      if(path === '/api/portal/admin/generation-reservations' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),taskId=text(data.taskId,80),requestKey=text(data.requestKey,80),estimatedCents=data.estimatedCents;
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-f0-9-]{36}$/.test(taskId)||!/^[a-zA-Z0-9_-]{20,80}$/.test(requestKey)||!Number.isSafeInteger(estimatedCents)||estimatedCents<0||estimatedCents>100000)return json({error:'Invalid reservation.'},400);
+        const result=await call(env,'generation-reserve',{projectId,taskId,requestKey,estimatedCents});
+        return json(result,result.error?409:200);
+      }
+      if(path === '/api/portal/admin/agent-alerts' && request.method === 'GET') {
+        const projectId=text(url.searchParams.get('projectId'),80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
+        const result=await call(env,'agent-escalation-list',{projectId});
+        if(result.error)return json(result,404);
+        return json({alerts:result.escalations.filter(x=>x.status==='open'&&['high','critical'].includes(x.severity)),delivery:'dashboard_only'});
+      }
+      if(path === '/api/portal/admin/agent-escalations' && request.method === 'GET') {
+        const projectId=text(url.searchParams.get('projectId'),80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
+        const result=await call(env,'agent-escalation-list',{projectId});return json(result,result.error?404:200);
+      }
+      if(path === '/api/portal/admin/agent-escalations' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),reporter=text(data.reporter,30),severity=text(data.severity,20),summary=text(data.summary,1000);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!['savannah','vesper'].includes(reporter)||!['low','medium','high','critical'].includes(severity)||!summary)return json({error:'Invalid escalation.'},400);
+        const result=await call(env,'agent-escalation-create',{projectId,reporter,severity,summary});return json(result,result.error?400:201);
+      }
+      if(path === '/api/portal/admin/agent-escalation-resolve' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),escalationId=text(data.escalationId,80),resolution=text(data.resolution,1000);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!escalationId||!resolution)return json({error:'Invalid resolution.'},400);
+        const result=await call(env,'agent-escalation-resolve',{projectId,escalationId,resolution});return json(result,result.error?409:200);
+      }
+      if(path === '/api/portal/admin/agent-tasks' && request.method === 'GET') {
+        const projectId=text(url.searchParams.get('projectId'),80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
+        const result=await call(env,'agent-task-list',{projectId});return json(result,result.error?404:200);
+      }
+      if(path === '/api/portal/admin/agent-tasks' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),assignedTo=text(data.assignedTo,30),title=text(data.title,160),instructions=text(data.instructions,3000);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!title||!instructions||!['savannah','vesper','anna','atlas','forge','mercury','sentinel','nova'].includes(assignedTo))return json({error:'Invalid task.'},400);
+        const result=await call(env,'agent-task-create',{projectId,assignedTo,title,instructions});return json(result,result.error?400:201);
+      }
+      if(path === '/api/portal/admin/agent-task-update' && request.method === 'POST') {
+        const data=await body(request),projectId=text(data.projectId,80),taskId=text(data.taskId,80),status=text(data.status,30);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!taskId||!['queued','in_progress','blocked','ready_for_review','completed','cancelled'].includes(status))return json({error:'Invalid task update.'},400);
+        const result=await call(env,'agent-task-update',{projectId,taskId,status,expectedStatus:text(data.expectedStatus,30),note:text(data.note,1000)});
+        return json(result,result.error?409:200);
+      }
+      if(path === '/api/portal/admin/agent-messages' && request.method === 'GET') {
+        const projectId=text(url.searchParams.get('projectId'),80);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return json({error:'Valid project ID required.'},400);
+        const result=await call(env,'agent-message-list',{projectId});return json(result,result.error?404:200);
+      }
+      if(path === '/api/portal/admin/agent-messages' && request.method === 'POST') {
+        const data=await body(request);
+        const projectId=text(data.projectId,80),from=text(data.from,30),to=text(data.to,30),message=text(data.message,3000);
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!message||!authorizeAgentMessage({from,to,channel:'internal'}))return json({error:'Invalid internal message.'},400);
+        const result=await call(env,'agent-message-create',{projectId,from,to,message});return json(result,result.error?400:201);
+      }
+      if(path === '/api/portal/admin/agent-policy' && request.method === 'POST') {
+        const data = await body(request);
+        if (data.kind === 'message') return json({allowed:authorizeAgentMessage({from:data.from,to:data.to,channel:data.channel})});
+        if (data.kind === 'transition') return json({allowed:authorizeOrderTransition({from:data.from,to:data.to,actor:data.actor,approvalEvidence:data.approvalEvidence})});
+        return json({error:'Unknown policy check.'},400);
       }
       if(path === '/api/portal/admin/portfolio' && request.method === 'GET') return json(await call(env,'portfolio-list'));
       if(path === '/api/portal/admin/portfolio' && request.method === 'POST') {
@@ -187,6 +366,47 @@ export async function portal(request, env) {
     if (path === '/api/portal/me' && request.method === 'GET') { const user = await session(request, env); return json({ user }); }
     const user = await session(request, env);
     if (!user) return json({ error: 'Sign in to view your projects.' }, 401);
+    if(path === '/api/portal/delivery-refresh-check' && request.method === 'POST') {
+      const origin=request.headers.get('Origin');
+      if(!origin||origin!==url.origin)return json({error:'Same-origin request required.'},403);
+      const site=request.headers.get('Sec-Fetch-Site');
+      if(site&&site!=='same-origin')return json({error:'Cross-site request denied.'},403);
+      const data=await body(request),projectId=text(data.projectId,80),versionId=text(data.versionId,80);
+      if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId))return json({error:'Invalid refresh request.'},400);
+      const state=await call(env,'delivery-refresh-state',{projectId,versionId,owner:user.id});
+      if(state.error)return json({error:'Delivery unavailable.'},403);
+      const decision=canRefreshDelivery({...state,owner:user.id,versionId});
+      if(!decision.allowed)return json({error:'Delivery unavailable.',reason:decision.reason},403);
+      if(!decision.requiresR2Recheck)return json({verified:true,refreshed:false,stillFresh:true});
+      if(!env.DELIVERY_BUCKET)return json({error:'Delivery storage unavailable.'},503);
+      const checked=await verifyDeliveryFiles(env.DELIVERY_BUCKET,state.manifest);
+      if(!checked.verified||!unchangedR2Snapshot(state.verification.files,checked.files))return json({error:'File verification requires owner review.'},409);
+      const renewal=await call(env,'delivery-refresh-commit',{projectId,versionId,owner:user.id,previousVerifiedAt:state.verification.verifiedAt,files:checked.files});
+      if(renewal.error)return json({error:'Delivery changed during revalidation.'},409);
+      return json({verified:true,unchanged:true,refreshed:true});
+    }
+    if(path === '/api/portal/delivery-download' && request.method === 'HEAD')return json({error:'Method not allowed.'},405);
+    if(path === '/api/portal/delivery-download' && request.method === 'GET') {
+      const projectId=text(url.searchParams.get('projectId'),80),versionId=text(url.searchParams.get('versionId'),80),fileName=text(url.searchParams.get('file'),160);
+      if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId)||!fileName)return json({error:'Invalid download request.'},400);
+      if(!env.DELIVERY_BUCKET)return json({error:'Delivery storage unavailable.'},503);
+      const result=await call(env,'delivery-client-file',{projectId,versionId,owner:user.id,fileName});
+      if(result.error==='Delivery access denied: fresh_verification_required')return json({error:'Verification expired. Refresh through the authenticated POST endpoint before downloading.',refreshRequired:true},409);
+      if(result.error)return json(result,403);
+      const file=result.file;
+      let object;try{object=await env.DELIVERY_BUCKET.get(file.storageKey);}catch{return json({error:'File temporarily unavailable.'},503);}
+      if(!object||object.etag!==result.verifiedEtag||object.size!==file.sizeBytes||object.httpMetadata?.contentType?.toLowerCase()!==file.mimeType.toLowerCase())return json({error:'File verification failed.'},409);
+      const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_').replace(/^\.+/,'_').slice(0,160);
+      if(!safeName)return json({error:'Invalid filename.'},400);
+      return new Response(object.body,{headers:{'Content-Type':file.mimeType,'Content-Disposition':'attachment; filename="'+safeName+'"','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex, nofollow'}});
+    }
+    if(path === '/api/portal/delivery-files' && request.method === 'GET') {
+      const projectId=text(url.searchParams.get('projectId'),80),versionId=text(url.searchParams.get('versionId'),80);
+      if(!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId))return json({error:'Invalid delivery request.'},400);
+      const result=await call(env,'delivery-client-manifest',{projectId,versionId,owner:user.id});
+      if(result.error)return json(result,403);
+      return json({files:result.files,versionId});
+    }
     if (path === '/api/portal/projects' && request.method === 'GET') { const data = await call(env, 'projects', { owner: user.id }); return json({projects:data.projects.map(clientProject)}); }
     if (path === '/api/portal/review' && request.method === 'POST') {
       const data = await body(request), action = data.action, message = text(data.message);
@@ -224,6 +444,269 @@ export class ProjectHub {
       }
       const studio = await studioOperation(operation, data, store, now);
       if(studio !== null) return studio;
+      if(operation==='agent-escalation-create'||operation==='agent-escalation-list'||operation==='agent-escalation-resolve') {
+        const projectId=data.projectId;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return {error:'Invalid project ID.'};
+        if(!await store.get('project:'+projectId))return {error:'Project not found.'};
+        const prefix='agent-escalation:'+projectId+':';
+        if(operation==='agent-escalation-list'){
+          const rows=await store.list({prefix,limit:101,reverse:true});
+          return {escalations:[...rows.values()].slice(0,100),hasMore:rows.size>100};
+        }
+        if(operation==='agent-escalation-create'){
+          if(!['savannah','vesper'].includes(data.reporter)||!['low','medium','high','critical'].includes(data.severity)||typeof data.summary!=='string'||!data.summary.trim()||data.summary.length>1000)return {error:'Invalid escalation.'};
+          const escalation={id:crypto.randomUUID(),projectId,reporter:data.reporter,severity:data.severity,summary:data.summary.trim(),status:'open',createdAt:new Date(now).toISOString(),resolvedAt:null};
+          await store.put(prefix+escalation.id,escalation);return {escalation};
+        }
+        if(typeof data.escalationId!=='string'||!/^[a-f0-9-]{36}$/.test(data.escalationId))return {error:'Invalid escalation ID.'};
+        const key=prefix+data.escalationId,escalation=await store.get(key);
+        if(!escalation)return {error:'Escalation not found.'};
+        if(escalation.status!=='open')return {error:'Escalation already resolved.'};
+        if(typeof data.resolution!=='string'||!data.resolution.trim()||data.resolution.length>1000)return {error:'Resolution required.'};
+        escalation.status='resolved';escalation.resolution=data.resolution.trim();escalation.resolvedAt=new Date(now).toISOString();
+        await store.put(key,escalation);return {escalation};
+      }
+      if(operation==='production-method-save') {
+        const {projectId,method}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!await store.get('project:'+projectId))return {error:'Project not found.'};
+        const validated=validateProductionMethod(method);
+        if(!validated)return {error:'Invalid production method.'};
+        const previous=await store.get('production-method:'+projectId);
+        if(previous&&previous.method!==validated.method){
+          const tasks=await store.list({prefix:'agent-task:'+projectId+':',limit:101});
+          if(tasks.size>100)return {error:'Task history exceeds review limit. Owner reconciliation required.'};
+          const active=[...tasks.values()].some(t=>t.productionMethod&&['queued','in_progress','blocked','ready_for_review','completed'].includes(t.status));
+          if(active)return {error:'Production method locked after task creation. Cancel or complete work and create a new approved project scope.'};
+        }
+        const record={...validated,projectId,updatedAt:new Date(now).toISOString(),recordedBy:'owner'};
+        await store.put('production-method:'+projectId,record);return {method:record};
+      }
+      if(operation==='delivery-verification-record') {
+        const {projectId,versionId,files}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof versionId!=='string'||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId)||!Array.isArray(files))return {error:'Invalid verification.'};
+        const project=await store.get('project:'+projectId);
+        const manifest=await store.get('delivery-manifest:'+projectId+':'+versionId);
+        const auth=await store.get('delivery-authorization:'+projectId+':'+versionId);
+        if(!project||!currentCustomerApproval(project,versionId)||!manifest||auth?.status!=='authorized_not_delivered')return {error:'Approval or manifest missing.'};
+        if(files.length!==manifest.files.length||!manifest.files.every((f,i)=>files[i]?.storageKey===f.storageKey&&files[i]?.sizeBytes===f.sizeBytes&&files[i]?.mimeType?.toLowerCase()===f.mimeType.toLowerCase()&&typeof files[i]?.etag==='string'&&files[i].etag.length>0))return {error:'File verification mismatch.'};
+        const verified={projectId,versionId,files,verifiedAt:new Date(now).toISOString()};
+        await store.put('delivery-verified:'+projectId+':'+versionId,verified);
+        return {verified:true};
+      }
+      if(operation==='delivery-refresh-commit') {
+        const {projectId,versionId,owner,previousVerifiedAt,files}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof versionId!=='string'||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId)||!Array.isArray(files))return {error:'Invalid refresh.'};
+        const project=await store.get('project:'+projectId);
+        const authorization=await store.get('delivery-authorization:'+projectId+':'+versionId);
+        const manifest=await store.get('delivery-manifest:'+projectId+':'+versionId);
+        const prior=await store.get('delivery-verified:'+projectId+':'+versionId);
+        const decision=canRefreshDelivery({project,owner,versionId,authorization,manifest,verification:prior,now});
+        if(!decision.allowed||prior.verifiedAt!==previousVerifiedAt||!unchangedR2Snapshot(prior.files,files))return {error:'Refresh not authorized.'};
+        await store.put('delivery-verified:'+projectId+':'+versionId,{...prior,files,verifiedAt:new Date(now).toISOString()});
+        return {refreshed:true};
+      }
+      if(operation==='delivery-refresh-state') {
+        const {projectId,versionId,owner}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof versionId!=='string'||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId))return {error:'Invalid request.'};
+        const project=await store.get('project:'+projectId);
+        if(!project||project.owner!==owner)return {error:'Access denied.'};
+        const authorization=await store.get('delivery-authorization:'+projectId+':'+versionId);
+        const manifest=await store.get('delivery-manifest:'+projectId+':'+versionId);
+        const verification=await store.get('delivery-verified:'+projectId+':'+versionId);
+        return {project,authorization,manifest,verification};
+      }
+      if(operation==='delivery-client-file') {
+        const {projectId,versionId,owner,fileName}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof versionId!=='string'||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId)||typeof fileName!=='string'||!fileName||fileName.length>160)return {error:'Invalid download request.'};
+        const project=await store.get('project:'+projectId);
+        const authorization=await store.get('delivery-authorization:'+projectId+':'+versionId);
+        const manifest=await store.get('delivery-manifest:'+projectId+':'+versionId);
+        const verified=await store.get('delivery-verified:'+projectId+':'+versionId);
+        const access=authorizeCustomerDelivery({project,owner,versionId,authorization,manifest,verification:verified,now});
+        if(!access.allowed)return {error:'Delivery access denied: '+access.reason};
+        const matches=manifest.files.filter(f=>f.name===fileName);
+        if(matches.length!==1)return {error:'File unavailable or ambiguous.'};
+        const verifiedFile=verified.files.find(f=>f.storageKey===matches[0].storageKey);
+        if(!verifiedFile)return {error:'File not verified.'};
+        return {file:matches[0],verifiedEtag:verifiedFile.etag};
+      }
+      if(operation==='delivery-client-manifest') {
+        const {projectId,versionId,owner}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof versionId!=='string'||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId))return {error:'Invalid delivery request.'};
+        const project=await store.get('project:'+projectId);
+        const authorization=await store.get('delivery-authorization:'+projectId+':'+versionId);
+        const manifest=await store.get('delivery-manifest:'+projectId+':'+versionId);
+        const verification=await store.get('delivery-verified:'+projectId+':'+versionId);
+        const access=authorizeCustomerDelivery({project,owner,versionId,authorization,manifest,verification,now});
+        if(!access.allowed)return {error:'Delivery access denied: '+access.reason};
+        return {files:manifest.files.map(f=>({name:f.name,mimeType:f.mimeType,sizeBytes:f.sizeBytes})),versionId};
+      }
+      if(operation==='delivery-manifest-get') {
+        const {projectId,versionId}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof versionId!=='string'||!/^[a-zA-Z0-9-]{1,80}$/.test(versionId))return {error:'Invalid delivery request.'};
+        const project=await store.get('project:'+projectId);
+        if(!project||!currentCustomerApproval(project,versionId))return {error:'Current customer approval required.'};
+        const authorization=await store.get('delivery-authorization:'+projectId+':'+versionId);
+        if(!authorization||authorization.status!=='authorized_not_delivered')return {error:'Owner delivery authorization required.'};
+        const manifest=await store.get('delivery-manifest:'+projectId+':'+versionId);
+        return manifest?{manifest}:{error:'Delivery manifest not found.'};
+      }
+      if(operation==='delivery-manifest-save') {
+        const manifest=validateDeliveryManifest(data.manifest);
+        if(!manifest)return {error:'Invalid delivery manifest.'};
+        const {projectId,versionId}=manifest;
+        const project=await store.get('project:'+projectId);
+        if(!project||!currentCustomerApproval(project,versionId))return {error:'Current customer approval required.'};
+        const authorization=await store.get('delivery-authorization:'+projectId+':'+versionId);
+        if(!authorization||authorization.status!=='authorized_not_delivered')return {error:'Owner delivery authorization required.'};
+        const key='delivery-manifest:'+projectId+':'+versionId;
+        if(await store.get(key))return {error:'Manifest already exists; owner review required for changes.'};
+        const saved={...manifest,id:crypto.randomUUID(),createdAt:new Date(now).toISOString()};
+        await store.put(key,saved);return {manifest:saved};
+      }
+      if(operation==='delivery-authorize') {
+        const {projectId,versionId}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof versionId!=='string'||versionId.length>80)return {error:'Invalid delivery request.'};
+        const project=await store.get('project:'+projectId);
+        if(!project)return {error:'Project not found.'};
+        const approval=currentCustomerApproval(project,versionId);
+        if(!approval)return {error:'Current customer approval required.'};
+        const key='delivery-authorization:'+projectId+':'+versionId;
+        const existing=await store.get(key);
+        if(existing)return {authorization:existing,reused:true};
+        const authorization={id:crypto.randomUUID(),projectId,versionId,approval,authorizedBy:'owner',authorizedAt:new Date(now).toISOString(),status:'authorized_not_delivered'};
+        await store.put(key,authorization);return {authorization,reused:false};
+      }
+      if(operation==='customer-approvals') {
+        const projectId=data.projectId;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return {error:'Invalid project ID.'};
+        const project=await store.get('project:'+projectId);
+        if(!project)return {error:'Project not found.'};
+        return {approvals:(project.reviews||[]).filter(v=>v.status==='approved'&&v.decidedAt).map(v=>({versionId:v.id,number:v.number,approvedAt:v.decidedAt,source:'authenticated_client_portal'}))};
+      }
+      if(operation==='creative-task-create') {
+        const {projectId,planId,approvalEvidence}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof planId!=='string'||!/^[a-f0-9-]{36}$/.test(planId)||!authorizesInitialCreativeTask(validateApprovalEvidence(approvalEvidence)))return {error:'Invalid creative task request.'};
+        if(!await store.get('project:'+projectId))return {error:'Project not found.'};
+        const productionMethod=await store.get('production-method:'+projectId);
+        const readiness=authorizeProductionMethod(productionMethod);
+        if(!readiness.allowed)return {error:'Production method not authorized: '+readiness.reason};
+        const plans=await store.list({prefix:'creative-plan:'+projectId+':',limit:101});
+        const plan=[...plans.values()].find(p=>p.id===planId);
+        if(!plan)return {error:'Creative plan not found.'};
+        const uniqueKey='creative-task-link:'+projectId+':'+planId;
+        const existing=await store.get(uniqueKey);
+        if(existing)return {taskId:existing.taskId,reused:true};
+        const id=crypto.randomUUID(),at=new Date(now).toISOString();
+        const task={id,projectId,assignedTo:'vesper',title:'Produce '+plan.brief.assetType+' for '+plan.brief.platform,instructions:plan.brief.description,status:'queued',createdAt:at,updatedAt:at,planId,productionMethod:productionMethod.method,approvalEvidence:validateApprovalEvidence(approvalEvidence),history:[{status:'queued',at,by:'owner',note:'Created from approved creative plan'}]};
+        await store.put('agent-task:'+projectId+':'+id,task);
+        await store.put(uniqueKey,{taskId:id,createdAt:at});
+        return {taskId:id,reused:false};
+      }
+      if(operation==='creative-plan-save'||operation==='creative-plan-list') {
+        const projectId=operation==='creative-plan-save'?data.plan?.brief?.projectId:data.projectId;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return {error:'Invalid project ID.'};
+        if(!await store.get('project:'+projectId))return {error:'Project not found.'};
+        const prefix='creative-plan:'+projectId+':';
+        if(operation==='creative-plan-list'){
+          const rows=await store.list({prefix,limit:101,reverse:true});
+          return {plans:[...rows.values()].slice(0,100),hasMore:rows.size>100};
+        }
+        const plan={...data.plan,id:crypto.randomUUID(),createdAt:new Date(now).toISOString()};
+        if(plan.status!=='planning_only'||plan.producer!=='vesper'||plan.customerContact!=='savannah')return {error:'Invalid plan.'};
+        await store.put(prefix+String(now).padStart(13,'0')+':'+plan.id,plan);
+        return {plan};
+      }
+      if(operation==='generation-provider-state') {
+        const {projectId,requestKey,status,providerJobId}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof requestKey!=='string'||!/^[a-zA-Z0-9_-]{20,80}$/.test(requestKey)||!['submission_uncertain','submitted','completed','failed'].includes(status))return {error:'Invalid provider state.'};
+        const key='generation-reservation:'+projectId+':'+requestKey,reservation=await store.get(key);
+        if(!reservation)return {error:'Reservation not found.'};
+        const allowed={approved_not_submitted:['submission_uncertain','submitted'],submission_uncertain:['submitted','failed'],submitted:['completed','failed'],completed:[],failed:[],rejected:[],pending_owner_approval:[]};
+        if(!allowed[reservation.status]?.includes(status))return {error:'Invalid provider transition.'};
+        if(['submitted','completed'].includes(status)&&(!providerJobId||typeof providerJobId!=='string'||providerJobId.length>160))return {error:'Provider job ID required.'};
+        if(reservation.providerJobId&&providerJobId&&reservation.providerJobId!==providerJobId)return {error:'Provider job ID mismatch.'};
+        reservation.status=status;reservation.providerJobId=providerJobId||reservation.providerJobId;reservation.updatedAt=new Date(now).toISOString();
+        await store.put(key,reservation);return {reservation};
+      }
+      if(operation==='generation-approval') {
+        const {projectId,requestKey,decision}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof requestKey!=='string'||!/^[a-zA-Z0-9_-]{20,80}$/.test(requestKey)||!['approve','reject'].includes(decision))return {error:'Invalid approval request.'};
+        const key='generation-reservation:'+projectId+':'+requestKey,reservation=await store.get(key);
+        if(!reservation)return {error:'Reservation not found.'};
+        if(reservation.status!=='pending_owner_approval')return {error:'Decision already recorded.'};
+        reservation.status=decision==='approve'?'approved_not_submitted':'rejected';reservation.decidedAt=new Date(now).toISOString();reservation.decidedBy='owner';
+        await store.put(key,reservation);return {reservation};
+      }
+      if(operation==='generation-reserve') {
+        const {projectId,taskId,requestKey,estimatedCents}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof taskId!=='string'||!/^[a-f0-9-]{36}$/.test(taskId)||typeof requestKey!=='string'||!/^[a-zA-Z0-9_-]{20,80}$/.test(requestKey)||!Number.isSafeInteger(estimatedCents)||estimatedCents<0||estimatedCents>100000)return {error:'Invalid reservation.'};
+        const task=await store.get('agent-task:'+projectId+':'+taskId);
+        if(!task||task.assignedTo!=='vesper'||task.status!=='in_progress')return {error:'Active Vesper task required.'};
+        const key='generation-reservation:'+projectId+':'+requestKey;
+        const existing=await store.get(key);
+        if(existing)return existing.taskId===taskId&&existing.estimatedCents===estimatedCents?{reservation:existing,reused:true}:{error:'Idempotency key conflict.'};
+        const reservation={id:crypto.randomUUID(),projectId,taskId,requestKey,estimatedCents,status:'pending_owner_approval',providerJobId:null,createdAt:new Date(now).toISOString()};
+        await store.put(key,reservation);return {reservation,reused:false};
+      }
+      if(operation==='agent-task-claim') {
+        const {projectId,taskId,agent}=data;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||typeof taskId!=='string'||!/^[a-f0-9-]{36}$/.test(taskId))return {error:'Invalid claim.'};
+        const key='agent-task:'+projectId+':'+taskId,task=await store.get(key);
+        if(!task||task.assignedTo!==agent)return {error:'Task unavailable.'};
+        if(task.status!=='queued')return {error:'Task already claimed or unavailable.'};
+        task.status='in_progress';task.attempts=(task.attempts||0)+1;
+        if(task.attempts>3)return {error:'Retry limit reached. Owner review required.'};
+        task.claimedAt=new Date(now).toISOString();task.updatedAt=task.claimedAt;
+        task.history=[...task.history,{status:'in_progress',at:task.claimedAt,by:agent,note:'Task claimed'}].slice(-50);
+        await store.put(key,task);return {task};
+      }
+      if(operation==='agent-task-assigned') {
+        const projectId=data.projectId,agent=data.agent;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId)||!['anna','savannah','vesper','atlas','forge','mercury','sentinel','nova'].includes(agent))return {error:'Invalid request.'};
+        if(!await store.get('project:'+projectId))return {error:'Project not found.'};
+        const rows=await store.list({prefix:'agent-task:'+projectId+':',limit:101});
+        return {tasks:[...rows.values()].filter(t=>t.assignedTo===agent&&['queued','in_progress','blocked'].includes(t.status)).slice(0,100),hasMore:rows.size>100};
+      }
+      if(operation==='agent-task-create'||operation==='agent-task-list'||operation==='agent-task-update') {
+        const projectId=data.projectId;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return {error:'Invalid project ID.'};
+        if(!await store.get('project:'+projectId))return {error:'Project not found.'};
+        const prefix='agent-task:'+projectId+':';
+        if(operation==='agent-task-list'){
+          const rows=await store.list({prefix,limit:101,reverse:true});
+          return {tasks:[...rows.values()].slice(0,100),hasMore:rows.size>100};
+        }
+        if(operation==='agent-task-create'){
+          if(!['anna','savannah','vesper','atlas','forge','mercury','sentinel','nova'].includes(data.assignedTo)||typeof data.title!=='string'||!data.title.trim()||data.title.length>160||typeof data.instructions!=='string'||!data.instructions.trim()||data.instructions.length>3000)return {error:'Invalid task.'};
+          const task={id:crypto.randomUUID(),projectId,assignedTo:data.assignedTo,title:data.title.trim(),instructions:data.instructions.trim(),status:'queued',createdAt:new Date(now).toISOString(),updatedAt:new Date(now).toISOString(),history:[{status:'queued',at:new Date(now).toISOString(),by:'owner'}]};
+          await store.put(prefix+task.id,task);return {task};
+        }
+        if(typeof data.taskId!=='string'||!/^[a-f0-9-]{36}$/.test(data.taskId))return {error:'Invalid task ID.'};
+        const key=prefix+data.taskId,task=await store.get(key);
+        if(!task)return {error:'Task not found.'};
+        if(data.actor && (task.assignedTo!==data.actor||!['in_progress','blocked','ready_for_review'].includes(data.status)))return {error:'Agent cannot update this task.'};
+        if(task.status!==data.expectedStatus)return {error:'Task changed. Refresh before updating.'};
+        const allowed={queued:['in_progress','cancelled'],in_progress:['blocked','ready_for_review','cancelled'],blocked:['queued','cancelled'],ready_for_review:['completed','in_progress','cancelled'],completed:[],cancelled:[]};
+        if(!allowed[task.status]?.includes(data.status))return {error:'Invalid task transition.'};
+        task.status=data.status;task.updatedAt=new Date(now).toISOString();task.history=[...task.history,{status:data.status,at:task.updatedAt,by:data.actor||'owner',note:typeof data.note==='string'?data.note.slice(0,1000):''}].slice(-50);
+        await store.put(key,task);return {task};
+      }
+      if(operation==='agent-message-create'||operation==='agent-message-list') {
+        const projectId=data.projectId;
+        if(typeof projectId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(projectId))return {error:'Invalid project ID.'};
+        const project=await store.get('project:'+projectId);
+        if(!project)return {error:'Project not found.'};
+        const prefix='agent-message:'+projectId+':';
+        if(operation==='agent-message-list'){
+          const rows=await store.list({prefix,limit:101,reverse:true});
+          return {messages:[...rows.values()].slice(0,100),hasMore:rows.size>100};
+        }
+        if(!authorizeAgentMessage({from:data.from,to:data.to,channel:'internal'})||typeof data.message!=='string'||!data.message.trim()||data.message.length>3000)return {error:'Internal message denied.'};
+        const message={id:crypto.randomUUID(),projectId,from:data.from,to:data.to,body:data.message.trim(),createdAt:new Date(now).toISOString()};
+        await store.put(prefix+String(now).padStart(13,'0')+':'+message.id,message);
+        return {message};
+      }
       if (operation === 'login') { await store.put('session:' + data.key, { user: data.user, expiresAt: now + (data.duration === 3600000 ? 3600000 : 7 * DAY) }); return { ok: true }; }
       if (operation === 'session') { const s = await store.get('session:' + data.key); return s && s.expiresAt > now ? s.user : null; }
       if (operation === 'logout') { await store.delete('session:' + data.key); return { ok: true }; }

@@ -14,6 +14,7 @@
     {"tag": "savannah-v1", "new_sqlite_classes": ["SavannahInbox"]},
     {"tag": "projects-v1", "new_sqlite_classes": ["ProjectHub"]}
   ],
+  "r2_buckets": [{"binding": "DELIVERY_BUCKET", "bucket_name": "obsidian-reign-delivery-staging"}],
   "observability": {"enabled": true},
   "vars": {"SAVANNAH_AUTO_SEND": "false", "STAGING": "true"},
   "assets": {"directory": "dist", "binding": "ASSETS", "run_worker_first": true,
