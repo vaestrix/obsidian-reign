@@ -7,6 +7,8 @@ test('staging smoke checks are restricted to staging workers.dev hostname',()=>{
  assert.match(smoke,/hostname\.startsWith\('obsidian-reign-staging\.'\)/);
 });
 test('smoke tests only exercise unauthenticated denial paths',()=>{
+ assert.match(smoke,/unauthenticated project listing/);
+ assert.match(smoke,/unauthenticated customer review/);
  assert.match(smoke,/unauthenticated file listing/);
  assert.match(smoke,/unauthenticated file download/);
  assert.match(smoke,/unauthenticated refresh/);
