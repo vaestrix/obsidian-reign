@@ -2,8 +2,11 @@ name: Staging Readiness (No Deploy)
 on:
   pull_request:
     paths:
-      - 'wrangler.staging.jsonc'
+      - 'wrangler*.jsonc'
       - 'src/**'
+      - 'assets/js/**'
+      - 'client-portal.html'
+      - 'scripts/**'
       - 'test/**'
       - '.github/workflows/staging-readiness.yml'
   workflow_dispatch:
