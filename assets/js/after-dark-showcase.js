@@ -11,6 +11,11 @@
   const activeVideo = () => active?.querySelector('video');
   const updatePlay = () => {
     const video = activeVideo();
+    if (video?.dataset.artworkOnly === 'true') {
+      play.hidden = true;
+      caption.textContent = 'Black Rose alert artwork. Motion preview is unavailable in this browser.';
+      return;
+    }
     play.hidden = !video;
     play.textContent = video?.ended ? 'Replay demo' : video && !video.paused ? 'Pause demo' : 'Play demo';
     play.setAttribute('aria-label', `${play.textContent}: ${active?.dataset.assetTitle ?? ''}`);
@@ -39,7 +44,11 @@
   });
   videos.forEach(video => ['play', 'pause', 'ended', 'error'].forEach(event => video.addEventListener(event, () => {
     if (video !== activeVideo()) return;
-    if (event === 'error') { caption.textContent = 'Video unavailable. The still preview is shown.'; play.textContent = 'Try again'; }
+    if (event === 'error') {
+      const fallback = active.querySelector('[data-asset-fallback]');
+      if (fallback) { video.dataset.artworkOnly = 'true'; video.hidden = true; fallback.hidden = false; updatePlay(); }
+      else { caption.textContent = 'Video unavailable. The still preview is shown.'; play.textContent = 'Try again'; }
+    }
     else updatePlay();
   })));
   document.addEventListener('visibilitychange', () => { if (document.hidden) videos.forEach(video => video.pause()); });

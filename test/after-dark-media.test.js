@@ -8,7 +8,7 @@ test('rendered alert stays behind the age prompt and starts only on request', as
   const dom=new JSDOM(html,{runScripts:'dangerously'});
   dom.window.scrollTo=()=>{};
   const doc=dom.window.document,videos=[...doc.querySelectorAll('video')];
-  assert.equal(videos.length,2);
+  assert.equal(videos.length,3);
   assert.equal(doc.getElementById('content').hidden,true);
   assert.equal(doc.getElementById('age-gate').hidden,false);
   doc.getElementById('enter').click();
@@ -16,7 +16,7 @@ test('rendered alert stays behind the age prompt and starts only on request', as
   assert.equal(doc.getElementById('age-gate').hidden,true);
   for(const video of videos){
     assert.equal(video.autoplay,false);
-    assert.equal(video.loop,false);
+    assert.equal(video.loop,video.closest('[data-asset-panel]').dataset.assetPanel==='scene');
     assert.equal(video.preload,'none');
     assert(video.controls);
     for(const path of [video.querySelector('source').getAttribute('src'),video.getAttribute('poster')]){
@@ -67,6 +67,22 @@ test('showcase switches artwork without autoplay and pauses inactive previews', 
   assert.equal(camera.hidden,false);
   assert((await stat(new URL('..'+camera.querySelector('img').getAttribute('src'),import.meta.url))).size>0);
   assert.equal(doc.querySelectorAll('[data-asset-option][aria-pressed="true"]').length,1);
+  doc.querySelector('[data-asset-option="overlay"]').click();
+  const overlay=doc.querySelector('[data-asset-panel="overlay"]');
+  assert.equal(overlay.hidden,false);
+  assert.equal(button.hidden,false);
+  assert.equal(states.get(overlay.querySelector('video')).plays,0);
+  assert.equal(overlay.querySelector('video source').type,'video/webm');
+  assert.equal(doc.querySelector('[data-asset-panel="camera"]').hidden,true);
+  const overlayVideo=overlay.querySelector('video');
+  overlayVideo.dispatchEvent(new dom.window.Event('error'));
+  assert.equal(overlayVideo.hidden,true);
+  assert.equal(overlay.querySelector('[data-asset-fallback]').hidden,false);
+  assert.equal(button.hidden,true);
+  doc.querySelector('[data-asset-option="camera"]').click();
+  doc.querySelector('[data-asset-option="overlay"]').click();
+  assert.equal(button.hidden,true);
+  assert.match(doc.querySelector('[data-asset-caption]').textContent,/Motion preview is unavailable/);
   dom.window.close();
 });
 
