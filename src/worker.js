@@ -21,6 +21,7 @@ function secured(response, path, staging = false) {
   if(/^\/(api|auth|admin)(\/|$)/.test(path)||/^\/(project-admin|admin-login|client-portal)(\.html)?\/?$/.test(path)){
     headers.set('Cache-Control','no-store');headers.set('X-Robots-Tag','noindex, nofollow');
   }
+  if(path==='/after-dark'||path==='/after-dark.html')headers.set('X-Robots-Tag','noindex, nofollow');
   if(staging)headers.set('X-Robots-Tag','noindex, nofollow');
   return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
 }
