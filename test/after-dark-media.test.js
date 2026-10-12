@@ -7,19 +7,22 @@ test('rendered alert stays behind the age prompt and starts only on request', as
   const html=await readFile(new URL('../after-dark.html',import.meta.url),'utf8');
   const dom=new JSDOM(html,{runScripts:'dangerously'});
   dom.window.scrollTo=()=>{};
-  const doc=dom.window.document,video=doc.querySelector('.rendered-alert');
+  const doc=dom.window.document,videos=[...doc.querySelectorAll('video')];
+  assert.equal(videos.length,2);
   assert.equal(doc.getElementById('content').hidden,true);
   assert.equal(doc.getElementById('age-gate').hidden,false);
-  assert.equal(video.autoplay,false);
-  assert.equal(video.loop,false);
-  assert.equal(video.preload,'none');
-  assert(video.controls);
   doc.getElementById('enter').click();
   assert.equal(doc.getElementById('content').hidden,false);
   assert.equal(doc.getElementById('age-gate').hidden,true);
-  for(const path of [video.querySelector('source').getAttribute('src'),video.getAttribute('poster')]){
-    assert(path.startsWith('/assets/'));
-    assert((await stat(new URL('..'+path,import.meta.url))).size>0);
+  for(const video of videos){
+    assert.equal(video.autoplay,false);
+    assert.equal(video.loop,false);
+    assert.equal(video.preload,'none');
+    assert(video.controls);
+    for(const path of [video.querySelector('source').getAttribute('src'),video.getAttribute('poster')]){
+      assert(path.startsWith('/assets/'));
+      assert((await stat(new URL('..'+path,import.meta.url))).size>0);
+    }
   }
   dom.window.close();
 });
