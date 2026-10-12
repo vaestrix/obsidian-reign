@@ -9,7 +9,7 @@ export { SavannahInbox } from './savannah.js';
 
 // Preserve the existing migration destinations, with actual permanent redirects.
 const migrations = {news:'/',raids:'/services',roster:'/portfolio',join:'/start-project','who-we-are':'/',guides:'/services',profile:'/'};
-const publicPages = new Set(['services','portfolio','pricing','start-project','client-portal','privacy']);
+const publicPages = new Set(['services','portfolio','pricing','start-project','client-portal','privacy','after-dark']);
 function secured(response, path, staging = false) {
   const headers=new Headers(response.headers);
   headers.set('X-Content-Type-Options','nosniff');
