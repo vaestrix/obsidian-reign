@@ -7,6 +7,9 @@ const url=new URL(base);
 if(url.protocol!=='https:'||!url.hostname.endsWith('.workers.dev')||!url.hostname.startsWith('obsidian-reign-staging.'))throw new Error('Only the dedicated staging workers.dev hostname is allowed.');
 const origin=url.origin;
 const checks=[
+ {name:'unauthenticated project listing',path:'/api/portal/projects',method:'GET',allowed:[401,403]},
+ {name:'unauthenticated customer review',path:'/api/portal/review',method:'POST',allowed:[401,403],body:{id:'synthetic',versionId:'synthetic',action:'approved'}},
+ {name:'unauthenticated delivery metadata',path:'/api/portal/delivery-files?projectId=synthetic&versionId=synthetic',method:'GET',allowed:[401,403]},
  {name:'unauthenticated file listing',path:'/api/portal/delivery-files?projectId=synthetic&versionId=synthetic',method:'GET',allowed:[401,403]},
  {name:'unauthenticated file download',path:'/api/portal/delivery-download?projectId=synthetic&versionId=synthetic&file=sample.png',method:'GET',allowed:[401,403]},
  {name:'unauthenticated refresh',path:'/api/portal/delivery-refresh-check',method:'POST',allowed:[401,403],body:{projectId:'synthetic',versionId:'synthetic'}},
