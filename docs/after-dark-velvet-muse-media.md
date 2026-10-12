@@ -33,4 +33,3 @@ Both motion previews are user initiated with native controls and original still 
 ### Motion release verification
 
 Deployed Cloudflare Worker version 838c58bb-2d41-4058-92ad-4e7dbb8dbcc5 on 2026-10-12 after all 78 tests, build, deployment preservation guard, and whitespace checks passed. Live media returned HTTP 200 with the expected content types and exact SHA-256 matches. Main, pricing, After Dark, client portal, and project administration routes returned 200; unknown routes returned 404; both unauthenticated mailbox webhooks returned 401. After Dark retains noindex and its age safeguards. Authenticated status confirmed Savannah automated replies disabled and Anna enabled. Streaming application playback compatibility remains unverified; no desktop interaction was used.
-
