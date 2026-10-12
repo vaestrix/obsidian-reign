@@ -7,3 +7,5 @@ For user-authorized follow-up scheduling, use `node scripts/project-agent.mjs sc
 The script reads an ignored local credential in `.wrangler/portal-agent-credential.json` or a server-side environment variable. Never print, commit, publish, or paste the token. Do not copy client/internal records to public artifacts. Agent access cannot edit quotes, client ownership or access codes. The studio administers those at `/admin/projects` using the existing admin login.
 
 Read `docs/client-portal.md` for provider setup and operational details. Preserve the read-only `sources/` project references in the parent workspace.
+
+Preserve both agents in the integrated src/worker.js entry point during site deployments. Run scripts/check-agent-deployment.mjs, preserve live bindings and explicit owner pauses, and verify authenticated Anna status after deploy. Do not replace production with an old portal-only entry point.
