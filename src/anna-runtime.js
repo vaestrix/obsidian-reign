@@ -19,6 +19,7 @@ export function outreachMessage(lead) {
 }
 export async function queueProspect(ctx,env,lead) {
   if (env.ANNA_AUTO_SEND !== 'true' || !env.ANNA_MAIL_API_TOKEN || !env.ANNA_MAILBOX_ID || campaign.approval?.approvedBy !== 'Philip') return Response.json({error:'anna-not-enabled'},{status:503});
+  if (env.SAVANNAH_AUTO_SEND !== 'true') return Response.json({error:'savannah-handoff-paused'},{status:503});
   let message; try { message = outreachMessage(lead); } catch { return Response.json({error:'ineligible-prospect'},{status:400}); }
   const key = await contactKey(message.to[0]);
   return ctx.blockConcurrencyWhile(async () => {
@@ -36,7 +37,7 @@ export async function queueProspect(ctx,env,lead) {
   });
 }
 export async function dispatchProspects(ctx,env) {
-  if(env.ANNA_AUTO_SEND !== 'true')return;
+  if(env.ANNA_AUTO_SEND !== 'true' || env.SAVANNAH_AUTO_SEND !== 'true')return;
   for(const [jobKey,job] of await ctx.storage.list({prefix:'anna:outbox:'})) {
     if(job.state!=='queued')continue;
     const contact=await ctx.storage.get(job.key);
