@@ -8,7 +8,7 @@ test('rendered alert stays behind the age prompt and starts only on request', as
   const dom=new JSDOM(html,{runScripts:'dangerously'});
   dom.window.scrollTo=()=>{};
   const doc=dom.window.document,videos=[...doc.querySelectorAll('video')];
-  assert.equal(videos.length,5);
+  assert.equal(videos.length,7);
   assert.equal(doc.getElementById('content').hidden,true);
   assert.equal(doc.getElementById('age-gate').hidden,false);
   doc.getElementById('enter').click();
@@ -16,7 +16,7 @@ test('rendered alert stays behind the age prompt and starts only on request', as
   assert.equal(doc.getElementById('age-gate').hidden,true);
   for(const video of videos){
     assert.equal(video.autoplay,false);
-    assert.equal(video.loop,video.closest('[data-asset-panel]').dataset.assetPanel==='scene');
+    assert.equal(video.loop,['scene','break','ending'].includes(video.closest('[data-asset-panel]').dataset.assetPanel));
     assert.equal(video.preload,'none');
     assert(video.controls);
     for(const path of [video.querySelector('source').getAttribute('src'),video.getAttribute('poster')]){
@@ -83,7 +83,7 @@ test('showcase switches artwork without autoplay and pauses inactive previews', 
   suite.querySelector('[data-asset-option="camera"]').click();
   suite.querySelector('[data-asset-option="overlay"]').click();
   assert.equal(button.hidden,true);
-  assert.match(suite.querySelector('[data-asset-caption]').textContent,/Motion preview is unavailable/);
+  assert.match(suite.querySelector('.ad-preview-caption [data-asset-caption]').textContent,/Motion preview is unavailable/);
   dom.window.close();
 });
 
@@ -158,5 +158,24 @@ test('starting a different collection pauses the previously playing preview',asy
   velvet.querySelector('[data-asset-play]').click();await Promise.resolve();
   assert.equal(states.get(roseVideo).paused,true);
   assert.equal(states.get(velvet.querySelector('[data-asset-panel="scene"] video')).paused,false);
+  dom.window.close();
+});
+
+test('Velvet stream scenes have distinct media and remain selectable behind the age gate',async()=>{
+  const html=await readFile(new URL('../after-dark.html',import.meta.url),'utf8');
+  const script=await readFile(new URL('../assets/js/after-dark-showcase.js',import.meta.url),'utf8');
+  const dom=new JSDOM(html,{runScripts:'dangerously'}),doc=dom.window.document;
+  for(const video of doc.querySelectorAll('video'))video.pause=()=>{};
+  dom.window.eval(script);
+  const suite=doc.querySelector('.ad-suite-velvet'),sources=[],posters=[];
+  for(const key of ['scene','break','ending']){
+    suite.querySelector(`[data-asset-option="${key}"]`).click();
+    const panel=suite.querySelector(`[data-asset-panel="${key}"]`);
+    assert.equal(panel.hidden,false);
+    assert.equal(suite.querySelectorAll('[data-asset-panel]:not([hidden])').length,1);
+    sources.push(panel.querySelector('source').src);posters.push(panel.querySelector('video').poster);
+    assert.equal(doc.getElementById('content').hidden,true);
+  }
+  assert.equal(new Set(sources).size,3);assert.equal(new Set(posters).size,3);
   dom.window.close();
 });

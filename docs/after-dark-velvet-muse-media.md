@@ -33,3 +33,21 @@ Both motion previews are user initiated with native controls and original still 
 ### Motion release verification
 
 Deployed Cloudflare Worker version 838c58bb-2d41-4058-92ad-4e7dbb8dbcc5 on 2026-10-12 after all 78 tests, build, deployment preservation guard, and whitespace checks passed. Live media returned HTTP 200 with the expected content types and exact SHA-256 matches. Main, pricing, After Dark, client portal, and project administration routes returned 200; unknown routes returned 404; both unauthenticated mailbox webhooks returned 401. After Dark retains noindex and its age safeguards. Authenticated status confirmed Savannah automated replies disabled and Anna enabled. Streaming application playback compatibility remains unverified; no desktop interaction was used.
+
+## Distinct 10-second streaming scenes
+
+Starting Soon uses a dressing alcove; Be Right Back uses a perfume/lipstick/lace vanity; Stream Ending uses a city-view candlelit lounge. Each has a different background, composition and motion. They replace the repetitive room variants in the showcase. The signature kiss alert remains a separate composition.
+
+Runway tasks: a5d0d3c1-01ed-4e0e-8bf0-23dc6ef91d1a, 33a78a54-abe9-4b05-8f76-f27710ca8d4e, 7e7d9396-b7f0-485a-b171-c0ef2493d581. Batch cost: 1200 credits.
+
+All three final MP4s: 1920x1080, 24 fps, 240 frames, exactly 10 seconds, silent H.264, faststart. The last second dissolves toward the opening frame; decoded first and last frames match exactly. Original forward motion is retained. Sampled frames including closing transitions were visually inspected for readable titles and major structural artifacts. Streaming-app compatibility remains unverified. Website videos have request-only controls, no autoplay, preload none and distinct posters behind the age gate.
+
+starting-soon: 2256781 bytes; SHA-256 b781507c83fbf192aa31198e875257f4beb16f87647fcc44c4c7b05db4c25275.
+
+be-right-back: 3188815 bytes; SHA-256 945063883f555eb5d089c9a5f8078d2a1415d512a43486ed919ab19e96dbcbf8.
+
+stream-ending: 1727463 bytes; SHA-256 ae9ae879a21f250eb1b3bca2bf117ecffa3f6aa9666cc515ac75595b729aebf1.
+
+Release: Cloudflare version 1c5df04c-ec64-4866-99e7-ca5bc23fafdb. All 79 npm tests, npm build and deployment preservation guard passed. Live videos and posters returned 200 with exact local SHA-256 matches; age gate, no-autoplay and noindex verified. Main routes remained available and unauthenticated mailbox webhooks returned 401. Authenticated state confirmed Savannah false and Anna true. The preview caption selector was corrected to target the caption paragraph, preserving video panels when changing previews.
+Be Right Back: 3188815 bytes; SHA-256 945063883f555eb5d089c9a5f8078d2a1415d512a43486ed919ab19e96dbcbf8.
+Stream Ending: 1727463 bytes; SHA-256 ae9ae879a21f250eb1b3bca2bf117ecffa3f6aa9666cc515ac75595b729aebf1.

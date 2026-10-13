@@ -5,7 +5,7 @@
   const options = [...suite.querySelectorAll('[data-asset-option]')];
   const panels = [...suite.querySelectorAll('[data-asset-panel]')];
   const play = suite.querySelector('[data-asset-play]');
-  const caption = suite.querySelector('[data-asset-caption]');
+  const caption = suite.querySelector('.ad-preview-caption [data-asset-caption]');
   const videos = [...suite.querySelectorAll('video')];
   let active = panels.find(panel => !panel.hidden);
   const activeVideo = () => active?.querySelector('video');
