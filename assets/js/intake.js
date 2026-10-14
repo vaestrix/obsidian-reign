@@ -13,6 +13,22 @@ const form=document.querySelector('#project-form'),params=new URLSearchParams(lo
 if(form){
  const items=selectedKit(params.get('kit')),summary=describeKit(params.get('kit'));
  if(items.length){for(const item of items){const input=form.elements['want_'+item[3]];if(input)input.checked=true;}form.elements.configuration.value=summary;const note=document.querySelector('[data-kit-summary]');note.hidden=false;note.textContent=summary;}
+ const afterDarkPackages={
+  'after-dark':'After Dark custom creator identity',
+  'after-dark-essentials':'After Dark — Velvet Essentials',
+  'after-dark-motion':'After Dark — Midnight Motion',
+  'after-dark-signature':'After Dark — Obsidian Signature'
+ };
+ const service=params.get('service');
+ const afterDark=Object.hasOwn(afterDarkPackages,service)?afterDarkPackages[service]:null;
+ if(afterDark){
+  const context=afterDark+' · Custom quote; scope and price agreed before production.';
+  form.elements.configuration.value=[form.elements.configuration.value,context].filter(Boolean).join('\n');
+  const note=document.querySelector('[data-kit-summary]');note.hidden=false;note.textContent=form.elements.configuration.value;
+  const notice=document.querySelector('[data-after-dark-inquiry]');if(notice)notice.hidden=false;
+  const title=form.querySelector('h3');if(title)title.textContent='Your After Dark Brief';
+  if(!form.elements.scope.value)form.elements.scope.value='I am interested in '+afterDark+'. Please help me define the visual direction, deliverables and custom quote.';
+ }
 }
 function wire(form,status,emailLink,kind){
  if(!form)return;

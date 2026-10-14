@@ -5,6 +5,24 @@ import {JSDOM} from 'jsdom';
 const source=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
 function setup(file,url){const dom=new JSDOM(source(file),{url,runScripts:'outside-only',pretendToBeVisual:true});const w=dom.window;w.matchMedia=()=>({matches:false,addEventListener(){}});w.HTMLElement.prototype.animate=()=>({});w.HTMLMediaElement.prototype.pause=()=>{};w.HTMLMediaElement.prototype.play=()=>Promise.resolve();w.eval(source('assets/js/studio.js'));w.eval(source('assets/js/catalog.js').replace(/export /g,'')+'\n'+source('assets/js/intake.js').replace(/^import[^\n]+\n/,''));return dom;}
 const settle=()=>new Promise(r=>setImmediate(r));
+
+test('After Dark package links carry context and policy into the submitted brief',async()=>{
+ for(const [service,label]of [['after-dark','custom creator identity'],['after-dark-essentials','Velvet Essentials'],['after-dark-motion','Midnight Motion'],['after-dark-signature','Obsidian Signature']]){
+  const dom=setup('start-project.html','https://obsidianreign.gg/start-project?service='+service+'&kit=music');
+  try{
+   const w=dom.window,d=w.document,f=d.querySelector('#project-form');
+   assert.match(f.elements.configuration.value,new RegExp(label));assert.match(f.elements.configuration.value,/Creator Theme Music/);
+   assert.equal(d.querySelector('[data-after-dark-inquiry]').hidden,false);
+   assert.match(d.querySelector('[data-after-dark-inquiry]').textContent,/remain on hold/);
+   f.elements.name.value='QA';f.elements.email.value='qa@example.test';f.elements.vibe.value='Velvet';f.elements.consent.checked=true;
+   let submitted;w.fetch=async(url,options)=>{submitted=JSON.parse(options.body);return{ok:true,json:async()=>({id:'after-dark-qa'})};};
+   f.dispatchEvent(new w.Event('submit',{cancelable:true}));await settle();
+   assert.match(submitted.configuration,new RegExp(label));assert.equal(submitted.want_audio,'on');
+  }finally{dom.window.close();}
+ }
+ const ordinary=setup('start-project.html','https://obsidianreign.gg/start-project?service=__proto__');
+ try{assert.equal(ordinary.window.document.querySelector('[data-after-dark-inquiry]').hidden,true);}finally{ordinary.window.close();}
+});
 test('calculator carries exact selected products into the brief and deduplicates matching add-ons',async()=>{
  const home=setup('index.html','https://obsidianreign.gg/');try{const d=home.window.document;const music=d.querySelectorAll('[data-quote]')[4];music.click();d.querySelector('[data-add-quote="199"]').click();await settle();assert.equal(d.querySelector('[data-quote-total]').textContent,'$199');const href=d.querySelector('[data-kit-link]').href;assert.match(href,/kit=music/);const brief=setup('start-project.html',href);try{const form=brief.window.document.querySelector('#project-form');assert.equal(form.elements.want_audio.checked,true);assert.match(form.elements.configuration.value,/Creator Theme Music/);assert.match(form.elements.configuration.value,/\$199/);assert.equal(brief.window.document.querySelector('[data-kit-summary]').hidden,false);}finally{brief.window.close();}}finally{home.window.close();}
 });
