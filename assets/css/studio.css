@@ -1028,3 +1028,10 @@ body [data-vibe-preview] .selection-film figcaption{display:none;}
 body .faq-grid{align-items:start;} body .faq-item summary{font-family:Nunito,system-ui,sans-serif;font-size:16px;line-height:1.45;} body .faq-item p{color:#b9adc7;font-size:14px;line-height:1.75;}
 
 body .faq-privacy{grid-column:1 / -1;}
+
+/* Small decorative companion stays outside reading and interaction areas. */
+body:has(main .hero) .footer{position:relative;margin-top:64px;}
+body:has(main .hero) .footer:before{content:'';position:absolute;right:clamp(16px,4vw,64px);top:-112px;width:108px;height:132px;background:url('/assets/img/studio-kitten.png') center/contain no-repeat;pointer-events:none;animation:companion-float 7s ease-in-out infinite;filter:drop-shadow(0 0 12px #b76bdd22);}
+@keyframes companion-float{50%{transform:translateY(-5px) rotate(2deg);}}
+@media(max-width:700px){body:has(main .hero) .footer:before{width:74px;height:94px;top:-80px;right:18px;}body:has(main .hero) .footer{margin-top:48px;}}
+@media(prefers-reduced-motion:reduce){body:has(main .hero) .footer:before{animation:none;}}
