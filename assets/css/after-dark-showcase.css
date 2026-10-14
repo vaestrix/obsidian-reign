@@ -15,7 +15,7 @@
 body .hero.ad-hero{position:relative;min-height:0;padding:0;isolation:isolate;background:#190b13;overflow:hidden;border-block:1px solid #e0b18e33}
 .ad-hero:before{display:none}
 .ad-hero-art{display:block;margin:0;position:relative;z-index:0}
-.ad-hero-art img{display:block;width:100%;height:auto;aspect-ratio:1672/941;object-fit:contain}
+.ad-hero-art img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain}
 .ad-hero-art:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#10070dbb 0%,#10070d55 38%,transparent 65%),linear-gradient(0deg,#10070d99,transparent 30%);pointer-events:none}
 .ad-hero .ad-hero-copy{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;max-width:none;padding:clamp(24px,5vw,80px);text-align:left}
 .ad-hero .ad-hero-copy h1{font:400 clamp(38px,5.2vw,80px)/1.04 Georgia,serif;max-width:10ch;margin:20px 0;color:#fff1e6;background:none;text-shadow:0 3px 28px #0009;text-wrap:balance}
@@ -59,3 +59,12 @@ body .hero.ad-hero{position:relative;min-height:0;padding:0;isolation:isolate;ba
 .ad-hero .ad-hero-copy h1{max-width:none;font-size:clamp(26px,4.4vw,70px);overflow-wrap:normal;word-break:normal;hyphens:none;text-wrap:wrap;text-transform:none}
 .ad-hero .ad-hero-copy h1 span{display:block;white-space:nowrap}
 @media(max-width:1100px){.ad-hero .ad-hero-copy h1{max-width:100%;font-size:clamp(26px,6.5vw,58px)}}
+
+/* Creator-first offer and broader art directions. */
+.ad-offer>.kicker,.ad-principles>.kicker{text-align:center}
+.ad-offer .cardx{display:flex;flex-direction:column}.ad-offer .cardx h3{margin:18px 0 8px}.ad-offer .cardx ul{flex:1}.ad-offer .button{align-self:flex-start}.ad-offer .ad-featured{border-color:#e1b88a;background:linear-gradient(145deg,#3c1929,#1a0b18)}
+.ad-principles{padding-top:20px}.ad-principles .cardx{padding:24px}.ad-principles h3{margin-top:0}
+.style-tile:nth-child(2){--glow:#915e70}.style-tile:nth-child(3){--glow:#873fb1}.style-tile:nth-child(4){--glow:#766553}.style-tile:nth-child(5){--glow:#396e70}.style-tile:nth-child(6){--glow:#494665}
+#creator-packages{scroll-margin-top:24px}
+.ad-hero .ad-hero-copy .kicker{max-width:48%;line-height:1.65}
+@media(max-width:1100px){.ad-hero .ad-hero-copy .kicker{max-width:100%}}

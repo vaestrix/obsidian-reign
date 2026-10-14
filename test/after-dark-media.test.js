@@ -103,7 +103,7 @@ test('switching previews during a pending play request cannot restart hidden foo
   dom.window.close();
 });
 
-test('Velvet Muse leads the adult boudoir collection and selectors stay independent',async()=>{
+test('Creator packages lead into independent Velvet Muse and Black Rose collections',async()=>{
   const html=await readFile(new URL('../after-dark.html',import.meta.url),'utf8');
   const script=await readFile(new URL('../assets/js/after-dark-showcase.js',import.meta.url),'utf8');
   const dom=new JSDOM(html,{runScripts:'dangerously'}),doc=dom.window.document;
@@ -118,7 +118,7 @@ test('Velvet Muse leads the adult boudoir collection and selectors stay independ
   assert.equal(rose.querySelector('[data-asset-panel="scene"]').hidden,false);
   for(const suite of suites)assert.equal(suite.querySelectorAll('[data-asset-option][aria-pressed="true"]').length,1);
   for(const image of velvet.querySelectorAll('img'))assert((await stat(new URL('..'+image.getAttribute('src'),import.meta.url))).size>0);
-  assert.match(html,/Boudoir-inspired scenes, provocative editorial artwork/);
+  assert.match(html,/Custom profile banners, watermarks, social templates and video branding/);
   assert.doesNotMatch(html,/Moonlit Heiress/);
   dom.window.close();
 });

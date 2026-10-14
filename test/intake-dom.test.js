@@ -7,17 +7,19 @@ function setup(file,url){const dom=new JSDOM(source(file),{url,runScripts:'outsi
 const settle=()=>new Promise(r=>setImmediate(r));
 
 test('After Dark package links carry context and policy into the submitted brief',async()=>{
- for(const [service,label]of [['after-dark','custom creator identity'],['after-dark-essentials','Velvet Essentials'],['after-dark-motion','Midnight Motion'],['after-dark-signature','Obsidian Signature']]){
+ for(const [service,label]of [['after-dark','custom creator identity'],['after-dark-essentials','Velvet Essentials'],['after-dark-motion','Midnight Motion'],['after-dark-signature','Obsidian Signature'],['after-dark-profile','Profile Essentials'],['after-dark-social','Social & Launch Kit'],['after-dark-brand-world','Signature Brand World']]){
   const dom=setup('start-project.html','https://obsidianreign.gg/start-project?service='+service+'&kit=music');
   try{
    const w=dom.window,d=w.document,f=d.querySelector('#project-form');
    assert.match(f.elements.configuration.value,new RegExp(label));assert.match(f.elements.configuration.value,/Creator Theme Music/);
    assert.equal(d.querySelector('[data-after-dark-inquiry]').hidden,false);
+   assert.ok([...f.elements.platform.options].some(o=>o.value==='OnlyFans'));
+   f.elements.platform.value='OnlyFans';
    assert.match(d.querySelector('[data-after-dark-inquiry]').textContent,/remain on hold/);
    f.elements.name.value='QA';f.elements.email.value='qa@example.test';f.elements.vibe.value='Velvet';f.elements.consent.checked=true;
    let submitted;w.fetch=async(url,options)=>{submitted=JSON.parse(options.body);return{ok:true,json:async()=>({id:'after-dark-qa'})};};
    f.dispatchEvent(new w.Event('submit',{cancelable:true}));await settle();
-   assert.match(submitted.configuration,new RegExp(label));assert.equal(submitted.want_audio,'on');
+   assert.equal(submitted.platform,'OnlyFans');assert.match(submitted.configuration,new RegExp(label));assert.equal(submitted.want_audio,'on');
   }finally{dom.window.close();}
  }
  const ordinary=setup('start-project.html','https://obsidianreign.gg/start-project?service=__proto__');
