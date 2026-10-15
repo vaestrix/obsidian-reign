@@ -48,7 +48,7 @@ export async function squareOperation(operation,data,storage,env){
     checkout_options:{allow_tipping:false,redirect_url:'https://obsidianreign.gg/client-portal?payment=returned'},payment_note:'Midnight Atlas Studios / Obsidian Reign Studios'
    });
    const link=result.payment_link;const url=new URL(link?.url);
-   if(url.protocol!=='https:'||!['square.link','checkout.square.site'].includes(url.hostname)||!link.order_id)throw Error('Invalid checkout response');
+   if(url.protocol!=='https:'||!(env.SQUARE_ENVIRONMENT==='sandbox'?['sandbox.square.link','sandbox.checkout.square.site']:['square.link','checkout.square.site']).includes(url.hostname)||!link.order_id)throw Error('Invalid checkout response');
    payment={...payment,status:'pending',url:url.href,orderId:link.order_id,linkId:link.id};
    await storage.put('square:order:'+payment.orderId,payment.id);await storage.put('square:request:'+payment.id,payment);
    return {payment:publicPayment(payment)};
