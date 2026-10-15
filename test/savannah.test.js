@@ -251,7 +251,7 @@ test('Anna mailbox inquiry uses Anna API credentials with Savannah response iden
   assert.ok(calls.every(c=>c.init.headers.Authorization==='Bearer anna-test-only'));
 });
 
-for (const text of ["Please don't email me again.", "Don’t contact me.", "Take me off your mailing list.", "Remove me from this email list.", "No more emails please."]) {
+for (const text of ["Please don't email me again.", "Don’t contact me.", "Take me off your mailing list.", "Remove me from this email list.", "No more emails please.", "opt out", "no thanks"]) {
  test('natural opt-out persists suppression without AI or send: '+text, async t => {
   const { sends } = mockMail(t,{text}); let aiCalls=0;
   const {object,storage}=setup({AI:{run:async()=>{aiCalls++;throw Error('Must not run');}}});
