@@ -1,4 +1,5 @@
 import campaign from '../config/anna-campaign.json' with { type: 'json' };
+import { automationWaiting } from './automation-window.js';
 const validEmail = /^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/;
 export async function contactKey(address) {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(address.toLowerCase().trim()));
@@ -15,12 +16,23 @@ export function outreachMessage(lead) {
       lead.suppressed || lead.alreadyContacted || lead.alreadyReplied || !Number.isFinite(age) || age < -60000 || age > 7*86400000 ||
       /https?:|\$|guarantee|discount|free trial|watched|six years|6 years|ignore.*instruction/i.test(lead.observation)) throw Error('ineligible-prospect');
   return { to: [to], displayName:'Anna | Obsidian Reign Studios', subject:'Creator design inquiry from Obsidian Reign Studios',
-    text:`Hi ${lead.name},\n\nI'm Anna with Obsidian Reign Studios. ${lead.observation.trim()}\n\nWe help creators with emotes, stream branding, and stream kits. If you're considering a refresh, Savannah can help you explore what fits your channel. You can reply here or email savannah@obsidianreign.gg.\n\nAnna | Obsidian Reign Studios\n${campaign.businessAddress}\n\nThis is a commercial introduction. To opt out, reply “stop outreach” or email savannah@obsidianreign.gg with that request.` };
+    text:`Hi ${lead.name},\n\nI'm Anna, Obsidian Reign Studios' AI outreach assistant. ${lead.observation.trim()}\n\nWe help creators with emotes, stream branding, and stream kits. If you're considering a refresh, Savannah can help you explore what fits your channel. You can reply here or email savannah@obsidianreign.gg.\n\nAnna | Obsidian Reign Studios\n${campaign.businessAddress}\n\nThis is a commercial introduction. To opt out, reply “stop outreach” or email savannah@obsidianreign.gg with that request.` };
 }
 export async function queueProspect(ctx,env,lead) {
+  if (automationWaiting(env)) return Response.json({error:'launch-not-started',startsAt:env.AGENTS_START_AT},{status:503});
   if (env.ANNA_AUTO_SEND !== 'true' || !env.ANNA_MAIL_API_TOKEN || !env.ANNA_MAILBOX_ID || campaign.approval?.approvedBy !== 'Philip') return Response.json({error:'anna-not-enabled'},{status:503});
   if (env.SAVANNAH_AUTO_SEND !== 'true') return Response.json({error:'savannah-handoff-paused'},{status:503});
   let message; try { message = outreachMessage(lead); } catch { return Response.json({error:'ineligible-prospect'},{status:400}); }
+  if (lead.approvedDraft) {
+    const draft = lead.approvedDraft;
+    if (typeof draft.subject !== 'string' || /[\r\n]/.test(draft.subject) || draft.subject.length > 200 ||
+        typeof draft.text !== 'string' || draft.text.length > 6500) return Response.json({error:'invalid-approved-draft'},{status:400});
+    const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(message.to[0]+'\n'+draft.subject+'\n'+draft.text));
+    const hash = [...new Uint8Array(bytes)].map(b=>b.toString(16).padStart(2,'0')).join('');
+    let approved; try { approved=JSON.parse(env.ANNA_APPROVED_DRAFT_HASHES ?? '[]'); } catch { approved=[]; }
+    if (!Array.isArray(approved) || !approved.includes(hash)) return Response.json({error:'draft-not-approved'},{status:403});
+    message={...message,subject:draft.subject,text:draft.text};
+  }
   const key = await contactKey(message.to[0]);
   return ctx.blockConcurrencyWhile(async () => {
     if(await ctx.storage.get(key))return Response.json({error:'already-contacted-or-suppressed'},{status:409});
@@ -37,6 +49,7 @@ export async function queueProspect(ctx,env,lead) {
   });
 }
 export async function dispatchProspects(ctx,env) {
+  if (automationWaiting(env)) return;
   if(env.ANNA_AUTO_SEND !== 'true' || env.SAVANNAH_AUTO_SEND !== 'true')return;
   for(const [jobKey,job] of await ctx.storage.list({prefix:'anna:outbox:'})) {
     if(job.state!=='queued')continue;
