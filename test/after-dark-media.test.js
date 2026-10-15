@@ -27,9 +27,12 @@ test('rendered alert stays behind the age prompt and starts only on request', as
   dom.window.close();
 });
 
-test('production config preserves integrated agents and disables Savannah auto-send',async()=>{
+test('production agents stay armed behind October 20 launch while previews stay paused',async()=>{
   const config=JSON.parse(await readFile(new URL('../wrangler.jsonc',import.meta.url),'utf8'));
-  assert.equal(config.vars.SAVANNAH_AUTO_SEND,'false');
+  assert.equal(config.vars.SAVANNAH_AUTO_SEND,'true');
+  assert.equal(config.vars.ANNA_AUTO_SEND,'true');
+  assert.equal(config.vars.AGENTS_START_AT,'2026-10-20T05:00:00Z');
+  assert.equal(config.previews.vars.SAVANNAH_AUTO_SEND,'false');
   assert.equal(config.keep_vars,true);
   assert.equal(config.main,'src/worker.js');
 });
