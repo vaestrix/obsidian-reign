@@ -1,3 +1,4 @@
+import { squareWebhook } from './square-payments.js';
 import { agentHealth } from './agent-health.js';
 import { authenticate, receiveWebhook } from './savannah.js';
 import legacyWorker, {adminAuthorized} from './legacy-worker.js';
@@ -28,6 +29,7 @@ function secured(response, path, staging = false) {
 }
 const application = {
   async fetch(request, env) {
+    if(new URL(request.url).pathname==='/webhooks/square')return squareWebhook(request,env);
 if(new URL(request.url).pathname==='/api/anna/health'){if(request.method!=='GET')return Response.json({error:'method-not-allowed'},{status:405});if(!await authenticate(request,env.ANNA_AGENT_TOKEN))return Response.json({error:'unauthorized'},{status:401});return Response.json(await agentHealth(env),{headers:{'cache-control':'no-store'}});}
     let path;
     try { path=decodeURIComponent(new URL(request.url).pathname); }
