@@ -1,74 +1,31 @@
 import { automationWaiting } from './automation-window.js';
 const reply=(data,status=200)=>Response.json(data,{status,headers:{'cache-control':'no-store'}});
 const API_VERSION='2026-09-16';
-export function usdCents(value){
- if(typeof value!=='string'||!/^\d{1,7}(\.\d{1,2})?$/.test(value))throw Error('Enter a USD amount.');
- const [whole,fraction='']=value.split('.');const cents=Number(whole)*100+Number(fraction.padEnd(2,'0'));
- if(!Number.isSafeInteger(cents)||cents<1||cents>100000000)throw Error('Enter an amount between $0.01 and $1,000,000.');
- return cents;
-}
+export function usdCents(value){if(typeof value!=='string'||!/^\d{1,7}(\.\d{1,2})?$/.test(value))throw Error('Enter a USD amount.');const [whole,fraction='']=value.split('.');const cents=Number(whole)*100+Number(fraction.padEnd(2,'0'));if(!Number.isSafeInteger(cents)||cents<1||cents>100000000)throw Error('Enter an amount between $0.01 and $1,000,000.');return cents;}
+export const depositCents=total=>Math.floor((total*15+50)/100);
 const ready=env=>env.SQUARE_PAYMENTS_ENABLED==='true'&&env.SQUARE_ACCESS_TOKEN&&env.SQUARE_LOCATION_ID&&env.SQUARE_MERCHANT_ID&&env.SQUARE_WEBHOOK_SIGNATURE_KEY&&!automationWaiting(env);
-async function square(env,path,body){
- const base=env.SQUARE_ENVIRONMENT==='sandbox'?'https://connect.squareupsandbox.com':'https://connect.squareup.com';
- const r=await fetch(base+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+env.SQUARE_ACCESS_TOKEN,'Square-Version':API_VERSION,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined,redirect:'manual',signal:AbortSignal.timeout(20000)});
- if(!r.ok)throw Error('Square is temporarily unavailable.');return r.json();
-}
-export const publicPayment=p=>({id:p.id,projectId:p.projectId,label:p.label,amount:p.amount,currency:'USD',status:p.status,url:p.status==='pending'?p.url:null});
+async function square(env,path,body){const base=env.SQUARE_ENVIRONMENT==='sandbox'?'https://connect.squareupsandbox.com':'https://connect.squareup.com';const r=await fetch(base+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+env.SQUARE_ACCESS_TOKEN,'Square-Version':API_VERSION,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined,redirect:'manual',signal:AbortSignal.timeout(20000)});if(!r.ok){const d=await r.json().catch(()=>({}));const error=new Error('Square is temporarily unavailable.');error.providerCode=d.errors?.[0]?.code;error.providerField=d.errors?.[0]?.field;error.providerDetail=d.errors?.[0]?.detail;throw error;}return r.json();}
+function invoiceUrl(value,env){if(!value)return null;try{const u=new URL(value);return u.protocol==='https:'&&(env.SQUARE_ENVIRONMENT==='sandbox'?['squareupsandbox.com','app.squareupsandbox.com']:['squareup.com','app.squareup.com']).includes(u.hostname)&&u.pathname.startsWith('/pay-invoice/')?u.href:null;}catch{return null;}}
+export const publicInvoice=(p,enabled=true)=>p?{id:p.id,projectId:p.projectId,total:p.total,deposit:p.deposit,balance:p.total-p.deposit,depositPercent:15,status:p.status,depositPaid:Boolean(p.depositPaid),totalPaid:p.totalPaid||0,balanceDue:p.balanceDue,url:enabled&&['sent','partially-paid'].includes(p.status)?p.url:null,number:p.number||null}:null;
+export const publicPayment=p=>({id:p.id,projectId:p.projectId,label:p.label,amount:p.amount,currency:'USD',status:p.status,url:null});
+function sameTerms(invoice,record){const deposit=invoice.payment_requests?.find(p=>p.request_type==='DEPOSIT');return invoice.order_id===record.orderId&&invoice.primary_recipient?.customer_id===record.customerId&&invoice.payment_requests?.length===2&&deposit?.percentage_requested==='15'&&deposit?.computed_amount_money?.amount===record.deposit&&deposit.computed_amount_money.currency==='USD'&&invoice.payment_requests.some(p=>p.request_type==='BALANCE'&&p.due_date===record.balanceDue)&&invoice.payment_requests.every(p=>!p.automatic_payment_source||p.automatic_payment_source==='NONE');}
+async function reconcile(record,storage,env){const invoice=(await square(env,'/v2/invoices/'+encodeURIComponent(record.invoiceId))).invoice;const order=(await square(env,'/v2/orders/'+encodeURIComponent(record.orderId))).order;if(!invoice||!sameTerms(invoice,record)||order?.location_id!==env.SQUARE_LOCATION_ID||order.total_money?.amount!==record.total||order.total_money.currency!=='USD'){record={...record,status:'review',url:null,depositPaid:false};}else{const requests=invoice.payment_requests;const deposit=requests.find(p=>p.request_type==='DEPOSIT');const totalPaid=requests.reduce((sum,p)=>sum+(p.total_completed_amount_money?.amount||0),0);const status=invoice.status==='PAID'?'paid':invoice.status==='DRAFT'?'draft':['CANCELED','REFUNDED','PARTIALLY_REFUNDED','FAILED'].includes(invoice.status)?'review':totalPaid>0?'partially-paid':'sent';record={...record,status,version:invoice.version,depositPaid:status!=='review'&&(deposit.total_completed_amount_money?.amount||0)>=record.deposit,totalPaid,url:invoiceUrl(invoice.public_url,env),number:invoice.invoice_number,updatedAt:Date.now()};}await storage.put('square:invoice:'+record.projectId,record);return record;}
 export async function squareOperation(operation,data,storage,env){
  if(!operation.startsWith('square-'))return null;
- if(operation==='square-list'){
-  const project=await storage.get('project:'+data.id);
-  if(!project||(!data.admin&&project.owner!==data.owner))return {error:'Project not found.'};
-  const ids=await storage.get('square:project:'+data.id)||[];const payments=[];
-  for(const id of ids){const p=await storage.get('square:request:'+id);if(p)payments.push(publicPayment(p));}
-  return {payments,enabled:Boolean(ready(env))};
+ if(operation==='square-create')return {error:'Send a project invoice with the required 15% deposit. Standalone checkout is disabled.'};
+ if(operation==='square-list'){const project=await storage.get('project:'+data.id);if(!project||(!data.admin&&project.owner!==data.owner))return {error:'Project not found.'};const record=await storage.get('square:invoice:'+data.id);const ids=await storage.get('square:project:'+data.id)||[];const payments=[];for(const id of ids){const p=await storage.get('square:request:'+id);if(p)payments.push(publicPayment(p));}return {payments,invoice:publicInvoice(record,Boolean(ready(env))),enabled:Boolean(ready(env))};}
+ if(operation==='square-invoice-draft'){
+  if(!ready(env))return {error:'Invoices are not activated yet.'};const project=await storage.get('project:'+data.id);if(!project)return {error:'Project not found.'};let total;try{total=usdCents(project.quoteAmount);}catch{return {error:'Save the agreed total quote on this project first.'};}const deposit=depositCents(total);if(deposit<1)return {error:'The job total is too small for a 15% deposit.'};if(project.quoteStatus==='Declined')return {error:'This quote was declined.'};
+  const email=typeof data.email==='string'?data.email.trim():'';if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)return {error:'Enter the customer invoice email.'};const today=new Date().toISOString().slice(0,10);if(!/^\d{4}-\d{2}-\d{2}$/.test(data.balanceDue||'')||Number.isNaN(Date.parse(data.balanceDue))||new Date(data.balanceDue).toISOString().slice(0,10)!==data.balanceDue||data.balanceDue<=today)return {error:'Choose a future due date for the remaining 85%.'};
+  let record=await storage.get('square:invoice:'+project.id);if(record){if(record.total!==total||record.email.toLowerCase()!==email.toLowerCase()||record.balanceDue!==data.balanceDue)return {error:'An invoice already exists with different terms. Review it in Square before changing this project.'};if(record.invoiceId)return {invoice:publicInvoice(record)};}else{record={id:crypto.randomUUID(),projectId:project.id,total,deposit,email,balanceDue:data.balanceDue,status:'creating',depositDue:today,createdAt:Date.now()};await storage.put('square:invoice:'+project.id,record);}
+  try{if(!record.customerId){const d=await square(env,'/v2/customers',{idempotency_key:record.id+'-customer',email_address:email});if(!d.customer?.id)throw Error();record.customerId=d.customer.id;await storage.put('square:invoice:'+project.id,record);}if(!record.orderId){const d=await square(env,'/v2/orders',{idempotency_key:record.id+'-order',order:{location_id:env.SQUARE_LOCATION_ID,customer_id:record.customerId,reference_id:record.id,line_items:[{name:'Obsidian Reign Studios — '+project.title,quantity:'1',base_price_money:{amount:total,currency:'USD'}}]}});if(!d.order?.id)throw Error();record.orderId=d.order.id;await storage.put('square:invoice:'+project.id,record);await storage.put('square:invoice-order:'+record.orderId,project.id);}const d=await square(env,'/v2/invoices',{idempotency_key:record.id+'-invoice',invoice:{location_id:env.SQUARE_LOCATION_ID,order_id:record.orderId,primary_recipient:{customer_id:record.customerId},delivery_method:'EMAIL',title:'Obsidian Reign Studios — '+project.title,description:'A 15% deposit is required before work begins. The remaining 85% is due on the agreed balance date. Payments are processed for Midnight Atlas Studios.',payment_requests:[{request_type:'DEPOSIT',percentage_requested:'15',due_date:record.depositDue,automatic_payment_source:'NONE'},{request_type:'BALANCE',due_date:record.balanceDue,automatic_payment_source:'NONE'}],accepted_payment_methods:{card:true},store_payment_method_enabled:false}});if(!d.invoice?.id||d.invoice.status!=='DRAFT')throw Error();record={...record,invoiceId:d.invoice.id,version:d.invoice.version,status:'draft'};await storage.put('square:invoice:'+project.id,record);await storage.put('square:invoice-id:'+record.invoiceId,project.id);return {invoice:publicInvoice(record)};}catch(error){return {error:'Invoice creation could not be confirmed. Retry the same customer and due date to recover it safely.',providerCode:error.providerCode,providerField:error.providerField};}
  }
- if(operation==='square-create'){
-  if(!ready(env))return {error:'Square payments are not activated yet.'};
-  const project=await storage.get('project:'+data.id);if(!project)return {error:'Project not found.'};
-  // Only the authenticated studio route reaches this operation. Prices and scope
-  // remain owner-approved; public estimator amounts are never trusted.
-  let amount;try{amount=usdCents(data.amount);}catch(e){return {error:e.message};}
-  const label=typeof data.label==='string'?data.label.trim():'';
-  if(!label||label.length>120)return {error:'Add a payment description (up to 120 characters).'};
-  const ids=await storage.get('square:project:'+project.id)||[];
-  let payment;
-  for(const id of ids){const p=await storage.get('square:request:'+id);if(p&&p.amount===amount&&p.label===label&&p.status!=='paid'&&p.status!=='review'){payment=p;break;}}
-  if(payment?.status==='pending')return {payment:publicPayment(payment)};
-  if(!payment){
-   if(ids.length>=30)return {error:'Payment-request limit reached; contact the studio.'};
-   payment={id:crypto.randomUUID(),projectId:project.id,amount,label,status:'creating',createdAt:Date.now()};
-   await storage.put('square:request:'+payment.id,payment);await storage.put('square:project:'+project.id,[...ids,payment.id]);
-  }
-  try{
-   const result=await square(env,'/v2/online-checkout/payment-links',{
-    idempotency_key:payment.id,
-    description:'Obsidian Reign Studios — '+label,
-    order:{location_id:env.SQUARE_LOCATION_ID,reference_id:payment.id,line_items:[{name:'Obsidian Reign Studios — '+label,quantity:'1',base_price_money:{amount,currency:'USD'}}]},
-    checkout_options:{allow_tipping:false,redirect_url:'https://obsidianreign.gg/client-portal?payment=returned'},payment_note:'Midnight Atlas Studios / Obsidian Reign Studios'
-   });
-   const link=result.payment_link;const url=new URL(link?.url);
-   if(url.protocol!=='https:'||!(env.SQUARE_ENVIRONMENT==='sandbox'?['sandbox.square.link','sandbox.checkout.square.site']:['square.link','checkout.square.site']).includes(url.hostname)||!link.order_id)throw Error('Invalid checkout response');
-   payment={...payment,status:'pending',url:url.href,orderId:link.order_id,linkId:link.id};
-   await storage.put('square:order:'+payment.orderId,payment.id);await storage.put('square:request:'+payment.id,payment);
-   return {payment:publicPayment(payment)};
-  }catch{await storage.put('square:request:'+payment.id,{...payment,status:'creating'});return {error:'Checkout could not be confirmed. Retry this same request to recover it safely; do not create a replacement charge.'};}
+ if(operation==='square-invoice-send'){
+  if(!ready(env))return {error:'Invoices are not activated yet.'};const project=await storage.get('project:'+data.id);let record=await storage.get('square:invoice:'+data.id);if(!project||!record?.invoiceId)return {error:'Prepare a draft invoice first.'};let total;try{total=usdCents(project.quoteAmount);}catch{return {error:'The quote is invalid.'};}if(total!==record.total||project.quoteStatus==='Declined')return {error:'The quote changed. Review the invoice in Square before sending.'};try{record=await reconcile(record,storage,env);if(record.status==='review')return {error:'Invoice terms changed in Square. Review before sending.'};if(record.status==='draft'){await square(env,'/v2/invoices/'+encodeURIComponent(record.invoiceId)+'/publish',{version:record.version,idempotency_key:record.id+'-publish'});record=await reconcile(record,storage,env);}return {invoice:publicInvoice(record)};}catch{return {error:'Invoice delivery could not be confirmed. Retry this same invoice; do not create another one.'};}
  }
  if(operation==='square-event'){
-  const event=data.event;
-  if(!['payment.created','payment.updated'].includes(event.type))return {ignored:true};
-  const id=event.data?.object?.payment?.id;if(!id||event.merchant_id!==env.SQUARE_MERCHANT_ID)return {ignored:true};
-  // Reconcile the canonical payment rather than trusting a redirect or browser.
-  const canonical=(await square(env,'/v2/payments/'+encodeURIComponent(id))).payment;
-  const requestId=canonical?.order_id&&await storage.get('square:order:'+canonical.order_id);
-  const payment=requestId&&await storage.get('square:request:'+requestId);
-  if(!payment)return {ignored:true};
-  if(canonical.location_id!==env.SQUARE_LOCATION_ID||canonical.amount_money?.currency!=='USD'||canonical.amount_money?.amount!==payment.amount)return {error:'Payment mismatch'};
-  if(canonical.status!=='COMPLETED')return {ignored:true};
-  const status=Number(canonical.refunded_money?.amount||0)>0?'review':'paid';
-  if(payment.paymentId===canonical.id&&payment.status===status)return {duplicate:true};
-  await storage.put('square:request:'+requestId,{...payment,status,paymentId:canonical.id,updatedAt:Date.now()});
-  return {ok:true};
+  const event=data.event;if(event.merchant_id!==env.SQUARE_MERCHANT_ID)return {ignored:true};let projectId;
+  if(['payment.created','payment.updated'].includes(event.type)){const id=event.data?.object?.payment?.id;if(!id)return {ignored:true};const payment=(await square(env,'/v2/payments/'+encodeURIComponent(id))).payment;if(payment?.location_id!==env.SQUARE_LOCATION_ID)return {ignored:true};projectId=payment.order_id&&await storage.get('square:invoice-order:'+payment.order_id);}else if(['invoice.updated','invoice.payment_made','invoice.canceled','invoice.refunded','invoice.published'].includes(event.type)){const id=event.data?.object?.invoice?.id||event.data?.id;projectId=id&&await storage.get('square:invoice-id:'+id);}else return {ignored:true};const record=projectId&&await storage.get('square:invoice:'+projectId);if(!record)return {ignored:true};const updated=await reconcile(record,storage,env);return updated.status==='review'?{error:'Invoice requires review'}:{ok:true,depositPaid:updated.depositPaid};
  }
  return {error:'Unknown payment operation.'};
 }
