@@ -1,3 +1,4 @@
+import { automationWaiting } from './automation-window.js';
 // Aggregate-only operational view. No contact identities or message contents leave storage.
 export async function inboxStatus(storage, env) {
   const count = async prefix => {
@@ -16,6 +17,7 @@ export async function inboxStatus(storage, env) {
   return {
     generatedAt: new Date().toISOString(), scope: 'current durable states; not daily activity totals',
     switches: { anna: env.ANNA_AUTO_SEND === 'true', savannah: env.SAVANNAH_AUTO_SEND === 'true' },
+    launch: { startsAt: env.AGENTS_START_AT ?? null, waiting: automationWaiting(env) },
     outreach: await count('anna:outbox:'), inboxJobs: await count('job:')
   };
 }

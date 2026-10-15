@@ -1,5 +1,6 @@
 import { inboxStatus } from './inbox-status.js';
 import { queueProspect, dispatchProspects } from './anna-runtime.js';
+import { automationStart, automationWaiting } from './automation-window.js';
 export const NAME = 'Savannah | Obsidian Reign Studios';
 const ADDRESS = 'savannah@obsidianreign.gg';
 const ANNA_ALIAS = 'anna@obsidianreign.gg';
@@ -268,7 +269,7 @@ async function recordAnnaInbound(storage, latest) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(sender));
   const key = 'anna:contact:' + [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
   const previous = await storage.get(key);
-  const optOut = /\bstop outreach\b|\bunsubscribe\b|\bremove me\b|\b(?:do not|don['’]t) (?:email|contact|message) me\b|\bstop (?:emailing|contacting|messaging) me\b|\b(?:take|remove) me (?:off|from) (?:your|the|this) (?:mailing |email |contact )?list\b|\bno more (?:emails|outreach)(?: please)?\b/i.test((latest.subject ?? '') + '\n' + (latest.text ?? ''));
+  const optOut = /\bopt[ -]?out\b|\bno thanks\b|\bstop outreach\b|\bunsubscribe\b|\bremove me\b|\b(?:do not|don['’]t) (?:email|contact|message) me\b|\bstop (?:emailing|contacting|messaging) me\b|\b(?:take|remove) me (?:off|from) (?:your|the|this) (?:mailing |email |contact )?list\b|\bno more (?:emails|outreach)(?: please)?\b/i.test((latest.subject ?? '') + '\n' + (latest.text ?? ''));
   if (optOut || previous) await storage.put(key, { ...previous,
     state: optOut || previous?.state === 'suppressed' ? 'suppressed' : 'replied',
     lastInboundMessageId: latest.messageId, updatedAt: Date.now() });
@@ -292,6 +293,7 @@ export class SavannahInbox {
     });
   }
   async alarm() {
+    if (automationWaiting(this.env)) { await this.ctx.storage.setAlarm(automationStart(this.env)+1000); return; }
     await dispatchProspects(this.ctx, this.env);
     const jobs = await this.ctx.storage.list({ prefix: 'job:' });
     for (const [key, job] of jobs) {
@@ -314,6 +316,7 @@ export class SavannahInbox {
       await this.ctx.storage.setAlarm(Date.now() + 60000);
   }
   async process(key, job) {
+    if (automationWaiting(this.env)) throw new Error('launch-not-started');
     const env = job.event.mailbox === 'anna' ? { ...this.env, HOSTINGER_MAIL_API_TOKEN: this.env.ANNA_MAIL_API_TOKEN, HOSTINGER_MAILBOX_ID: this.env.ANNA_MAILBOX_ID } : this.env;
     if (!env.HOSTINGER_MAIL_API_TOKEN || !email.test(env.PHILIP_ESCALATION_EMAIL ?? '') || env.PHILIP_ESCALATION_EMAIL.toLowerCase() === ADDRESS) throw new Error('not-configured');
     if (job.event.messageId) {
