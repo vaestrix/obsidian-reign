@@ -132,9 +132,14 @@ export async function portal(request, env) {
         const result=await call(env,'lead-update',{id:text(data.id,80),stage:data.stage,notes:data.notes,expectedUpdatedAt:data.expectedUpdatedAt});
         return json(result,result.error?(result.conflict?409:404):200);
       }
-      if(path === '/api/portal/admin/payments' && request.method === 'POST'){const data=await body(request);const result=await call(env,'square-create',{id:text(data.id,80),amount:data.amount,label:data.label});return json(result,result.error?409:200);}
-      if(path === '/api/portal/admin/payments/list' && request.method === 'POST'){const data=await body(request);const result=await call(env,'square-list',{id:text(data.id,80),admin:true});return json(result,result.error?404:200);}
       if (path === '/api/portal/admin/projects' && request.method === 'GET') return json(await call(env, 'all'));
+      if(['/api/portal/admin/invoices/draft','/api/portal/admin/invoices/send'].includes(path) && request.method==='POST'){const data=await body(request);const result=await call(env,path.endsWith('/draft')?'square-invoice-draft':'square-invoice-send',{id:text(data.id,80),email:data.email,balanceDue:data.balanceDue});return json(result,result.error?409:200);}
+      if(path === '/api/portal/admin/payments' && request.method === 'POST') {
+        const data=await body(request);const result=await call(env,'square-create',{id:text(data.id,80),amount:data.amount,label:data.label});return json(result,result.error?409:200);
+      }
+      if(path === '/api/portal/admin/payments/list' && request.method === 'POST') {
+        const data=await body(request);const result=await call(env,'square-list',{id:text(data.id,80),admin:true});return json(result,result.error?404:200);
+      }
       if (path === '/api/portal/admin/projects' && request.method === 'POST') {
         const data = await body(request); validateProject(data); const result = await call(env, 'save', { ...data, id: text(data.id, 80), update: text(data.update), reviewLabel: text(data.reviewLabel, 120), reviewUrl: text(data.reviewUrl, 1500) }); return json(result, result.error ? 400 : 200);
       }
@@ -190,7 +195,9 @@ export async function portal(request, env) {
     if (path === '/api/portal/me' && request.method === 'GET') { const user = await session(request, env); return json({ user }); }
     const user = await session(request, env);
     if (!user) return json({ error: 'Sign in to view your projects.' }, 401);
-    if(path === '/api/portal/payments' && request.method === 'POST'){const data=await body(request);const result=await call(env,'square-list',{id:text(data.id,80),owner:user.id});return json(result,result.error?404:200);}
+    if(path === '/api/portal/payments' && request.method === 'POST') {
+      const data=await body(request);const result=await call(env,'square-list',{id:text(data.id,80),owner:user.id});return json(result,result.error?404:200);
+    }
     if (path === '/api/portal/projects' && request.method === 'GET') { const data = await call(env, 'projects', { owner: user.id }); return json({projects:data.projects.map(clientProject)}); }
     if (path === '/api/portal/review' && request.method === 'POST') {
       const data = await body(request), action = data.action, message = text(data.message);
@@ -211,7 +218,10 @@ export class ProjectHub {
   constructor(ctx,env={}) { this.ctx = ctx; this.env=env; }
   async fetch(request) {
     const operation = new URL(request.url).pathname.slice(1), data = await request.json(), now = Date.now();
-    if(operation.startsWith('square-')){const work=()=>squareOperation(operation,data,this.ctx.storage,this.env);return json(await(this.ctx.blockConcurrencyWhile?this.ctx.blockConcurrencyWhile(work):work()));}
+    if(operation.startsWith('square-')) {
+      const work=()=>squareOperation(operation,data,this.ctx.storage,this.env);
+      return json(await (this.ctx.blockConcurrencyWhile?this.ctx.blockConcurrencyWhile(work):work()));
+    }
     const result = await this.ctx.storage.transaction(async store => {
       if(operation==='portfolio-list'||operation==='portfolio-public') {
         const saved=await store.list({prefix:'portfolio:',limit:201});
@@ -239,7 +249,10 @@ export class ProjectHub {
       if (operation === 'save') {
         const id = data.id || crypto.randomUUID(); if (!/^[a-zA-Z0-9_-]{1,80}$/.test(id)) return { error: 'Invalid project ID.' };
         const old = await store.get('project:' + id); if (data.id && !old) return { error: 'Project not found.' };
-        const project = { ...validateProject({...old,...data}), id, updatedAt: new Date(now).toISOString(), createdAt: old?.createdAt || new Date(now).toISOString(), timeline: old?.timeline || [], activity: old?.activity || [], reviews: old?.reviews || [] };
+        const validated=validateProject({...old,...data});
+        const billing=await store.get('square:invoice:'+id);if(billing && String(validated.quoteAmount)!==String(old?.quoteAmount))return {error:'Review the existing invoice in Square before changing the agreed quote.'};
+        if(validated.stage>=1 && (!old || old.stage<validated.stage)){const invoice=await store.get('square:invoice:'+id);if(!invoice?.depositPaid||invoice.status==='review')return {error:'The verified 15% deposit is required before work begins or advances.'};}
+        const project = { ...validated, id, updatedAt: new Date(now).toISOString(), createdAt: old?.createdAt || new Date(now).toISOString(), timeline: old?.timeline || [], activity: old?.activity || [], reviews: old?.reviews || [] };
         if (data.reviewLabel || data.reviewUrl) {
           if (!data.reviewLabel || !data.reviewUrl) return {error:'Add both a preview label and an HTTPS preview link.'};
           let u; try { u = new URL(data.reviewUrl); } catch { return {error:'Use a valid HTTPS preview link.'}; }
