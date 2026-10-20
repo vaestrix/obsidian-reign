@@ -44,7 +44,20 @@ if(new URL(request.url).pathname==='/api/anna/health'){if(request.method!=='GET'
       }
       if(['GET','HEAD'].includes(request.method) && (path==='/sitemap.xml'||path==='/portfolio'||/^\/work\/[a-z0-9-]+$/.test(path))){
         let items=concepts;
-        if(env.PROJECT_HUB){const hub=env.PROJECT_HUB.get(env.PROJECT_HUB.idFromName('studio-projects'));const r=await hub.fetch(new Request('https://hub/portfolio-public',{method:'POST',body:'{}'}));if(!r.ok)throw new Error('Portfolio unavailable');items=(await r.json()).items;}
+        if(env.PROJECT_HUB){
+          try {
+            const hub=env.PROJECT_HUB.get(env.PROJECT_HUB.idFromName('studio-projects'));
+            const r=await hub.fetch(new Request('https://hub/portfolio-public',{method:'POST',body:'{}'}));
+            if(!r.ok)throw new Error('Portfolio unavailable');
+            const data=await r.json();
+            if(!Array.isArray(data.items))throw new Error('Invalid portfolio response');
+            items=data.items;
+          } catch(error) {
+            // Marketing sitemap must remain crawlable when optional portfolio storage is down.
+            if(path!=='/sitemap.xml')throw error;
+            console.warn('Sitemap portfolio fallback:',String(error));
+          }
+        }
         if(path==='/sitemap.xml'){
           const paths=['/','/services','/portfolio','/pricing','/start-project','/privacy',...services.map(x=>'/services/'+x.slug),...items.map(x=>'/work/'+x.slug)];
           return secured(new Response(request.method==='HEAD'?null:'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+paths.map(p=>'<url><loc>https://obsidianreign.gg'+p+'</loc></url>').join('')+'</urlset>',{headers:{'Content-Type':'application/xml; charset=utf-8','Cache-Control':'no-cache'}}),path);
