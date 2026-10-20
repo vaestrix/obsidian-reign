@@ -1034,3 +1034,7 @@ body .faq-privacy{grid-column:1 / -1;}
 body::before,body::after{content:'';position:fixed;top:90px;bottom:12px;width:clamp(18px,4vw,62px);background:url('/assets/img/gothic-edge.svg') center/100% 100% no-repeat;z-index:4;pointer-events:none;opacity:.62;filter:drop-shadow(0 0 7px #af63d777);}
 body::before{left:0;}body::after{right:0;transform:scaleX(-1);}
 @media(max-width:700px){body::before,body::after{width:14px;opacity:.35;top:76px;}}
+
+/* Keep demo controls inside narrow cards, including their inset margins. */
+body .selection-film .selection-film-button{width:calc(100% - 28px);max-width:calc(100% - 28px);min-width:0;min-height:44px;box-sizing:border-box;}
+@media(max-width:600px){body .draft-tools .btn{min-height:44px;}body .footer-inner{gap:16px 22px;}body .footer-inner a{display:inline-flex;align-items:center;min-height:44px;max-width:100%;overflow-wrap:anywhere;}}
