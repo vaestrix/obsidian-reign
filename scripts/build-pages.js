@@ -1,6 +1,10 @@
 import {mkdir,writeFile} from 'node:fs/promises';
 import {services,servicePage,page} from '../src/public-content.js';
 import {concepts,portfolioPage} from '../src/portfolio.js';
+import {guides,guidePage,guideIndex} from '../src/learn.js';
+await mkdir(new URL('../dist/learn/',import.meta.url),{recursive:true});
+await writeFile(new URL('../dist/learn.html',import.meta.url),guideIndex());
+for(const guide of guides)await writeFile(new URL('../dist/learn/'+guide.slug+'.html',import.meta.url),guidePage(guide));
 await mkdir(new URL('../dist/services/',import.meta.url),{recursive:true});
 for(const service of services)await writeFile(new URL('../dist/services/'+service.slug+'.html',import.meta.url),servicePage(service));
 await writeFile(new URL('../dist/portfolio.html',import.meta.url),portfolioPage(concepts));
