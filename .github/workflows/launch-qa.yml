@@ -39,3 +39,26 @@ jobs:
             test-results/
             playwright-report/
           retention-days: 14
+  public-audit:
+    env:
+      AUDIT_ORIGIN: ${{ github.ref == 'refs/heads/main' && 'https://obsidianreign.gg' || 'http://127.0.0.1:4173' }}
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --no-save --package-lock=false --no-audit --no-fund @playwright/test@1.58.2 @axe-core/playwright@4.10.2 lighthouse@12.8.2
+      - run: npm run build
+      - run: |
+          node scripts/qa-server.mjs &
+          node scripts/audit-production.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-accessibility-performance-audit
+          path: audit-results/
+          retention-days: 14

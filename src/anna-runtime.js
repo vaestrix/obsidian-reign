@@ -5,6 +5,9 @@ export async function contactKey(address) {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(address.toLowerCase().trim()));
   return 'anna:contact:' + [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2,'0')).join('');
 }
+export function compliantOutreachText(text,address) {
+  return typeof text==='string' && typeof address==='string' && address.trim().length>=20 && text.includes(address.trim()) && /\bAI (?:outreach )?assistant\b/i.test(text) && /commercial|advertisement/i.test(text) && /stop outreach|opt out|unsubscribe|no further contact/i.test(text) && !/\[ADD |\[VALID |ADDRESS REQUIRED|PLACEHOLDER/i.test(text);
+}
 export function outreachReady(env) {
   return env.STAGING!=='true' && env.ANNA_AUTO_SEND==='true' && env.ANNA_OUTREACH_VERIFIED==='true' && env.ANNA_POSTAL_ADDRESS_CONFIRMED==='true' && typeof env.ANNA_BUSINESS_ADDRESS==='string' && env.ANNA_BUSINESS_ADDRESS.trim().length>=20 && env.ANNA_BUSINESS_ADDRESS.length<=400 && !/required|placeholder|add verified|\[|\]/i.test(env.ANNA_BUSINESS_ADDRESS) && Boolean(env.ANNA_MAIL_API_TOKEN && env.ANNA_MAILBOX_ID) && campaign.approval?.approvedBy==='Philip';
 }
@@ -36,6 +39,7 @@ export async function queueProspect(ctx,env,lead) {
     if (!Array.isArray(approved) || !approved.includes(hash)) return Response.json({error:'draft-not-approved'},{status:403});
     message={...message,subject:draft.subject,text:draft.text};
   }
+  if(!compliantOutreachText(message.text,env.ANNA_BUSINESS_ADDRESS))return Response.json({error:'draft-compliance-missing'},{status:403});
   const key = await contactKey(message.to[0]);
   return ctx.blockConcurrencyWhile(async () => {
     if(await ctx.storage.get(key))return Response.json({error:'already-contacted-or-suppressed'},{status:409});
@@ -57,7 +61,7 @@ export async function dispatchProspects(ctx,env) {
   for(const [jobKey,job] of await ctx.storage.list({prefix:'anna:outbox:'})) {
     if(job.state!=='queued')continue;
     // Recheck the configured postal identity for queued work before any send attempt.
-    if(!job.message?.text?.includes(env.ANNA_BUSINESS_ADDRESS.trim()))continue;
+    if(!compliantOutreachText(job.message?.text,env.ANNA_BUSINESS_ADDRESS)){await ctx.storage.put(jobKey,{...job,state:'held-compliance'});continue;}
     const contact=await ctx.storage.get(job.key);
     if(contact?.state!=='queued'){await ctx.storage.put(jobKey,{...job,state:'cancelled'});continue;}
     if(Date.now()-Date.parse(contact.evidence?.verifiedAt)>7*86400000){await ctx.storage.put(jobKey,{key:job.key,state:'stale-verification'});continue;}
