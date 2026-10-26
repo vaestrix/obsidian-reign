@@ -40,7 +40,7 @@
   function updateQuote(){
     if(!quoteTotal)return;
     const total=quoteBoxes.reduce((sum,x)=>sum+(x.checked?Number(x.value||0):0),0)+addonTotal;
-    quoteTotal.textContent="$"+total.toLocaleString();
+    quoteTotal.textContent=total?"$"+total.toLocaleString():"Choose your assets";
   }
   quoteBoxes.forEach(x=>x.addEventListener("change",updateQuote));
   updateQuote();
@@ -132,7 +132,7 @@
   const addonButtons=[...document.querySelectorAll("[data-add-quote]")];
   addonButtons.forEach(btn=>btn.addEventListener("click",()=>{
     btn.classList.toggle("active");addonTotal=addonButtons.reduce((s,b)=>s+(b.classList.contains("active")?Number(b.dataset.addQuote||0):0),0);
-    if(quoteTotal){const base=quoteBoxes.reduce((sum,x)=>sum+(x.checked?Number(x.value||0):0),0);quoteTotal.textContent="$"+(base+addonTotal).toLocaleString();}
+    if(quoteTotal){const base=quoteBoxes.reduce((sum,x)=>sum+(x.checked?Number(x.value||0):0),0);quoteTotal.textContent=(base+addonTotal)?"$"+(base+addonTotal).toLocaleString():"Choose your assets";}
   }));
   // Prefill project intake from package, vibe, and Surprise Me links
   const params=new URLSearchParams(location.search);

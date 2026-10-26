@@ -1,6 +1,6 @@
 (() => {
   const form=document.getElementById('project-form');if(!form)return;
-  const fields=[...form.querySelectorAll('input,select,textarea')].filter(f=>!['website','consent'].includes(f.name)),required=fields.filter(f=>f.required),key='obsidian-reign-brief-v1';
+  const fields=[...form.querySelectorAll('input,select,textarea')].filter(f=>!['website','consent'].includes(f.name)),required=fields.filter(f=>f.required),key=new URLSearchParams(location.search).get('service')?.startsWith('after-dark')?'obsidian-reign-after-dark-brief-v2':'obsidian-reign-creator-brief-v2';
   const status=document.querySelector('[data-draft-status]'),progress=document.querySelector('[data-brief-progress]'),label=document.querySelector('[data-brief-progress-label]');
   function update(){const count=required.filter(f=>f.value.trim()&&f.validity.valid).length;progress.max=required.length;progress.value=count;label.textContent=count+' of '+required.length+' required fields complete';}
   form.addEventListener('input',update);form.addEventListener('change',update);update();

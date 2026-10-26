@@ -251,7 +251,7 @@ export class ProjectHub {
         const old = await store.get('project:' + id); if (data.id && !old) return { error: 'Project not found.' };
         const validated=validateProject({...old,...data});
         const billing=await store.get('square:invoice:'+id);if(billing && String(validated.quoteAmount)!==String(old?.quoteAmount))return {error:'Review the existing invoice in Square before changing the agreed quote.'};
-        if(validated.stage>=1 && (!old || old.stage<validated.stage)){const invoice=await store.get('square:invoice:'+id);if(!invoice?.depositPaid||invoice.status==='review')return {error:'The verified 15% deposit is required before work begins or advances.'};}
+        if(validated.stage>=1 && (!old || old.stage<validated.stage)){const invoice=await store.get('square:invoice:'+id);if(validated.quoteStatus!=='Accepted'||!invoice?.depositPaid||!['paid','partially-paid'].includes(invoice.status)||invoice.total!==Math.round(Number(validated.quoteAmount)*100))return {error:'The verified 15% deposit is required before work begins or advances.'};}
         const project = { ...validated, id, updatedAt: new Date(now).toISOString(), createdAt: old?.createdAt || new Date(now).toISOString(), timeline: old?.timeline || [], activity: old?.activity || [], reviews: old?.reviews || [] };
         if (data.reviewLabel || data.reviewUrl) {
           if (!data.reviewLabel || !data.reviewUrl) return {error:'Add both a preview label and an HTTPS preview link.'};

@@ -1,7 +1,7 @@
 // Existing published estimator prices; never used as an authoritative invoice.
 export const KIT = [
  ['branding','Creator Logo / Brand Mark',149,'branding'],['scenes','Animated Scene Pack',299,'streamkit'],
- ['alerts','5 Cinematic Alerts',249,'streamkit'],['emotes10','10 Custom Emotes',179,'emotes'],
+ ['alerts','5 Alert Variants (one shared cinematic master)',249,'streamkit'],['emotes10','10 Custom Emotes',179,'emotes'],
  ['music','Creator Theme Music',199,'audio'],['voice','Funny Voice Pack',129,'audio'],
  ['trailer','Stream Trailer',399,'cinematics'],['website','Creator Website',699,'site'],
  ['emotes6','6 Emotes',119,'emotes']
