@@ -136,7 +136,7 @@ test('routine inquiry replies with exact identity and source reference, once', a
   const { sends } = mockMail(t); const { object, storage } = setup();
   assert.equal((await enqueue(object)).status, 202);
   await object.alarm(); await object.alarm(); await enqueue(object); await object.alarm();
-  assert.equal(sends.length, 1); assert.equal(sends[0].displayName, NAME);
+  assert.equal(sends.length, 1); assert.equal(sends[0].displayName, NAME); assert.match(sends[0].text,/AI customer relations assistant/);
   assert.deepEqual(sends[0].inReplyTo, { folder: 'INBOX', uid: 12 });
   assert.equal(sends[0].to[0], 'customer@example.com');
   assert.equal((await storage.get('job:INBOX:12')).state, 'replied');
@@ -237,7 +237,7 @@ test('Anna alias inquiries reach Savannah while own alias mail is ignored', asyn
  assert.equal(preflight({ ...aliasMessage, from: { address: 'anna@obsidianreign.gg' } }), 'ignore');
  const { sends } = mockMail(t, { message: aliasMessage }); const { object } = setup();
  await enqueue(object); await object.alarm();
- assert.equal(sends.length, 1); assert.equal(sends[0].displayName, NAME); assert.deepEqual(sends[0].to, ['customer@example.com']);
+ assert.equal(sends.length, 1); assert.equal(sends[0].displayName, NAME); assert.match(sends[0].text,/AI customer relations assistant/); assert.deepEqual(sends[0].to, ['customer@example.com']);
  assert.equal(preflight({ ...message, to: [{ address: 'other@obsidianreign.gg' }] }), 'escalate');
 });
 
@@ -267,3 +267,5 @@ test('mailing-list design discussion is not an outreach opt-out',async t=>{
  assert.equal(sends.length,1);assert.equal(sends[0].to[0],'customer@example.com');
  assert.equal((await storage.list({prefix:'anna:contact:'})).size,0);
 });
+
+test('Savannah identifies as AI and keeps Vesper internal in production instructions',()=>{assert.match(PERSONA,/AI inbox assistant/);assert.match(PERSONA,/Vesper is internal creative production only/);assert.match(PERSONA,/agreed balance date shown on the invoice/);});
