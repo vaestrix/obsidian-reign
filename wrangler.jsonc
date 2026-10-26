@@ -47,10 +47,12 @@
   },
   "vars": {
     "PUBLIC_ORIGIN": "https://obsidianreign.gg",
-    "SAVANNAH_AUTO_SEND": "true",
+    "SAVANNAH_AUTO_SEND": "false",
     "ANNA_MAILBOX_ID": "AC087f44100a23d1b44998ca5baa35",
-    "ANNA_AUTO_SEND": "true",
-    "AGENTS_START_AT": "2026-10-24T05:00:00Z"
+    "ANNA_AUTO_SEND": "false",
+    "AGENTS_START_AT": "2026-10-24T05:00:00Z",
+    "ANNA_POSTAL_ADDRESS_CONFIRMED": "false",
+    "ANNA_OUTREACH_VERIFIED": "false"
   },
   "assets": {
     "directory": "dist",
@@ -67,7 +69,10 @@
       "STAGING": "true",
       "SAVANNAH_AUTO_SEND": "false",
       "HOSTINGER_MAILBOX_ID": "",
-      "PUBLIC_ORIGIN": ""
+      "PUBLIC_ORIGIN": "",
+      "ANNA_AUTO_SEND": "false",
+      "ANNA_POSTAL_ADDRESS_CONFIRMED": "false",
+      "ANNA_OUTREACH_VERIFIED": "false"
     },
     "durable_objects": {
       "bindings": [
