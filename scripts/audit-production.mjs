@@ -8,7 +8,7 @@ const origin=process.env.AUDIT_ORIGIN||'https://obsidianreign.gg';
 await mkdir('audit-results',{recursive:true});
 let sitemapResponse;for(let attempt=0;attempt<30;attempt++){try{sitemapResponse=await fetch(origin+'/sitemap.xml');if(sitemapResponse.ok)break;}catch{}await new Promise(r=>setTimeout(r,200));}if(!sitemapResponse?.ok)throw Error('Audit site unavailable');const sitemap=await sitemapResponse.text();
 const urls=[...new Set([...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(x=>new URL(new URL(x[1]).pathname,origin).href))];urls.push(origin+'/after-dark');
-if(!origin.includes('127.0.0.1')){let ready=false;for(let attempt=0;attempt<18;attempt++){try{const r=await fetch(origin+'/assets/img/studio-logo-web.webp');if(r.ok){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,10000));}if(!ready)throw Error('Optimized release asset is not deployed');}
+if(!origin.includes('127.0.0.1')){let ready=false;for(let attempt=0;attempt<18;attempt++){try{const r=await fetch(origin+'/');if(r.ok&&(await r.text()).includes('/assets/css/public.css?v=launch-20261026')){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,10000));}if(!ready)throw Error('Bundled stylesheet release is not deployed');}
 const browser=await chromium.launch({headless:true});
 const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
 await context.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
