@@ -2,8 +2,9 @@
 import assert from 'node:assert/strict';
 const origin='https://obsidianreign.gg',results=[];
 async function get(path,options={}){const r=await fetch(new URL(path,origin),{redirect:'manual',signal:AbortSignal.timeout(20000),...options});return {r,text:options.method==='HEAD'?'':await r.text()};}
+const requireCurrentRelease=process.env.GITHUB_REF==='refs/heads/main';
 let home;
-for(let attempt=0;attempt<18;attempt++){home=await get('/');if(home.r.status===200&&home.text.includes('Choose your assets')&&home.text.includes('3 static stream layouts')&&home.text.includes('/assets/css/public.css?v=launch-20261026')&&home.text.includes('CHOOSE STARTER'))break;if(attempt===17)throw Error('Repair release did not become visible on production');await new Promise(r=>setTimeout(r,10000));}
+for(let attempt=0;attempt<18;attempt++){home=await get('/');if(home.r.status===200&&home.text.includes('Choose your assets')&&home.text.includes('3 static stream layouts')&&(!requireCurrentRelease||(home.text.includes('/assets/css/public.css?v=launch-20261026')&&home.text.includes('CHOOSE STARTER'))))break;if(attempt===17)throw Error('Repair release did not become visible on production');await new Promise(r=>setTimeout(r,10000));}
 assert.equal(home.r.status,200);assert(!home.text.includes('data-quote-total>$0'));
 const pricing=await get('/pricing');assert.equal(pricing.r.status,200);assert(pricing.text.includes('ONE SHARED CINEMATIC MASTER'));assert(pricing.text.includes('Midnight Atlas Studios'));
 results.push({page:'/',status:home.r.status,repairVisible:true},{page:'/pricing',status:pricing.r.status,scopeAndMerchantVisible:true});
