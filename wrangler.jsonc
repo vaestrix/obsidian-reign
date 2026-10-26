@@ -62,7 +62,7 @@
     "not_found_handling": "404-page"
   },
   "build": {
-    "command": "node scripts/build-assets.js"
+    "command": "node --test test/*.test.js && node scripts/check-agent-deployment.mjs && node scripts/build-assets.js"
   },
   "previews": {
     "vars": {

@@ -5,7 +5,7 @@ function updateKit(){
   const ids=new Set(boxes.flatMap((input,i)=>input.checked?[KIT[i][0]]:[]));
   for(const b of addons){if(b.classList.contains('active'))ids.add({'199':'music','129':'voice','119':'emotes6','399':'trailer'}[b.dataset.addQuote]);b.setAttribute('aria-pressed',String(b.classList.contains('active')));}
   kit=KIT.filter(([id])=>ids.has(id));
-  const total=document.querySelector('[data-quote-total]');if(total){total.textContent='$'+kit.reduce((s,x)=>s+x[2],0).toLocaleString();total.setAttribute('aria-live','polite');}
+  const total=document.querySelector('[data-quote-total]');if(total){total.textContent=kit.length?'$'+kit.reduce((s,x)=>s+x[2],0).toLocaleString():'Choose your assets';total.setAttribute('aria-live','polite');}
   const link=document.querySelector('[data-kit-link]');if(link)link.href='/start-project'+(kit.length?'?kit='+encodeURIComponent(kit.map(x=>x[0]).join(',')):'');
 }
 boxes.forEach(b=>b.addEventListener('change',updateKit));addons.forEach(b=>b.addEventListener('click',()=>queueMicrotask(updateKit)));updateKit();

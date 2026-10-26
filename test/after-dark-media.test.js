@@ -27,10 +27,12 @@ test('rendered alert stays behind the age prompt and starts only on request', as
   dom.window.close();
 });
 
-test('production agents stay armed behind October 24 launch while previews stay paused',async()=>{
+test('deploy defaults and previews keep automatic sends paused pending verification',async()=>{
   const config=JSON.parse(await readFile(new URL('../wrangler.jsonc',import.meta.url),'utf8'));
-  assert.equal(config.vars.SAVANNAH_AUTO_SEND,'true');
-  assert.equal(config.vars.ANNA_AUTO_SEND,'true');
+  assert.equal(config.vars.SAVANNAH_AUTO_SEND,'false');
+  assert.equal(config.vars.ANNA_AUTO_SEND,'false');
+  assert.equal(config.vars.ANNA_POSTAL_ADDRESS_CONFIRMED,'false');
+  assert.equal(config.vars.ANNA_OUTREACH_VERIFIED,'false');
   assert.equal(config.vars.AGENTS_START_AT,'2026-10-24T05:00:00Z');
   assert.equal(config.previews.vars.SAVANNAH_AUTO_SEND,'false');
   assert.equal(config.keep_vars,true);

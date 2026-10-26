@@ -16,3 +16,7 @@ body .service-aside .text-link{margin-top:16px;padding:8px 0;font-weight:700;}
 body .service-layout{gap:clamp(28px,5vw,64px);}body .service-layout>div,body .service-aside{min-width:0;}
 body .service-layout p{max-width:65ch;}body .eyebrow{line-height:1.5;}
 @media(max-width:600px){body .service-aside .btn{width:100%;}body .service-layout h2{font-size:28px;}body .service-aside{padding:24px;}}
+
+/* Conditional inquiry notices must stay hidden despite component display rules. */
+[hidden] { display: none !important; }
+.quote-total { overflow-wrap: anywhere; font-size: clamp(1.5rem, 3vw, 3rem); }
