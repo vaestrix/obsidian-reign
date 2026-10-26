@@ -1,6 +1,7 @@
-import { mkdir, readdir, copyFile, cp, rm, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, copyFile, cp, rm, readFile, writeFile, realpath } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const output = path.resolve(root, 'dist');
 if (path.dirname(output) !== path.resolve(root) || path.basename(output) !== 'dist') throw new Error('Invalid output directory');
@@ -12,6 +13,12 @@ for (const file of await readdir(root)) {
   }
 }
 await cp(path.join(root, 'assets'), path.join(output, 'assets'), { recursive: true });
+// Use Wrangler's installed compiler; resolving its real path also supports pnpm.
+const wranglerRequire = createRequire(await realpath(path.join(root, 'node_modules/wrangler/package.json')));
+const { transform } = wranglerRequire('esbuild');
+const coreCss = await Promise.all(['studio', 'polish', 'launch'].map(name => readFile(path.join(root, 'assets/css', name + '.css'), 'utf8')));
+const cssBundle = await transform(coreCss.join('\n'), { loader: 'css', minify: true, charset: 'utf8' });
+await writeFile(path.join(output, 'assets/css/public.css'), cssBundle.code);
 await import('./build-pages.js');
 // Standardize favicon metadata on every generated and retained page.
 async function updateIcons(directory) {
@@ -20,6 +27,7 @@ async function updateIcons(directory) {
     if (entry.isDirectory()) { if (entry.name !== 'assets') await updateIcons(target); }
     else if (entry.name.endsWith('.html')) {
       const html = (await readFile(target, 'utf8'))
+        .replace(/<link rel="stylesheet" href="\/?assets\/css\/studio\.css[^"]*">\s*<link rel="stylesheet" href="\/?assets\/css\/polish\.css[^"]*">\s*<link rel="stylesheet" href="\/?assets\/css\/launch\.css[^"]*">/g, '<link rel="stylesheet" href="/assets/css/public.css?v=launch-20261026">')
         .replaceAll('<a class="brand" href="/">','<a class="brand" href="/" aria-label="Obsidian Reign Studios home">')
         .replace(/(<span class="header-logo"><img src="[^"]*)studio-logo\.png/g,'$1studio-logo-header.webp')
         .replace(/(\/?assets\/(?:css\/launch\.css|js\/(?:studio|intake|brief-tools)\.js))\?v=[^"']+/g,'$1?v=launch-20261026')
