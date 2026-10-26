@@ -51,8 +51,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: npm install --no-save --package-lock=false --no-audit --no-fund @playwright/test@1.58.2 @axe-core/playwright@4.10.2 lighthouse@12.8.2 sharp@0.34.3
-      - run: node scripts/prepare-header-logo.mjs
+      - run: npm install --no-save --package-lock=false --no-audit --no-fund @playwright/test@1.58.2 @axe-core/playwright@4.10.2 lighthouse@12.8.2
       - run: npm run build
       - run: |
           node scripts/qa-server.mjs &

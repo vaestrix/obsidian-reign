@@ -20,8 +20,8 @@ A fresh autonomous customer-reply, escalation receipt and live replay test have 
 The older hourly Savannah sender and Creator Prospecting automation were already paused and remain paused. Draft-only reply monitoring and read-only SEO/growth monitoring remain enabled. The SEO task's erroneous human-owner identity was corrected to Philip Chumley.
 
 ## Search-discovery release
-PR #13 prepares three original guides, a dedicated VTuber branding page, Article metadata, internal links and sitemap coverage. It also adds private headers to early agent routes, deterministic AI identification in Savannah signatures, and same-host IndexNow ownership/notification code.
-Its latest exact commit must pass all checks before merging. After merge, verify the production build and the recorded IndexNow response. HTTP 200 means receipt; 202 also leaves ownership validation pending. Neither means indexing or ranking.
+PR #13 is merged and Cloudflare deployed production version 92c916e3-6d75-4b96-8651-2cdb3d35bac8 at commit 7e5d19dfbdb8c2b3af06213a687968b13bbeddb6. It adds three original guides, a dedicated VTuber branding page, Article metadata, internal links and sitemap coverage. It also adds private headers to early agent routes, deterministic AI identification in Savannah signatures, and same-host IndexNow ownership/notification code.
+Its 111 repository tests, 15 browser checks and read-only production verification passed. Production served 24 sitemap pages and 37 referenced assets. IndexNow returned HTTP 202 for all 24 URLs at 18:39:59 UTC on October 26. HTTP 200 means receipt; 202 also leaves ownership validation pending. Neither means indexing or ranking.
 The GSC Wizard connection refuses data calls because its trial/subscription is inactive. No purchase was made. Direct Google Search Console and Bing Webmaster Tools verification remain incomplete after the desktop environment disconnected.
 
 ## Production and payment holds
@@ -40,3 +40,9 @@ The desktop environment disconnected during work; code and evidence were preserv
 
 ## Revenue reporting
 No new customer activity, sales, revenue, rankings, testimonials or backlinks are claimed. The growth plan's $5,000/month examples are arithmetic scenarios and must be replaced by actual qualified leads, accepted quotations, verified deposits and collected revenue as evidence becomes available.
+
+## Final accessibility, performance and outreach release
+PR #14 records the final exact checks and deployment result. The initial production mobile lab audit found missing mobile home-link names, low-contrast footer text and invalid palette ARIA labels. These were repaired without replacing the design. The candidate then passed axe checks across all 25 public pages (including After Dark) with zero detected WCAG-tagged violations. Automated checks are not proof of complete accessibility.
+The original 1,588,850-byte logo remains available. Purpose-sized copies of the same artwork are 8,790 bytes for the 108px header and 131,530 bytes for the 640px web illustration. HTML cache versions are refreshed for the changed stylesheet and browser modules.
+The initial production Lighthouse mobile lab score was 74 performance, 96 accessibility, 100 best practices and 92 SEO. Candidate localhost scores are not comparable to production because the synthetic server intentionally lacks production compression/caching and emits noindex. Use PR #14's final production audit for the subsequent measured result, rather than inventing an improvement.
+Anna's approved drafts and old queued messages must retain AI identification, commercial disclosure, the verified postal identity and opt-out wording. Noncompliant queued work is held before any attempt. Unsupported Most Popular labels were removed. None of this activates outreach.
