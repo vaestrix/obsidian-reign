@@ -1,0 +1,32 @@
+name: Launch browser QA
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, fix/launch-repair-20261026]
+permissions:
+  contents: read
+jobs:
+  browser-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --no-package-lock --no-audit --no-fund
+      - run: npm install --no-save --package-lock=false @playwright/test@1.58.2
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - run: node scripts/check-agent-deployment.mjs
+      - run: npm run build
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: launch-browser-qa
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 14
