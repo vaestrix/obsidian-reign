@@ -1,0 +1,2 @@
+import sharp from 'sharp';import {readFile,mkdir} from 'node:fs/promises';
+await mkdir('audit-results',{recursive:true});const output='audit-results/studio-logo-header.webp';await sharp('assets/img/studio-logo.png').resize({width:108,height:108,fit:'inside',withoutEnlargement:true}).webp({quality:90,effort:6}).toFile(output);const bytes=await readFile(output);console.log('HEADER_WEBP_INFO '+JSON.stringify({bytes:bytes.length,metadata:await sharp(bytes).metadata()}));console.log('HEADER_WEBP_BASE64 '+bytes.toString('base64'));
