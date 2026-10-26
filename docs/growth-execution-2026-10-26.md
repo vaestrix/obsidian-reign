@@ -18,3 +18,6 @@ A hypothetical mix of 4 Cinematic Reign projects at $1,299 is $5,196 in quoted p
 
 ## Measurement
 Use the existing private inquiry stages and project/quote/invoice records as the source of truth. Deduplicate inquiries and do not count tests, spam or unaccepted quotes as sales. Record cash actually collected separately from invoiced value, outstanding balances and refunds. Keep customer identities out of public dashboards. Reconcile Square with project records before reporting revenue. This release adds no advertising trackers, recurring billing enrollment or automatic marketing.
+
+## Search-engine notification
+The IndexNow script verifies a deployed root ownership file and submits only same-host public canonical sitemap URLs after a main-branch public-content change. It never submits private APIs, admin/client routes or After Dark. HTTP 200 means receipt; HTTP 202 also leaves key validation pending. Neither proves indexing or a ranking. Google Search Console and Bing Webmaster Tools ownership remain separate checks.

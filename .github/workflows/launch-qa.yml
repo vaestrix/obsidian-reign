@@ -24,6 +24,9 @@ jobs:
       - run: npx playwright test
       - name: Read-only production verification
         run: node scripts/verify-production.mjs
+      - name: Notify IndexNow after verified production ownership
+        if: github.ref == 'refs/heads/main'
+        run: node scripts/indexnow.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
