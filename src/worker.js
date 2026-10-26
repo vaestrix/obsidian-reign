@@ -5,13 +5,14 @@ import legacyWorker, {adminAuthorized} from './legacy-worker.js';
 import { portal } from './portal.js';
 import {concepts,portfolioPage,casePage} from './portfolio.js';
 import {services} from './public-content.js';
+import {guides,guideIndex,guidePage} from './learn.js';
 export { ProjectHub } from './portal.js';
 export { CommandStore } from './legacy-worker.js';
 export { SavannahInbox } from './savannah.js';
 
 // Preserve the existing migration destinations, with actual permanent redirects.
 const migrations = {news:'/',raids:'/services',roster:'/portfolio',join:'/start-project','who-we-are':'/',guides:'/services',profile:'/'};
-const publicPages = new Set(['services','portfolio','pricing','start-project','client-portal','privacy','after-dark']);
+const publicPages = new Set(['services','portfolio','pricing','start-project','client-portal','privacy','after-dark','learn']);
 function secured(response, path, staging = false) {
   const headers=new Headers(response.headers);
   headers.set('X-Content-Type-Options','nosniff');
@@ -39,7 +40,7 @@ if(new URL(request.url).pathname==='/api/anna/health'){if(request.method!=='GET'
       if(['GET','HEAD'].includes(request.method)){
         let target=migrations[name];
         if(path==='/index.html'||path==='/index')target='/';
-        if((publicPages.has(name)||services.some(service=>name==='services/'+service.slug)||/^work\/[a-z0-9-]+$/.test(name)) && path!=='/'+name)target='/'+name;
+        if((publicPages.has(name)||services.some(service=>name==='services/'+service.slug)||guides.some(guide=>name==='learn/'+guide.slug)||/^work\/[a-z0-9-]+$/.test(name)) && path!=='/'+name)target='/'+name;
         if(target)return secured(new Response(null,{status:301,headers:{Location:target+new URL(request.url).search}}),path);
       }
       if(['GET','HEAD'].includes(request.method) && (path==='/sitemap.xml'||path==='/portfolio'||/^\/work\/[a-z0-9-]+$/.test(path))){
@@ -59,12 +60,13 @@ if(new URL(request.url).pathname==='/api/anna/health'){if(request.method!=='GET'
           }
         }
         if(path==='/sitemap.xml'){
-          const paths=['/','/services','/portfolio','/pricing','/start-project','/privacy',...services.map(x=>'/services/'+x.slug),...items.map(x=>'/work/'+x.slug)];
+          const paths=['/','/services','/portfolio','/pricing','/start-project','/privacy','/learn',...guides.map(x=>'/learn/'+x.slug),...services.map(x=>'/services/'+x.slug),...items.map(x=>'/work/'+x.slug)];
           return secured(new Response(request.method==='HEAD'?null:'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+paths.map(p=>'<url><loc>https://obsidianreign.gg'+p+'</loc></url>').join('')+'</urlset>',{headers:{'Content-Type':'application/xml; charset=utf-8','Cache-Control':'no-cache'}}),path);
         }
         const item=items.find(x=>'/work/'+x.slug===path);
         if(path==='/portfolio'||item)return secured(new Response(request.method==='HEAD'?null:path==='/portfolio'?portfolioPage(items):casePage(item),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'}}),path);
       }
+      if(['GET','HEAD'].includes(request.method) && (path==='/learn'||guides.some(g=>path==='/learn/'+g.slug))){const guide=guides.find(g=>path==='/learn/'+g.slug);return secured(new Response(request.method==='HEAD'?null:guide?guidePage(guide):guideIndex(),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'}}),path);}
       if((path==='/api/admin/state'||path==='/api/admin/action') && env.PROJECT_HUB && !await adminAuthorized(request,env)){
         const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(request.headers.get('CF-Connecting-IP')||'unknown'));
         const key='legacy-admin:'+Array.from(new Uint8Array(digest)).map(x=>x.toString(16).padStart(2,'0')).join('');
@@ -83,7 +85,7 @@ if(new URL(request.url).pathname==='/api/anna/health'){if(request.method!=='GET'
   }
 };
 
-export default {async fetch(request,env){    if (new URL(request.url).pathname === '/webhooks/hostinger/anna') return receiveWebhook(request, { ...env,
+async function dispatch(request,env){    if (new URL(request.url).pathname === '/webhooks/hostinger/anna') return receiveWebhook(request, { ...env,
       HOSTINGER_WEBHOOK_SECRET: env.ANNA_WEBHOOK_SECRET, HOSTINGER_MAILBOX_ID: env.ANNA_MAILBOX_ID,
       SAVANNAH_REGISTRY_ID: env.HOSTINGER_MAILBOX_ID, INBOUND_MAILBOX_ADDRESS: 'anna@obsidianreign.gg' });
     if (new URL(request.url).pathname === '/api/anna/status') {
@@ -98,4 +100,6 @@ export default {async fetch(request,env){    if (new URL(request.url).pathname =
       return env.SAVANNAH_INBOX.get(env.SAVANNAH_INBOX.idFromName(env.HOSTINGER_MAILBOX_ID)).fetch(new Request('https://internal/anna',{method:'POST',body:JSON.stringify({annaLead:lead})}));
     }
     if (new URL(request.url).pathname === '/webhooks/hostinger') return receiveWebhook(request, env);
-const response=await application.fetch(request,env);return env.STAGING==='true'?secured(response,new URL(request.url).pathname,true):response;}};
+return application.fetch(request,env);
+}
+export default {async fetch(request,env){const path=new URL(request.url).pathname;try{return secured(await dispatch(request,env),path,env.STAGING==='true');}catch{console.error(JSON.stringify({event:'request-failed',area:'dispatch'}));return secured(Response.json({error:'The studio is temporarily unavailable. Please try again.'},{status:503}),path,env.STAGING==='true');}}};
