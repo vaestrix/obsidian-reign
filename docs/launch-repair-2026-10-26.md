@@ -18,7 +18,7 @@
 - Runs tests and the integrated agent deployment guard in Cloudflare's build command before deployment.
 
 ## Still incomplete
-No paid generation, real invoice, real charge or unsolicited outreach was authorized or performed. No new live email test has been completed. Vesper has no implementation in the deployed repository and remains disabled; Runway caps are zero. LydiaLuxe and Crimson Fox full production assets are not completed by this release. Google/Bing verification and IndexNow are not established; GSC Wizard access is blocked by an expired trial. The business must not be represented as fully launch-ready.
+No paid generation, real invoice, real charge or unsolicited outreach was performed. A controlled owner-only outbound test reached the connected Gmail inbox on October 26, with SPF, DKIM and DMARC passing. Hostinger webhook testing returned HTTP 202; this is event acceptance, not an end-to-end autonomous reply test. Vesper has no implementation in the deployed repository and remains disabled; Runway caps are zero. LydiaLuxe and Crimson Fox full production assets are not completed by this release. Google/Bing verification and IndexNow are not established; GSC Wizard access is blocked by an expired trial. The business must not be represented as fully launch-ready.
 
 ## Rollback
 Production version before this work was 5b050889-6e2a-4225-b7cd-05e7bde0d823. Pausing Anna created 874198bf-12ec-4a93-962a-a33675789d9b. Preserve all Durable Object bindings, secrets and data. Reverting code must preserve the Anna pause and current owner pauses.
