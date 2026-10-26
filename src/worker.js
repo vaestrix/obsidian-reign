@@ -85,7 +85,7 @@ if(new URL(request.url).pathname==='/api/anna/health'){if(request.method!=='GET'
   }
 };
 
-export default {async fetch(request,env){    if (new URL(request.url).pathname === '/webhooks/hostinger/anna') return receiveWebhook(request, { ...env,
+async function dispatch(request,env){    if (new URL(request.url).pathname === '/webhooks/hostinger/anna') return receiveWebhook(request, { ...env,
       HOSTINGER_WEBHOOK_SECRET: env.ANNA_WEBHOOK_SECRET, HOSTINGER_MAILBOX_ID: env.ANNA_MAILBOX_ID,
       SAVANNAH_REGISTRY_ID: env.HOSTINGER_MAILBOX_ID, INBOUND_MAILBOX_ADDRESS: 'anna@obsidianreign.gg' });
     if (new URL(request.url).pathname === '/api/anna/status') {
@@ -100,4 +100,6 @@ export default {async fetch(request,env){    if (new URL(request.url).pathname =
       return env.SAVANNAH_INBOX.get(env.SAVANNAH_INBOX.idFromName(env.HOSTINGER_MAILBOX_ID)).fetch(new Request('https://internal/anna',{method:'POST',body:JSON.stringify({annaLead:lead})}));
     }
     if (new URL(request.url).pathname === '/webhooks/hostinger') return receiveWebhook(request, env);
-const response=await application.fetch(request,env);return env.STAGING==='true'?secured(response,new URL(request.url).pathname,true):response;}};
+return application.fetch(request,env);
+}
+export default {async fetch(request,env){const path=new URL(request.url).pathname;try{return secured(await dispatch(request,env),path,env.STAGING==='true');}catch{console.error(JSON.stringify({event:'request-failed',area:'dispatch'}));return secured(Response.json({error:'The studio is temporarily unavailable. Please try again.'},{status:503}),path,env.STAGING==='true');}}};

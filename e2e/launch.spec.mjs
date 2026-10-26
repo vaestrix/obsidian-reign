@@ -2,7 +2,7 @@ import {test,expect} from '@playwright/test';
 test.beforeEach(async({context})=>{await context.route('**/*',route=>new URL(route.request().url()).origin==='http://127.0.0.1:4173'?route.continue():route.abort());});
 test('public pages have working local assets and fit the viewport',async({page,request},info)=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
- for(const route of ['/','/pricing','/services','/services/animated-alerts','/start-project','/portfolio']){
+ for(const route of ['/','/pricing','/services','/services/animated-alerts','/start-project','/portfolio','/services/vtuber-branding','/learn','/learn/obs-overlay-and-alert-setup']){
   const response=await page.goto(route);expect(response.status()).toBe(200);
   await expect(page.locator('h1')).toHaveCount(1);
   await expect(page.locator('h1')).toBeVisible();
