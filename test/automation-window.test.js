@@ -19,7 +19,7 @@ test('prelaunch rejects reservations without storage or fetch, and defers inbox 
  await assert.rejects(()=>inbox.process('x',{}),/launch-not-started/);
 });
 test('only exact owner-approved recipient, subject and body can override the campaign template',async()=>{
- const lead={email:'creator@example.com',name:'Creator',observation:'Your channel features cooperative games.',channelUrl:'https://example.com/channel',contactSourceUrl:'https://example.com/contact',verifiedAt:new Date().toISOString(),publicBusinessContact:true,contactVerified:true,outreachEligible:true,language:'English',segment:'smaller growing streamers',approvedDraft:{subject:'Approved subject',text:'Approved AI commercial introduction'}};
+ const lead={email:'creator@example.com',name:'Creator',observation:'Your channel features cooperative games.',channelUrl:'https://example.com/channel',contactSourceUrl:'https://example.com/contact',verifiedAt:new Date().toISOString(),publicBusinessContact:true,contactVerified:true,outreachEligible:true,language:'English',segment:'smaller growing streamers',approvedDraft:{subject:'Approved subject',text:"I'm Anna, an AI outreach assistant. This is a commercial introduction.\nQA Studio, 100 Test Street, Test City, TX 00000\nReply stop outreach to opt out."}};
  const env={SAVANNAH_AUTO_SEND:'true',ANNA_AUTO_SEND:'true',ANNA_OUTREACH_VERIFIED:'true',ANNA_POSTAL_ADDRESS_CONFIRMED:'true',ANNA_BUSINESS_ADDRESS:'QA Studio, 100 Test Street, Test City, TX 00000',ANNA_MAIL_API_TOKEN:'test',ANNA_MAILBOX_ID:'anna'};
  const data=new Map();const storage={get:async k=>data.get(k),put:async(k,v)=>data.set(k,v),getAlarm:async()=>null,setAlarm:async()=>{},transaction:async fn=>fn(storage)};
  const ctx={storage,blockConcurrencyWhile:fn=>fn()};

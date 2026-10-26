@@ -40,7 +40,6 @@ jobs:
             playwright-report/
           retention-days: 14
   public-audit:
-    needs: browser-qa
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.58.2-noble
