@@ -19,7 +19,10 @@ async function updateIcons(directory) {
     const target = path.join(directory, entry.name);
     if (entry.isDirectory()) { if (entry.name !== 'assets') await updateIcons(target); }
     else if (entry.name.endsWith('.html')) {
-      const html = (await readFile(target, 'utf8')).replace(/<link\b[^>]*rel=["'](?:shortcut icon|icon|apple-touch-icon)["'][^>]*>/gi, '');
+      const html = (await readFile(target, 'utf8'))
+        .replaceAll('<a class="brand" href="/">','<a class="brand" href="/" aria-label="Obsidian Reign Studios home">')
+        .replace(/(<span class="header-logo"><img src="[^"]*)studio-logo\.png/g,'$1studio-logo-header.webp')
+        .replace(/<link\b[^>]*rel=["'](?:shortcut icon|icon|apple-touch-icon)["'][^>]*>/gi, '');
       await writeFile(target, html.replace('</head>', '<link rel="icon" type="image/svg+xml" sizes="any" href="/assets/img/favicon.svg?v=or20261010"><link rel="apple-touch-icon" href="/assets/img/studio-logo.png"></head>'));
     }
   }

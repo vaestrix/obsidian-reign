@@ -20,3 +20,6 @@ body .service-layout p{max-width:65ch;}body .eyebrow{line-height:1.5;}
 /* Conditional inquiry notices must stay hidden despite component display rules. */
 [hidden] { display: none !important; }
 .quote-total { overflow-wrap: anywhere; font-size: clamp(1.5rem, 3vw, 3rem); }
+
+/* Readable supporting footer copy on the existing dark studio surface. */
+.footer-inner > span { color: #aaa0b4; font-size: 12px; line-height: 1.6; }
