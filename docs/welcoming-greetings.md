@@ -1,3 +1,5 @@
+Current operation (27 October 2026): Savannah automatic replies and eligible holding acknowledgements are enabled after owner-only live tests. Sensitive decisions remain with Philip; Anna outreach remains paused. See [activation verification](savannah-activation-2026-10-27.md). Earlier paused-state notes below are historical.
+
 # Welcoming default greetings — 27 October 2026
 
 The active music-and-voice page had one remaining pet-name greeting in its Jessica follower sample: “Come get comfy, cutie.” Regenerated directly in ElevenLabs with the same Jessica / Eleven v4 voice, replacing that phrase with “Come get comfy.” The rest of the playful script is retained:

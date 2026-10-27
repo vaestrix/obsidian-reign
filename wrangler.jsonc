@@ -47,7 +47,6 @@
   },
   "vars": {
     "PUBLIC_ORIGIN": "https://obsidianreign.gg",
-    "SAVANNAH_AUTO_SEND": "false",
     "ANNA_MAILBOX_ID": "AC087f44100a23d1b44998ca5baa35",
     "ANNA_AUTO_SEND": "false",
     "AGENTS_START_AT": "2026-10-24T05:00:00Z",

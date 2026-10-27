@@ -1,3 +1,5 @@
+Current operation (27 October 2026): Savannah automatic replies and eligible holding acknowledgements are enabled after owner-only live tests. Sensitive decisions remain with Philip; Anna outreach remains paused. See [activation verification](savannah-activation-2026-10-27.md). Earlier paused-state notes below are historical.
+
 # Savannah inbound mail
 
 Current operational evidence: [October 27 repair report](operational-repair-2026-10-27.md) and [October 26 launch report](launch-readiness-2026-10-26.md). The setup/verification notes below include historical milestones and must not be treated as current secret or activation status. Auto-send is currently paused.

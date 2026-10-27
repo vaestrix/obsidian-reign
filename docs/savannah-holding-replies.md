@@ -8,7 +8,7 @@ Refund requests, cancellations (including indirect requests to stop a project), 
 
 The acknowledgement is included in Philip's existing review notice. A customer acknowledgement can be sent only after the owner notice is accepted, when SAVANNAH_AUTO_SEND is true, forceReview is false, the automation start gate permits processing, and the original sender/authentication/recipient and thread checks pass. Anna-origin messages use Anna mailbox credentials with Savannah's established response identity.
 
-Production read-back confirmed ANNA_AUTO_SEND=false and SAVANNAH_AUTO_SEND=false. Those controls were preserved, so customer acknowledgements currently remain drafts in review notices. No real customer email was sent during this work.
+At initial publication both send controls remained false. Later on 27 October, the owner authorized activation and owner-only live tests passed. Savannah routine replies and holding acknowledgements are now enabled; Anna outreach remains paused. See [activation verification](savannah-activation-2026-10-27.md).
 
 ## Safety and duplicate handling
 

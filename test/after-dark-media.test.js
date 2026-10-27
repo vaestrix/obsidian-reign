@@ -27,9 +27,9 @@ test('rendered alert stays behind the age prompt and starts only on request', as
   dom.window.close();
 });
 
-test('deploy defaults and previews keep automatic sends paused pending verification',async()=>{
+test('deploy preserves the owner-managed Savannah switch and keeps previews paused',async()=>{
   const config=JSON.parse(await readFile(new URL('../wrangler.jsonc',import.meta.url),'utf8'));
-  assert.equal(config.vars.SAVANNAH_AUTO_SEND,'false');
+  assert.equal(Object.hasOwn(config.vars,'SAVANNAH_AUTO_SEND'),false);
   assert.equal(config.vars.ANNA_AUTO_SEND,'false');
   assert.equal(config.vars.ANNA_POSTAL_ADDRESS_CONFIRMED,'false');
   assert.equal(config.vars.ANNA_OUTREACH_VERIFIED,'false');
