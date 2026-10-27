@@ -203,7 +203,7 @@
  const picks=document.querySelector('.project-picks');if(picks){const film=panel(picks.parentElement,'scene',picks.nextElementSibling);film.box.classList.add('wide');film.box.style.gridColumn='1 / -1';const keys={want_streamkit:'scene',want_emotes:'emotes',want_cinematics:'trailer',want_audio:'audio',want_branding:'branding',want_site:'website'};film.box.hidden=!!picks.querySelector('input:checked')&&!keys[picks.querySelector('input:checked').name];picks.querySelectorAll('input[type=checkbox]').forEach(input=>input.addEventListener('change',()=>{if(input.checked){film.box.hidden=!keys[input.name];if(keys[input.name])film.choose(keys[input.name]);}}));}
  const quiz=document.querySelector('[data-quiz]');if(quiz){const film=panel(quiz,'glam');quiz.addEventListener('click',e=>{const b=e.target.closest('[data-quiz-answer]');if(b)film.choose({glam:'glam',cozy:'cozy',chaos:'chaos',dark:'fantasy'}[b.dataset.quizAnswer]||'violet');},true);}
  const goal=document.querySelector('[name=goal]');if(goal){const film=panel(goal.closest('form'),'branding');goal.addEventListener('change',()=>film.choose(goal.value.includes('Emotes')?'emotes':goal.value.includes('Website')?'website':goal.value.includes('visuals')?'scene':'branding'));}
- // Preview downloads and motion begin only after a visitor chooses Play.
+ // Shared preview-motion handles visible-only muted autoplay and source changes.
  // Pause offscreen media without overriding a visitor's explicit Pause choice.
  if('IntersectionObserver' in window){const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(!e.isIntersecting)e.target.pause();}),{threshold:.01});document.querySelectorAll('video').forEach(v=>observer.observe(v));}
  document.addEventListener('visibilitychange',()=>{if(document.hidden)document.querySelectorAll('video').forEach(v=>v.pause());});
@@ -226,3 +226,5 @@
  document.addEventListener('visibilitychange',()=>{if(document.hidden){v.pause();v.muted=true;label();}else preview();});
  motion.addEventListener('change',()=>{if(motion.matches){v.pause();v.muted=true;label();}else preview();});
 })();
+
+(()=>{if(document.querySelector('script[data-preview-motion]'))return;const script=document.createElement('script');script.src='/assets/js/preview-motion.js?v=site-loops-20261027';script.dataset.previewMotion='';script.defer=true;document.head.append(script);})();
