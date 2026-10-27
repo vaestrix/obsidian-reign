@@ -213,4 +213,4 @@
 
 
 
-(()=>{const v=document.querySelector('[data-feature-video]'),b=document.querySelector('[data-ad-sound]');if(!v||!b)return;b.addEventListener('click',()=>{v.muted=!v.muted;if(!v.muted){v.currentTime=0;v.play().catch(()=>{});}b.textContent=v.muted?'WATCH WITH SOUND':'MUTE SOUND';b.setAttribute('aria-pressed',String(!v.muted));});v.addEventListener('volumechange',()=>{b.textContent=v.muted?'WATCH WITH SOUND':'MUTE SOUND';b.setAttribute('aria-pressed',String(!v.muted));});})();
+(()=>{const v=document.querySelector('[data-feature-video]'),b=document.querySelector('[data-ad-sound]');if(!v||!b)return;function label(){b.textContent=v.ended?'REPLAY WITH SOUND':v.muted?'WATCH WITH SOUND':'MUTE SOUND';b.setAttribute('aria-pressed',String(!v.muted));}b.addEventListener('click',async()=>{if(v.paused||v.ended||v.muted){if(v.ended||v.muted)v.currentTime=0;v.muted=false;try{await v.play();}catch{b.textContent='TRY PLAYBACK AGAIN';return;}}else v.muted=true;label();});['volumechange','play','ended'].forEach(event=>v.addEventListener(event,label));})();

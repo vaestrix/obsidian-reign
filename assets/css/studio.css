@@ -1023,6 +1023,7 @@ body [data-vibe-preview] .selection-film figcaption{display:none;}
 .selection-film[hidden]{display:none;}
 
 .cinema-frame:has([data-ad-video]){aspect-ratio:16 / 9;} [data-ad-video]{object-fit:contain;} .scene-title .btn{margin:16px 8px 0 0;}
+.savannah-ad-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}.scene-title .savannah-ad-actions .btn{margin:0;max-width:100%;white-space:normal;text-align:center}.savannah-ad-transcript{margin-top:20px;color:#cbbbd7;font-size:14px;line-height:1.7}.savannah-ad-transcript summary{cursor:pointer;font-family:Nunito,system-ui,sans-serif;font-weight:700}.savannah-ad-transcript p{margin:12px 0 0}.cinema-frame [data-ad-video]{width:100%;height:100%;display:block;object-fit:contain}@media(max-width:480px){.savannah-ad-actions{flex-direction:column;align-items:stretch}.savannah-ad-actions .btn{width:100%;box-sizing:border-box}.showcase-stage:has([data-ad-video]){min-height:0}}
 
 /* Keep project questions comfortable to read and independently expandable. */
 body .faq-grid{align-items:start;} body .faq-item summary{font-family:Nunito,system-ui,sans-serif;font-size:16px;line-height:1.45;} body .faq-item p{color:#b9adc7;font-size:14px;line-height:1.75;}
