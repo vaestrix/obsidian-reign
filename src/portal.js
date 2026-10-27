@@ -222,6 +222,14 @@ export class ProjectHub {
       const work=()=>squareOperation(operation,data,this.ctx.storage,this.env);
       return json(await (this.ctx.blockConcurrencyWhile?this.ctx.blockConcurrencyWhile(work):work()));
     }
+    if(operation==='save'&&Number(data.stage)>=1) {
+      const old=data.id?await this.ctx.storage.get('project:'+data.id):null;
+      if(!old||Number(data.stage)>old.stage) {
+        const check=await squareOperation('square-verify-deposit',{id:data.id,
+          quoteAmount:data.quoteAmount??old?.quoteAmount,quoteStatus:data.quoteStatus??old?.quoteStatus},this.ctx.storage,this.env);
+        if(check.error)return json(check);
+      }
+    }
     const result = await this.ctx.storage.transaction(async store => {
       if(operation==='portfolio-list'||operation==='portfolio-public') {
         const saved=await store.list({prefix:'portfolio:',limit:201});
@@ -250,7 +258,7 @@ export class ProjectHub {
         const id = data.id || crypto.randomUUID(); if (!/^[a-zA-Z0-9_-]{1,80}$/.test(id)) return { error: 'Invalid project ID.' };
         const old = await store.get('project:' + id); if (data.id && !old) return { error: 'Project not found.' };
         const validated=validateProject({...old,...data});
-        const billing=await store.get('square:invoice:'+id);if(billing && String(validated.quoteAmount)!==String(old?.quoteAmount))return {error:'Review the existing invoice in Square before changing the agreed quote.'};
+        const billing=await store.get('square:invoice:'+id);if(billing&&old?.owner!==validated.owner)return {error:'An invoiced project cannot be reassigned. Review the customer and invoice before creating a replacement project.'};if(billing && String(validated.quoteAmount)!==String(old?.quoteAmount))return {error:'Review the existing invoice in Square before changing the agreed quote.'};
         if(validated.stage>=1 && (!old || old.stage<validated.stage)){const invoice=await store.get('square:invoice:'+id);if(validated.quoteStatus!=='Accepted'||!invoice?.depositPaid||!['paid','partially-paid'].includes(invoice.status)||invoice.total!==Math.round(Number(validated.quoteAmount)*100))return {error:'The verified 15% deposit is required before work begins or advances.'};}
         const project = { ...validated, id, updatedAt: new Date(now).toISOString(), createdAt: old?.createdAt || new Date(now).toISOString(), timeline: old?.timeline || [], activity: old?.activity || [], reviews: old?.reviews || [] };
         if (data.reviewLabel || data.reviewUrl) {

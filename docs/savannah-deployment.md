@@ -1,5 +1,7 @@
 # Savannah inbound mail
 
+Current operational evidence: [October 27 repair report](operational-repair-2026-10-27.md) and [October 26 launch report](launch-readiness-2026-10-26.md). The setup/verification notes below include historical milestones and must not be treated as current secret or activation status. Auto-send is currently paused.
+
 ## What changed
 
 `POST /webhooks/hostinger` handles mail events. All other paths delegate to the preserved production Worker, retaining admin, Discord, guild APIs and the CommandStore Durable Object. Public pages use the same ASSETS binding and HTML/404 behavior. The build copies only HTML, robots.txt, sitemap.xml and assets into dist; source, tests, documentation, local secrets and Wrangler state are not published.

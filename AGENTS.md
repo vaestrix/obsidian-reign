@@ -9,3 +9,7 @@ The script reads an ignored local credential in `.wrangler/portal-agent-credenti
 Read `docs/client-portal.md` for provider setup and operational details. Preserve the read-only `sources/` project references in the parent workspace.
 
 Preserve both agents in the integrated src/worker.js entry point during site deployments. Run scripts/check-agent-deployment.mjs, preserve live bindings and explicit owner pauses, and verify authenticated Anna status after deploy. Do not replace production with an old portal-only entry point.
+
+## Asset separation
+
+Do not use or adapt any Blush Havoc artwork, characters, logos, apparel designs, lore, or other assets for Obsidian Reign. Studio demonstrations and deliverables must use independently created or explicitly authorized Obsidian Reign material.
