@@ -281,3 +281,13 @@ test('forced-review recovery survives Message-ID resolution even when normal aut
 test('public webhook payloads cannot inject recovery actions or trusted review flags',()=>{
  assert.deepEqual(normalizeEvent({...event,recoverInbox:true,forceReview:true},'mailbox'),{folder:'INBOX',uid:12});
 });
+
+for (const address of ['savannah@obsidianreign.gg','anna@obsidianreign.gg']) {
+ test('welcoming instructions reach Savannah drafting for '+address,async t=>{
+  const {sends}=mockMail(t,{message:{...message,to:[{address}]},text:'Hey cutie! My handle is MoonQueen. Can you help with branding?'});let system;
+  const {object}=setup({AI:{run:async(_model,input)=>{system=input.messages.find(m=>m.role==='system').content;return {response:JSON.stringify({action:'reply',routine:true,uncertain:false,confidence:.99,reply:'Hey there! Happy to help bring your idea to life. What style do you have in mind?'})};}}});
+  await enqueue(object);await object.alarm();
+  assert.match(system,/Never address a customer with pet names/);assert.match(system,/Do not mirror these forms of address/);assert.match(system,/Do not infer or assume gender, pronouns, age, sexuality/);assert.match(system,/Hi, Hello or Hey there/);assert.match(system,/including Anna inbox handoffs/);
+  assert.equal(sends.length,1);assert.equal(sends[0].displayName,NAME);assert.match(sends[0].text,/Hey there!/);
+ });
+}
