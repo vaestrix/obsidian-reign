@@ -216,7 +216,7 @@
 (()=>{
  const v=document.querySelector('[data-feature-video]'),b=document.querySelector('[data-ad-sound]');if(!v||!b)return;
  const motion=matchMedia('(prefers-reduced-motion: reduce)');let inView=false,userPaused=false;
- v.muted=true;v.playsInline=true;
+ v.muted=true;v.playsInline=true;v.loop=true;
  function label(){b.textContent=v.ended?'REPLAY WITH SOUND':v.muted?'WATCH WITH SOUND':'MUTE SOUND';b.setAttribute('aria-pressed',String(!v.muted));}
  function preview(){if(!inView||document.hidden||motion.matches||navigator.connection?.saveData||userPaused)return;if(v.ended)v.currentTime=0;v.play().catch(()=>{});}
  b.addEventListener('click',async()=>{if(v.paused||v.ended||v.muted){if(v.ended||v.muted)v.currentTime=0;v.muted=false;userPaused=false;try{await v.play();}catch{b.textContent='TRY PLAYBACK AGAIN';return;}}else v.muted=true;label();});

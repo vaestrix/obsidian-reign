@@ -31,7 +31,7 @@ async function updateIcons(directory) {
         .replaceAll('<a class="brand" href="/">','<a class="brand" href="/" aria-label="Obsidian Reign Studios home">')
         .replace(/(<span class="header-logo"><img src="[^"]*)studio-logo\.png/g,'$1studio-logo-header.webp')
         .replace(/(\/?assets\/(?:css\/launch\.css|js\/(?:studio|intake|brief-tools)\.js))\?v=[^"']+/g,'$1?v=launch-20261026')
-        .replaceAll('assets/js/studio.js?v=launch-20261026','assets/js/studio.js?v=savannah-autoplay-20261027')
+        .replaceAll('assets/js/studio.js?v=launch-20261026','assets/js/studio.js?v=savannah-loop-20261027')
         .replace(/<link\b[^>]*rel=["'](?:shortcut icon|icon|apple-touch-icon)["'][^>]*>/gi, '');
       await writeFile(target, html.replace('</head>', '<link rel="icon" type="image/svg+xml" sizes="any" href="/assets/img/favicon.svg?v=or20261010"><link rel="apple-touch-icon" href="/assets/img/studio-logo.png"></head>'));
     }

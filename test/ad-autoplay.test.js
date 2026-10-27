@@ -12,7 +12,7 @@ function setup(reduced=false){
  return {dom,v,b,plays:()=>plays,view:visible=>observer([{isIntersecting:visible,intersectionRatio:visible?.8:0}])};
 }
 test('ad enters silently, enables sound only on request, and remutes offscreen',async()=>{
- const q=setup();q.view(true);assert.equal(q.plays(),1);assert.equal(q.v.muted,true);assert.equal(q.v.playsInline,true);
+ const q=setup();q.view(true);assert.equal(q.plays(),1);assert.equal(q.v.muted,true);assert.equal(q.v.playsInline,true);assert.equal(q.v.loop,true);
  q.v.currentTime=4;q.b.click();await Promise.resolve();assert.equal(q.v.muted,false);assert.equal(q.v.currentTime,0);assert.equal(q.b.textContent,'MUTE SOUND');
  q.view(false);assert.equal(q.v.paused,true);assert.equal(q.v.muted,true);q.view(true);assert.equal(q.v.paused,false);assert.equal(q.v.muted,true);q.dom.window.close();
 });
