@@ -32,3 +32,19 @@ The existing webhook remains active with the same endpoint and secret. Its stale
 - https://developer.squareup.com/reference/square/refunds-api/webhooks/refund.updated
 - https://developer.squareup.com/reference/square/invoices-api/webhooks/invoice.refunded
 - https://developer.squareup.com/docs/invoices-api/pay-refund-invoices
+
+
+## Manual inbox recovery candidate
+
+The protected studio dashboard now has an owner-only recovery control. It checks at most 100 recent inbox metadata records, queues at most 20 unprocessed messages from the last 24 hours per run and reports truncation or remaining candidates. Existing Message-ID jobs, legacy UID jobs and ambiguous-send tombstones are preserved and skipped. Provider failures report an error; retries skip jobs already queued.
+
+Recovered jobs retain a trusted force-review flag through Message-ID resolution. They can send only the existing owner review notice, even if normal customer auto-reply is later enabled. Public webhook data cannot supply recovery actions or trusted flags. The endpoint requires the existing owner admin session or admin authentication plus same-origin POST; the project agent credential gains no new access. No cron or automatic sender is enabled.
+
+All 128 local tests pass, including review-only processing, replay/unknown-send preservation, bounded history/batches, cross-origin/role protection and UI retry behavior. Remote QA includes a synthetic private-dashboard test at all three viewport sizes, with no external email or payment calls. Live recovery, owner review receipt and the remaining automatic webhook gap still require the owner to sign in to the existing studio admin page and complete the controlled test.
+
+
+## Search notification follow-up
+
+The payment release deployed successfully and passed 120 repository tests, 15 browser checks, 24 production sitemap URLs, 36 assets and the 25-page accessibility scan. Its final notification step failed because IndexNow returned HTTP 403 (UserForbiddedToAccessSite). Earlier HTTP 202 receipts did not establish ownership acceptance. The public key file is reachable and matches locally; the search provider's validation failure remains unresolved and no indexing success is claimed.
+
+The notification job had a shallow checkout without HEAD's parent, so it submitted even for backend-only changes. The recovery candidate fetches two commits, fails clearly if change inspection is unavailable, ignores private-dashboard/backend-only changes and separates search notification from browser QA. Actual search-provider rejections continue to fail the notification job with a bounded error code; they are not silently converted into success.

@@ -17,6 +17,8 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -28,9 +30,6 @@ jobs:
       - run: npx playwright test
       - name: Read-only production verification
         run: node scripts/verify-production.mjs
-      - name: Notify IndexNow after verified production ownership
-        if: github.ref == 'refs/heads/main'
-        run: node scripts/indexnow.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -48,6 +47,8 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -62,3 +63,17 @@ jobs:
           name: public-accessibility-performance-audit
           path: audit-results/
           retention-days: 14
+  search-notification:
+    if: github.ref == 'refs/heads/main'
+    needs: browser-qa
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Notify IndexNow only for indexable public changes
+        run: node scripts/indexnow.mjs

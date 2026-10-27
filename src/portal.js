@@ -119,6 +119,13 @@ export async function portal(request, env) {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));
         const headers = new Headers(response.headers); headers.set('Cache-Control', 'no-store'); headers.set('X-Robots-Tag', 'noindex'); return new Response(response.body, { status: response.status, headers });
       }
+      if(path==='/api/portal/admin/inbox/recover') {
+        if(request.method!=='POST')return json({error:'Use POST for inbox recovery.'},405);
+        if(!env.SAVANNAH_INBOX||!env.HOSTINGER_MAILBOX_ID)return json({error:'Inbox recovery is not configured.'},503);
+        const result=await env.SAVANNAH_INBOX.get(env.SAVANNAH_INBOX.idFromName(env.HOSTINGER_MAILBOX_ID)).fetch(
+          new Request('https://internal/recover',{method:'POST',body:JSON.stringify({recoverInbox:true})}));
+        return json(await result.json(),result.status);
+      }
       if(path === '/api/portal/admin/portfolio' && request.method === 'GET') return json(await call(env,'portfolio-list'));
       if(path === '/api/portal/admin/portfolio' && request.method === 'POST') {
         const data=await readJson(request), item=validatePortfolio(data);

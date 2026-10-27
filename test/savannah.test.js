@@ -269,3 +269,15 @@ test('mailing-list design discussion is not an outreach opt-out',async t=>{
 });
 
 test('Savannah identifies as AI and keeps Vesper internal in production instructions',()=>{assert.match(PERSONA,/AI inbox assistant/);assert.match(PERSONA,/Vesper is internal creative production only/);assert.match(PERSONA,/agreed balance date shown on the invoice/);});
+
+test('forced-review recovery survives Message-ID resolution even when normal auto-send is enabled',async t=>{
+ const {object,storage}=setup();const {sends}=mockMail(t,{resolveFolder:'INBOX'});
+ await object.fetch(new Request('https://internal/enqueue',{method:'POST',body:JSON.stringify({messageId:message.messageId,forceReview:true})}));
+ await object.alarm();await object.alarm();
+ assert.equal(sends.length,1);assert.equal(sends[0].to[0],'philip@example.com');
+ const saved=await storage.get('job:message:'+message.messageId);assert.equal(saved.state,'escalated');assert.equal(saved.event.forceReview,true);
+});
+
+test('public webhook payloads cannot inject recovery actions or trusted review flags',()=>{
+ assert.deepEqual(normalizeEvent({...event,recoverInbox:true,forceReview:true},'mailbox'),{folder:'INBOX',uid:12});
+});
