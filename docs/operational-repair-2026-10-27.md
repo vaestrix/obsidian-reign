@@ -58,3 +58,14 @@ The old notification job used a shallow checkout without the merge parent's hist
 - https://developers.cloudflare.com/bots/additional-configurations/block-ai-bots/
 - https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/
 - https://developers.cloudflare.com/ai-crawl-control/configuration/ai-crawl-control-with-waf/
+
+
+## Final robots compatibility follow-up
+
+PR #17 deployed Cloudflare production version 47ddb0d0-690f-4b18-b12c-78f507eb33b1. Its post-merge workflow passed 132 repository tests, 18 desktop/mobile checks, 24 production sitemap URLs, 36 assets and the 25-page axe scan. A direct production check confirmed that the recovery endpoint rejects unauthenticated requests with 401 and that its module is deployed.
+
+The fresh IndexNow submission returned 202, followed by HTTP 200 at 05:50:56 UTC on October 27, confirming notification/ownership acceptance. Indexing and rankings are still not confirmed.
+
+The managed Content-Signal extension made the pinned Lighthouse robots audit fail and reduced its SEO score to 92, despite the intended search access being allowed. The compatibility follow-up uses standard User-agent/Disallow training restrictions in the repository and turns off only Bot Preference Sync. The separate targeted edge blocks for the 16 training-category crawlers remain enabled, as do WAF, DDoS and authentication. Search/Agent stay allowed and the global training policy remains Disallow rather than the mixed-purpose Block option. This avoids restoring the Bing/Google block.
+
+Local verification for this follow-up: 133 repository tests and deployment guard pass. Its exact candidate and post-deploy evidence are recorded in PR #18. Google ownership TXT verification is prepared but not submitted; it would grant the signed-in owner account Search Console ownership and awaits explicit confirmation.
