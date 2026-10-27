@@ -1,3 +1,4 @@
+import {crawlerAllowed} from './robots-policy.mjs';
 // Read-only production smoke checks. Never submit forms, emails, invoices or payments.
 import assert from 'node:assert/strict';
 const origin='https://obsidianreign.gg',results=[];
@@ -8,7 +9,7 @@ for(let attempt=0;attempt<18;attempt++){home=await get('/');if(home.r.status===2
 assert.equal(home.r.status,200);assert(!home.text.includes('data-quote-total>$0'));
 const pricing=await get('/pricing');assert.equal(pricing.r.status,200);assert(pricing.text.includes('ONE SHARED CINEMATIC MASTER'));assert(pricing.text.includes('Midnight Atlas Studios'));
 results.push({page:'/',status:home.r.status,repairVisible:true},{page:'/pricing',status:pricing.r.status,scopeAndMerchantVisible:true});
-const robots=await get('/robots.txt');assert.equal(robots.r.status,200);assert(robots.text.includes('Sitemap: '+origin+'/sitemap.xml'));assert(!/Disallow:\s*\/\s*$/m.test(robots.text));
+const robots=await get('/robots.txt');assert.equal(robots.r.status,200);assert(robots.text.includes('Sitemap: '+origin+'/sitemap.xml'));for(const agent of ['Googlebot','bingbot','OAI-SearchBot'])for(const path of ['/','/services/animated-alerts'])assert(crawlerAllowed(robots.text,agent,path),agent+' must be allowed to crawl '+path);
 const sitemap=await get('/sitemap.xml');assert.equal(sitemap.r.status,200);assert.match(sitemap.r.headers.get('content-type'),/xml/);const urls=[...sitemap.text.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]);assert(urls.length>=19);assert.equal(new Set(urls).size,urls.length);
 const assets=new Set();
 for(let start=0;start<urls.length;start+=4){await Promise.all(urls.slice(start,start+4).map(async url=>{assert.equal(new URL(url).origin,origin);const {r,text}=await get(url);assert.equal(r.status,200,url);assert(!/noindex/i.test(r.headers.get('x-robots-tag')||''),url);const canonical=text.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1];assert.equal(canonical,url,url);for(const m of text.matchAll(/(?:src|poster|href)=["']([^"']*assets\/[^"']+)["']/g))assets.add(new URL(m[1],url).href);results.push({page:new URL(url).pathname,status:r.status,canonical:true});}));}

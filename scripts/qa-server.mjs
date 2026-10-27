@@ -16,6 +16,13 @@ const env={STAGING:'true',PUBLIC_ORIGIN:origin,ANNA_AUTO_SEND:'false',SAVANNAH_A
  try{const bytes=await readFile(target);return new Response(request.method==='HEAD'?null:bytes,{headers:{'Content-Type':mime[extname(target)]||'application/octet-stream'}});}
  catch{return new Response(await readFile(resolve(root,'404.html')),{status:404,headers:{'Content-Type':'text/html'}});}
 }}};
+// Synthetic owner access and recovery response; never used by a production build.
+env.ADMIN_PASSWORD_SHA256=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('launch-qa-only-password')))).map(value=>value.toString(16).padStart(2,'0')).join('');
+env.HOSTINGER_MAILBOX_ID='synthetic-mailbox';
+env.SAVANNAH_INBOX={idFromName:id=>id,get:()=>({fetch:async request=>{
+ const data=await request.json();if(data.recoverInbox!==true)throw Error('Unexpected synthetic inbox action');
+ return Response.json({queued:2,duplicates:1,remaining:0,historyLimited:false,reviewOnly:true});
+}})};
 const hub=new ProjectHub({storage,blockConcurrencyWhile:fn=>fn()},env);
 env.PROJECT_HUB={idFromName:x=>x,get:()=>hub};
 // Any accidental provider call fails before transmission.

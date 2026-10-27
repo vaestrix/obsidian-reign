@@ -1,3 +1,4 @@
+import { recoverRecentInbox } from './inbox-recovery.js';
 import { inboxStatus } from './inbox-status.js';
 import { queueProspect, dispatchProspects } from './anna-runtime.js';
 import { automationStart, automationWaiting } from './automation-window.js';
@@ -282,6 +283,13 @@ export class SavannahInbox {
   constructor(ctx, env) { this.ctx = ctx; this.env = env; }
   async fetch(request) {
     const event = await request.json();
+    if(event.recoverInbox===true) {
+      if(!this.env.HOSTINGER_MAIL_API_TOKEN||!email.test(this.env.PHILIP_ESCALATION_EMAIL??''))return json({error:'Inbox review is not configured.'},503);
+      try{return json(await recoverRecentInbox({storage:this.ctx.storage,
+        list:()=>mail(this.env,'/folders/INBOX/messages?perPage=100&page=1&sort=-date'),
+        enqueue:async item=>{const response=await this.fetch(new Request('https://internal/enqueue',{method:'POST',body:JSON.stringify(item)}));return response.json();}}));}
+      catch{return json({error:'Inbox recovery could not be completed. Retry to safely skip messages already queued.'},503);}
+    }
     if (event.inboxStatus === true) return json(await inboxStatus(this.ctx.storage, this.env));
     if (event.annaLead) return queueProspect(this.ctx, this.env, event.annaLead);
     const key = event.messageId ? `job:message:${event.messageId}` : `job:${event.mailbox === 'anna' ? 'anna:' : ''}${event.folder}:${event.uid}`;
@@ -325,9 +333,10 @@ export class SavannahInbox {
     const env = job.event.mailbox === 'anna' ? { ...this.env, HOSTINGER_MAIL_API_TOKEN: this.env.ANNA_MAIL_API_TOKEN, HOSTINGER_MAILBOX_ID: this.env.ANNA_MAILBOX_ID } : this.env;
     if (!env.HOSTINGER_MAIL_API_TOKEN || !email.test(env.PHILIP_ESCALATION_EMAIL ?? '') || env.PHILIP_ESCALATION_EMAIL.toLowerCase() === ADDRESS) throw new Error('not-configured');
     if (job.event.messageId) {
-      const mailbox = job.event.mailbox;
+      const mailbox = job.event.mailbox,forceReview=job.event.forceReview===true;
       job.event = await resolveMessage(env, job.event.messageId);
       if (mailbox) job.event.mailbox = mailbox;
+      if(forceReview)job.event.forceReview=true;
       await this.ctx.storage.put(key, job);
     }
     if (job.event.folder !== 'INBOX') return this.finish(key, job, 'ignored');
@@ -347,7 +356,7 @@ export class SavannahInbox {
     try { decision = await decide(env, messages); }
     catch { return this.escalate(key, job, latest, { reason: 'AI decision unavailable or invalid.' }); }
     if (decision.action === 'ignore') return this.finish(key, job, 'ignored');
-    if (decision.action === 'escalate' || env.SAVANNAH_AUTO_SEND !== 'true') return this.escalate(key, job, latest, decision);
+    if (decision.action === 'escalate' || env.SAVANNAH_AUTO_SEND !== 'true' || job.event.forceReview===true) return this.escalate(key, job, latest, decision);
     // Recheck immediately before sending to catch another agent/manual response.
     if (!(await thread(env, latest))) return this.finish(key, job, 'already-answered');
     await this.ctx.storage.put(identity, { state: 'send-attempted', at: Date.now() });

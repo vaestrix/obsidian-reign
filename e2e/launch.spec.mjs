@@ -58,3 +58,13 @@ test('private endpoints and obsolete guild paths preserve protections',async({re
  const migrated=await request.get('/raids',{maxRedirects:0});expect(migrated.status()).toBe(301);expect(migrated.headers().location).toBe('/services');
  const sitemap=await request.get('/sitemap.xml');expect(sitemap.status()).toBe(200);expect(await sitemap.text()).toContain('/services/creator-websites');
 });
+
+test('owner recovery control works in the private dashboard at desktop and mobile widths',async({page},info)=>{
+ await page.setExtraHTTPHeaders({Authorization:'Basic '+Buffer.from('admin:launch-qa-only-password').toString('base64')});
+ const response=await page.goto('/admin/projects');expect(response.status()).toBe(200);
+ const button=page.getByRole('button',{name:'Recover recent inbox for review',exact:true});await expect(button).toBeVisible();
+ await button.click();await expect(page.locator('#inbox-recovery-status')).toContainText('2 queued for owner review; 1 already recorded.');
+ await expect(page.locator('#inbox-recovery-status')).toContainText('No customer reply was sent by recovery.');await expect(button).toBeEnabled();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.screenshot({path:info.outputPath('admin-inbox-recovery.png'),fullPage:false,animations:'disabled'});
+});
