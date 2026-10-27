@@ -27,3 +27,7 @@ Decoded mono audio comparison against the saved narration: waveform correlation 
 Sixteen sampled frames were inspected for mouth variation, expression, face/hand distortion, framing, and a sampled quiet pause. The mouth is closed at the sampled 1.2-second quiet pause; the stylized expression and gestures remain coherent. Local site playback and a 390-pixel viewport check passed with no horizontal overflow and the full frame visible. These visual/timing checks do not certify every spoken phoneme.
 
 The owner subsequently watched the corrected clip, confirmed that the lips match, and explicitly authorized publication. The home-page showcase now uses the corrected v2 video and retains the responsive player, optional sound, replay control, and transcript.
+
+## Softened loop return
+
+The home-page player now uses `assets/video/savannah-perky-ad-v3.mp4`. It preserves the full approved v2 performance and narration, then appends a short silent dissolve from the ending pose to the opening pose. This avoids a hard visual reset without overlapping or cutting spoken words. The web file is approximately 2.19 MB, uses fast-start MP4, and runs about 15.92 seconds. The first/last frame comparison and transition contact sheet were inspected; mobile playback crossed the loop boundary while remaining muted. Retained narration comparison: correlation 0.999403, no global audio offset. The existing opt-in sound, offscreen pause/remute, manual pause, and reduced-motion handling remain in place.
