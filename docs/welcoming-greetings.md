@@ -33,3 +33,18 @@ Retested four fictional emails through the current decide() path and configured 
 - Friendly banter retained: “Hi! Let’s give that potato a break. Purple and cozy vibes sound like a great start for your Twitch overlays…”
 
 All 148 repository tests passed. This small generation test is evidence of these cases, not a guarantee of all future model outputs. No customer email was accessed or sent. Sending flags, pauses, bindings and other production code were preserved. The separate authenticated Anna health check still lacks its local scoped credential; live end-to-end mail delivery was not tested.
+
+
+## Concise payments and forward-moving follow-ups
+
+Published version 765c3d41-ff54-4fa8-a35c-e5101dac8997 on 27 October 2026, with the exact instruction addition verified by production read-back. Payment replies should answer only what was asked in two or three short conversational sentences. Follow-ups briefly acknowledge new information, retain supplied facts without a full recap, and ask only the next unanswered question. Customers are never asked to judge studio capacity or confirm whether their deadline fits our production schedule. Feasible timing stays an internal studio confirmation; no bookings, checks or status changes may be invented.
+
+Retested with the configured model and fictional multi-message threads using public test facts:
+
+- Pricing and payment: Hi! It's a 15% deposit before work starts, with the remaining 85% due on the date agreed in your invoice. You'll pay through Square; PayPal isn't available.
+
+- Project delay: Held for owner review: Customer frustration and missing project status require Philip's review.
+
+- Follow-up with details already supplied: Hi! Thanks for the rainy-cafe references and the subtle purple neon details. We'll confirm the scope and feasible timing before production. Do you have an existing logo you'd like included in the scenes?
+
+The prior four tone scenarios were rerun as a regression sample. Warm greetings, frustration acknowledgement and separating channel names from personal names remained present; generated phrasing still varies, and this is not an exhaustive guarantee of future responses. All 148 repository tests passed. No real customer emails were accessed or sent. Sending settings, pauses, bindings and other production code were preserved. The separate Anna authenticated health check still lacks the local scoped credential; production instructions were verified, not live mail delivery.
