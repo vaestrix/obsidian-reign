@@ -28,10 +28,11 @@ async function updateIcons(directory) {
     else if (entry.name.endsWith('.html')) {
       const html = (await readFile(target, 'utf8'))
         .replace(/<link rel="stylesheet" href="\/?assets\/css\/studio\.css[^"]*">\s*<link rel="stylesheet" href="\/?assets\/css\/polish\.css[^"]*">\s*<link rel="stylesheet" href="\/?assets\/css\/launch\.css[^"]*">/g, '<link rel="stylesheet" href="/assets/css/public.css?v=savannah-ad-20261027">')
+        .replace(/<video\b[^>]*>[\s\S]*?<\/video>/gi, markup=>markup.includes('data-feature-video')?markup.replace(/preload="[^"]*"/g,'preload="none"'):markup.replace(/\bsrc="([^"]+)"/g,'data-preview-src="$1"').replace(/preload="[^"]*"/g,'preload="none"'))
         .replaceAll('<a class="brand" href="/">','<a class="brand" href="/" aria-label="Obsidian Reign Studios home">')
         .replace(/(<span class="header-logo"><img src="[^"]*)studio-logo\.png/g,'$1studio-logo-header.webp')
         .replace(/(\/?assets\/(?:css\/launch\.css|js\/(?:studio|intake|brief-tools)\.js))\?v=[^"']+/g,'$1?v=launch-20261026')
-        .replaceAll('assets/js/studio.js?v=launch-20261026','assets/js/studio.js?v=site-loops-20261027b')
+        .replaceAll('assets/js/studio.js?v=launch-20261026','assets/js/studio.js?v=lazy-previews-20261027')
         .replace(/<link\b[^>]*rel=["'](?:shortcut icon|icon|apple-touch-icon)["'][^>]*>/gi, '');
       await writeFile(target, html.replace('</head>', '<link rel="icon" type="image/svg+xml" sizes="any" href="/assets/img/favicon.svg?v=or20261010"><link rel="apple-touch-icon" href="/assets/img/studio-logo.png"></head>'));
     }

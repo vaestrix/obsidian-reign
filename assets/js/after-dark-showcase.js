@@ -58,4 +58,4 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) { selectionVersion++; pauseAll(); } });
 })();
 
-(()=>{if(document.querySelector('script[data-preview-motion]'))return;const script=document.createElement('script');script.src='/assets/js/preview-motion.js?v=site-loops-20261027b';script.dataset.previewMotion='';script.defer=true;document.head.append(script);})();
+(()=>{if(document.querySelector('script[data-preview-motion]'))return;const script=document.createElement('script');script.src='/assets/js/preview-motion.js?v=lazy-previews-20261027';script.dataset.previewMotion='';script.defer=true;document.head.append(script);})();
