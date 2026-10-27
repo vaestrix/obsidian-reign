@@ -12,4 +12,4 @@ Verification: 145 tests passed; mobile homepage, pricing and project form checke
 
 Anna's separate authenticated health check could not run because the local scoped credential is unavailable; deployment entry-point and binding preservation checks passed. No agent behavior or backend logic was changed.
 
-Greeting review: the existing ad and transcript both still say “Hey, cutie!”; “Hey, creator!” is the recommended neutral replacement, pending a matching audio/lip-sync revision.
+Greeting follow-up: the ad and transcript were revised to “Hey, creator!” with new matching ElevenLabs narration and Sync 3 lip sync; see savannah-ad-production.md for checks and owner listening confirmation.
