@@ -227,4 +227,4 @@
  motion.addEventListener('change',()=>{if(motion.matches){v.pause();v.muted=true;label();}else preview();});
 })();
 
-(()=>{if(document.querySelector('script[data-preview-motion]'))return;const script=document.createElement('script');script.src='/assets/js/preview-motion.js?v=site-loops-20261027';script.dataset.previewMotion='';script.defer=true;document.head.append(script);})();
+(()=>{if(document.querySelector('script[data-preview-motion]'))return;const script=document.createElement('script');script.src='/assets/js/preview-motion.js?v=site-loops-20261027b';script.dataset.previewMotion='';script.defer=true;document.head.append(script);})();
