@@ -3,3 +3,11 @@ Allow: /
 
 # Private pages emit noindex headers; do not block crawlers from seeing redirects.
 Sitemap: https://obsidianreign.gg/sitemap.xml
+
+# Training-only crawlers are also blocked by targeted Cloudflare rules.
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: CCBot
+User-agent: Bytespider
+User-agent: Meta-ExternalAgent
+Disallow: /
