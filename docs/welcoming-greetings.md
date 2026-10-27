@@ -48,3 +48,7 @@ Retested with the configured model and fictional multi-message threads using pub
 - Follow-up with details already supplied: Hi! Thanks for the rainy-cafe references and the subtle purple neon details. We'll confirm the scope and feasible timing before production. Do you have an existing logo you'd like included in the scenes?
 
 The prior four tone scenarios were rerun as a regression sample. Warm greetings, frustration acknowledgement and separating channel names from personal names remained present; generated phrasing still varies, and this is not an exhaustive guarantee of future responses. All 148 repository tests passed. No real customer emails were accessed or sent. Sending settings, pauses, bindings and other production code were preserved. The separate Anna authenticated health check still lacks the local scoped credential; production instructions were verified, not live mail delivery.
+
+## Holding acknowledgements follow-up
+
+Refunds, cancellations and serious complaints now have fixed warm holding drafts that confirm receipt and owner handoff only. The design-feedback instruction says Let's review that direction instead of Let's adjust that. See savannah-holding-replies.md for controls, exact copy, duplicate handling and verification. All 163 tests passed; deployed code was read back and compared to the tested source. Both sending flags remain false, so customer acknowledgements currently stay as drafts in the owner's review notices.
