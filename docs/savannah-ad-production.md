@@ -31,3 +31,14 @@ The owner subsequently watched the corrected clip, confirmed that the lips match
 ## Softened loop return
 
 The home-page player now uses `assets/video/savannah-perky-ad-v3.mp4`. It preserves the full approved v2 performance and narration, then appends a short silent dissolve from the ending pose to the opening pose. This avoids a hard visual reset without overlapping or cutting spoken words. The web file is approximately 2.19 MB, uses fast-start MP4, and runs about 15.92 seconds. The first/last frame comparison and transition contact sheet were inspected; mobile playback crossed the loop boundary while remaining muted. Retained narration comparison: correlation 0.999403, no global audio offset. The existing opt-in sound, offscreen pause/remute, manual pause, and reduced-motion handling remain in place.
+
+## Inclusive greeting revision (in review)
+
+The owner requested “Hey, creator!” in the voice, animation and transcript. Revised narration generated directly in ElevenLabs with Jessica, Eleven v4 and the same delivery tags. A new Sync 3 pass reuses the approved Savannah animation; publication waits for rendered-media review. Previous published media stays available until the replacement passes checks.
+
+
+Prepared output: `assets/video/savannah-perky-ad-v4.mp4`, 15.52 seconds, 1080 × 594, 2,122,534 bytes. Narration: `assets/audio/savannah-ad-jessica-v2.mp3`, 14.759 seconds. The new Sync 3 render uses the approved animated Savannah with updated Jessica narration; no Runway or Descript was used.
+
+Full-quality rendered audio versus the selected ElevenLabs source: waveform correlation 0.999463, no global audio offset. Source narration has no clipped samples. Sixteen frame samples were inspected for coherent mouth variation, expression, framing and visible distortion; the mouth is closed at the sampled 1.2-second quiet pause. A silent 0.8-second end-to-start dissolve was appended without trimming the narration. Mobile 390px QA found no horizontal overflow; the complete frame and matching transcript render correctly. Native sound opt-in and looping work.
+
+Publication hold: these checks do not constitute auditory naturalness review or exhaustive phoneme-level validation. The available tools cannot directly hear the playback. A concrete local preview is provided to the owner for the final listening check before deployment. The live site remains on v3; the revised index, transcript and media are prepared locally. No additional production credentials or agent settings were changed.
