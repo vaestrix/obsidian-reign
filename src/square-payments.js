@@ -9,9 +9,54 @@ function invoiceUrl(value,env){if(!value)return null;try{const u=new URL(value);
 export const publicInvoice=(p,enabled=true)=>p?{id:p.id,projectId:p.projectId,total:p.total,deposit:p.deposit,balance:p.total-p.deposit,depositPercent:15,status:p.status,depositPaid:Boolean(p.depositPaid),totalPaid:p.totalPaid||0,balanceDue:p.balanceDue,url:enabled&&['sent','partially-paid'].includes(p.status)?p.url:null,number:p.number||null}:null;
 export const publicPayment=p=>({id:p.id,projectId:p.projectId,label:p.label,amount:p.amount,currency:'USD',status:p.status,url:null});
 function sameTerms(invoice,record){const deposit=invoice.payment_requests?.find(p=>p.request_type==='DEPOSIT');return invoice.order_id===record.orderId&&invoice.primary_recipient?.customer_id===record.customerId&&invoice.payment_requests?.length===2&&deposit?.percentage_requested==='15'&&deposit?.computed_amount_money?.amount===record.deposit&&deposit.computed_amount_money.currency==='USD'&&invoice.payment_requests.some(p=>p.request_type==='BALANCE'&&p.due_date===record.balanceDue)&&invoice.payment_requests.every(p=>!p.automatic_payment_source||p.automatic_payment_source==='NONE');}
-async function reconcile(record,storage,env){const invoice=(await square(env,'/v2/invoices/'+encodeURIComponent(record.invoiceId))).invoice;const order=(await square(env,'/v2/orders/'+encodeURIComponent(record.orderId))).order;if(!invoice||!sameTerms(invoice,record)||order?.location_id!==env.SQUARE_LOCATION_ID||order.total_money?.amount!==record.total||order.total_money.currency!=='USD'){record={...record,status:'review',url:null,depositPaid:false};}else{const requests=invoice.payment_requests;const deposit=requests.find(p=>p.request_type==='DEPOSIT');const totalPaid=requests.reduce((sum,p)=>sum+(p.total_completed_amount_money?.amount||0),0);const status=invoice.status==='PAID'?'paid':invoice.status==='DRAFT'?'draft':['CANCELED','REFUNDED','PARTIALLY_REFUNDED','FAILED'].includes(invoice.status)?'review':totalPaid>0?'partially-paid':'sent';record={...record,status,version:invoice.version,depositPaid:status!=='review'&&(deposit.total_completed_amount_money?.amount||0)>=record.deposit,totalPaid,url:invoiceUrl(invoice.public_url,env),number:invoice.invoice_number,updatedAt:Date.now()};}await storage.put('square:invoice:'+record.projectId,record);return record;}
+async function holdInvoice(record, storage, reason) {
+  const held = {...record,status:'review',url:null,depositPaid:false,reviewReason:reason,verifiedAt:null,updatedAt:Date.now()};
+  await storage.put('square:invoice:'+record.projectId,held);
+  return held;
+}
+async function reconcile(record,storage,env) {
+  let invoice,order;
+  try {
+    [invoice,order] = await Promise.all([
+      square(env,'/v2/invoices/'+encodeURIComponent(record.invoiceId)).then(data=>data.invoice),
+      square(env,'/v2/orders/'+encodeURIComponent(record.orderId)).then(data=>data.order)
+    ]);
+  } catch (error) {
+    await holdInvoice(record,storage,record.reviewReason?.endsWith('-review-required')?record.reviewReason:'verification-unavailable');
+    throw error;
+  }
+  const requests=invoice?.payment_requests;
+  const validMoney=Array.isArray(requests)&&requests.every(request=>{
+    const money=request.total_completed_amount_money;
+    return money===undefined||(Number.isSafeInteger(money.amount)&&money.amount>=0&&money.currency==='USD');
+  });
+  const totalPaid=validMoney?requests.reduce((sum,request)=>sum+(request.total_completed_amount_money?.amount||0),0):0;
+  const knownStatus=['DRAFT','UNPAID','SCHEDULED','PARTIALLY_PAID','PAID'].includes(invoice?.status);
+  const persistentHold=['refund-review-required','payment-failure-review-required'].includes(record.reviewReason);
+  if(!invoice||invoice.location_id!==env.SQUARE_LOCATION_ID||!sameTerms(invoice,record)||
+     order?.location_id!==env.SQUARE_LOCATION_ID||order.total_money?.amount!==record.total||order.total_money.currency!=='USD'||
+     !validMoney||!Number.isSafeInteger(totalPaid)||totalPaid>record.total||!knownStatus||persistentHold||
+     (invoice.status==='PAID'&&totalPaid!==record.total)) {
+    return holdInvoice(record,storage,persistentHold?record.reviewReason:'invoice-review-required');
+  }
+  const deposit=requests.find(request=>request.request_type==='DEPOSIT');
+  const status=invoice.status==='DRAFT'?'draft':invoice.status==='PAID'?'paid':totalPaid>0?'partially-paid':'sent';
+  const updated={...record,status,version:invoice.version,depositPaid:['paid','partially-paid'].includes(status)&&
+    (deposit.total_completed_amount_money?.amount||0)>=record.deposit,totalPaid,url:invoiceUrl(invoice.public_url,env),
+    number:invoice.invoice_number,reviewReason:null,verifiedAt:Date.now(),updatedAt:Date.now()};
+  await storage.put('square:invoice:'+record.projectId,updated);
+  return updated;
+}
 export async function squareOperation(operation,data,storage,env){
  if(!operation.startsWith('square-'))return null;
+ if(operation==='square-verify-deposit') {
+  if(!ready(env))return {error:'The deposit cannot be verified with Square. Work remains on hold.'};
+  let total;try{total=usdCents(data.quoteAmount);}catch{return {error:'The agreed quote is invalid.'};}
+  const record=await storage.get('square:invoice:'+data.id);
+  if(data.quoteStatus!=='Accepted'||!record?.invoiceId||record.total!==total)return {error:'The verified 15% deposit is required before work begins or advances.'};
+  try{const current=await reconcile(record,storage,env);return current.depositPaid&&['paid','partially-paid'].includes(current.status)?{ok:true}:{error:'The verified 15% deposit is required before work begins or advances.'};}
+  catch{return {error:'The deposit could not be verified with Square. Work remains on hold.'};}
+ }
  if(operation==='square-create')return {error:'Send a project invoice with the required 15% deposit. Standalone checkout is disabled.'};
  if(operation==='square-list'){const project=await storage.get('project:'+data.id);if(!project||(!data.admin&&project.owner!==data.owner))return {error:'Project not found.'};const record=await storage.get('square:invoice:'+data.id);const ids=await storage.get('square:project:'+data.id)||[];const payments=[];for(const id of ids){const p=await storage.get('square:request:'+id);if(p)payments.push(publicPayment(p));}return {payments,invoice:publicInvoice(record,Boolean(ready(env))),enabled:Boolean(ready(env))};}
  if(operation==='square-invoice-draft'){
@@ -23,9 +68,34 @@ export async function squareOperation(operation,data,storage,env){
  if(operation==='square-invoice-send'){
   if(!ready(env))return {error:'Invoices are not activated yet.'};const project=await storage.get('project:'+data.id);let record=await storage.get('square:invoice:'+data.id);if(!project||!record?.invoiceId)return {error:'Prepare a draft invoice first.'};let total;try{total=usdCents(project.quoteAmount);}catch{return {error:'The quote is invalid.'};}if(total!==record.total||project.quoteStatus!=='Accepted')return {error:'The quote changed. Review the invoice in Square before sending.'};try{record=await reconcile(record,storage,env);if(record.status==='review')return {error:'Invoice terms changed in Square. Review before sending.'};if(record.status==='draft'){await square(env,'/v2/invoices/'+encodeURIComponent(record.invoiceId)+'/publish',{version:record.version,idempotency_key:record.id+'-publish'});record=await reconcile(record,storage,env);}return {invoice:publicInvoice(record)};}catch{return {error:'Invoice delivery could not be confirmed. Retry this same invoice; do not create another one.'};}
  }
- if(operation==='square-event'){
-  const event=data.event;if(event.merchant_id!==env.SQUARE_MERCHANT_ID)return {ignored:true};let projectId;
-  if(['payment.created','payment.updated'].includes(event.type)){const id=event.data?.object?.payment?.id;if(!id)return {ignored:true};const payment=(await square(env,'/v2/payments/'+encodeURIComponent(id))).payment;if(payment?.location_id!==env.SQUARE_LOCATION_ID)return {ignored:true};projectId=payment.order_id&&await storage.get('square:invoice-order:'+payment.order_id);}else if(['invoice.updated','invoice.payment_made','invoice.canceled','invoice.refunded','invoice.published'].includes(event.type)){const id=event.data?.object?.invoice?.id||event.data?.id;projectId=id&&await storage.get('square:invoice-id:'+id);}else return {ignored:true};const record=projectId&&await storage.get('square:invoice:'+projectId);if(!record)return {ignored:true};const updated=await reconcile(record,storage,env);return updated.status==='review'?{error:'Invoice requires review'}:{ok:true,depositPaid:updated.depositPaid};
+ if(operation==='square-event') {
+  const event=data.event;if(event?.merchant_id!==env.SQUARE_MERCHANT_ID)return {ignored:true};
+  let projectId,holdReason;
+  if(['refund.created','refund.updated'].includes(event.type)) {
+    const id=event.data?.object?.refund?.id||event.data?.id;if(typeof id!=='string'||!id)return {ignored:true};
+    const refund=(await square(env,'/v2/refunds/'+encodeURIComponent(id))).refund;
+    if(refund?.location_id!==env.SQUARE_LOCATION_ID||!refund.payment_id)return {ignored:true};
+    const payment=(await square(env,'/v2/payments/'+encodeURIComponent(refund.payment_id))).payment;
+    if(payment?.location_id!==env.SQUARE_LOCATION_ID)return {ignored:true};
+    projectId=payment.order_id&&await storage.get('square:invoice-order:'+payment.order_id);
+    // A refund has its own order; associate through the verified original payment.
+    if(['PENDING','COMPLETED'].includes(refund.status))holdReason='refund-review-required';
+  } else if(['payment.created','payment.updated'].includes(event.type)) {
+    const id=event.data?.object?.payment?.id;if(typeof id!=='string'||!id)return {ignored:true};
+    const payment=(await square(env,'/v2/payments/'+encodeURIComponent(id))).payment;
+    if(payment?.location_id!==env.SQUARE_LOCATION_ID)return {ignored:true};
+    projectId=payment.order_id&&await storage.get('square:invoice-order:'+payment.order_id);
+    if(['FAILED','CANCELED'].includes(payment.status))holdReason='payment-failure-review-required';
+  } else if(['invoice.updated','invoice.payment_made','invoice.canceled','invoice.refunded','invoice.published','invoice.scheduled_charge_failed'].includes(event.type)) {
+    const id=event.data?.object?.invoice?.id||event.data?.id;
+    projectId=typeof id==='string'&&await storage.get('square:invoice-id:'+id);
+    if(event.type==='invoice.scheduled_charge_failed')holdReason='payment-failure-review-required';
+  } else return {ignored:true};
+  let record=projectId&&await storage.get('square:invoice:'+projectId);if(!record)return {ignored:true};
+  if(holdReason)record=await holdInvoice(record,storage,holdReason);
+  const updated=await reconcile(record,storage,env);
+  // A valid event in review is acknowledged; retries cannot resolve an owner decision.
+  return {ok:true,requiresReview:updated.status==='review',depositPaid:updated.depositPaid};
  }
  return {error:'Unknown payment operation.'};
 }
