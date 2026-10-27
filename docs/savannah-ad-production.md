@@ -24,4 +24,6 @@ The existing animation and the same saved Jessica narration were processed throu
 
 Decoded mono audio comparison against the saved narration: waveform correlation 0.999433, best global offset 0 milliseconds within a ±500 millisecond search. This confirms retained narration and no added global audio offset, not phoneme-level visual synchronization.
 
-Sixteen sampled frames were inspected for mouth variation, expression, face/hand distortion, framing, and a sampled quiet pause. The mouth is closed at the sampled 1.2-second quiet pause; the stylized expression and gestures remain coherent. Local site playback and a 390-pixel viewport check passed with no horizontal overflow and the full frame visible. These visual/timing checks do not certify every spoken phoneme. A final listening review remains necessary before re-enabling the showcase ad.
+Sixteen sampled frames were inspected for mouth variation, expression, face/hand distortion, framing, and a sampled quiet pause. The mouth is closed at the sampled 1.2-second quiet pause; the stylized expression and gestures remain coherent. Local site playback and a 390-pixel viewport check passed with no horizontal overflow and the full frame visible. These visual/timing checks do not certify every spoken phoneme.
+
+The owner subsequently watched the corrected clip, confirmed that the lips match, and explicitly authorized publication. The home-page showcase now uses the corrected v2 video and retains the responsive player, optional sound, replay control, and transcript.
