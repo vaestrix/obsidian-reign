@@ -43,7 +43,7 @@ test('inbox recovery requires an owner admin session and same-origin POST, not a
  const s=setup();s.env.ADMIN_PASSWORD_SHA256='test-verifier';let called=0;
  s.env.HOSTINGER_MAILBOX_ID='mailbox';s.env.SAVANNAH_INBOX={idFromName:id=>id,get:()=>({fetch:async request=>{called++;assert.deepEqual(await request.json(),{recoverInbox:true});return Response.json({queued:2,duplicates:0,reviewOnly:true});}})};
  const route='/api/portal/admin/inbox/recover';assert.equal((await portal(s.req(route,{}),s.env)).status,401);
- await s.call('login',{key:await hash('admin-token'),user:{id:'studio:admin',authVersion:'test-verifier'}});
+ await s.call('login',{key:await hash('admin-token'),user:{id:'studio:admin',authVersion:await hash('test-verifier')}});
  const cookie='__Host-or_admin=admin-token';assert.equal((await portal(s.req(route,{},cookie,'https://evil.example'),s.env)).status,403);
  assert.equal((await portal(s.req(route,null,cookie),s.env)).status,405);
  const result=await portal(s.req(route,{},cookie),s.env);assert.equal(result.status,200);assert.equal((await result.json()).reviewOnly,true);assert.equal(called,1);

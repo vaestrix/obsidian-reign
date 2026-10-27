@@ -98,10 +98,10 @@ export async function portal(request, env) {
       const rate = await call(env, 'rate', { key: 'admin:' + await hash(request.headers.get('CF-Connecting-IP') || 'unknown') });
       if (!rate.allowed) return json({ error: 'Too many attempts. Please wait a minute.' }, 429);
       const data = await body(request);
-      const headers = new Headers(); headers.set('Authorization', 'Basic ' + btoa('admin:' + String(data.password || '')));
+      const headers = new Headers(); headers.set('Authorization', 'Basic ' + btoa(String(data.username || 'admin') + ':' + String(data.password || '')));
       const validPassword = await adminAuthorized(new Request(origin + '/api/admin/state', { headers }), env);
       if (!validPassword) return json({ error: 'That admin password was not accepted.' }, 401);
-      const token = random(); await call(env, 'login', { key: await hash(token), user: { id: 'studio:admin', authVersion: env.ADMIN_PASSWORD_SHA256 }, duration: 3600000 });
+      const token = random(); await call(env, 'login', { key: await hash(token), user: { id: 'studio:admin', authVersion: await hash(String(env.ADMIN_PASSWORD_SHA256)) }, duration: 3600000 });
       const response = json({ ok: true }); response.headers.append('Set-Cookie', cookie('__Host-or_admin', token, 3600)); return response;
     }
     if (path === '/auth/admin/logout' && request.method === 'POST') {
@@ -113,7 +113,7 @@ export async function portal(request, env) {
       const validPassword = await adminAuthorized(request, env);
       const token = readCookie(request, '__Host-or_admin');
       const admin = token ? await call(env, 'session', { key: await hash(token) }) : null;
-      const validSession = admin?.id === 'studio:admin' && admin.authVersion && admin.authVersion === env.ADMIN_PASSWORD_SHA256;
+      const validSession = admin?.id === 'studio:admin' && admin.authVersion && admin.authVersion === await hash(String(env.ADMIN_PASSWORD_SHA256));
       if (!validPassword && !validSession) return path.startsWith('/api/') ? json({ error: 'Admin sign-in required.' }, 401) : redirect('/admin-login.html');
       if (path === '/admin/projects' || path === '/project-admin.html' || path === '/project-admin') {
         const response = await env.ASSETS.fetch(new Request(origin + '/project-admin', request));

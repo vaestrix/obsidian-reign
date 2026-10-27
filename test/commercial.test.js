@@ -13,7 +13,7 @@ function setup(){
  const hub=new ProjectHub({storage});const env={PUBLIC_ORIGIN:'https://obsidianreign.gg',ADMIN_PASSWORD_SHA256:'test-verifier',PROJECT_HUB:{idFromName:x=>x,get:()=>hub},ASSETS:{fetch:async()=>new Response('asset')}};
  const call=async(op,data={})=>(await hub.fetch(new Request('https://hub/'+op,{method:'POST',body:JSON.stringify(data)}))).json();
  const req=(path,data,headers={})=>new Request(env.PUBLIC_ORIGIN+path,{method:data?'POST':'GET',headers:{...(data?{Origin:env.PUBLIC_ORIGIN,'Content-Type':'application/json'}:{}),...headers},body:data?JSON.stringify(data):undefined});
- const admin=async()=>{await call('login',{key:await hash('admin-session'),user:{id:'studio:admin',authVersion:env.ADMIN_PASSWORD_SHA256}});return {Cookie:'__Host-or_admin=admin-session'};};
+ const admin=async()=>{await call('login',{key:await hash('admin-session'),user:{id:'studio:admin',authVersion:await hash(String(env.ADMIN_PASSWORD_SHA256))}});return {Cookie:'__Host-or_admin=admin-session'};};
  return {rows,env,req,call,admin};
 }
 const brief={name:'QA creator',email:'qa@example.test',vibe:'Purple',scope:'A matching scene family',want_streamkit:'on',consent:true};

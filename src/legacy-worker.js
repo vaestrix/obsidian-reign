@@ -71,7 +71,10 @@ async function authorized(request, env) {
     if (splitAt < 0) return false;
     const username = decoded.slice(0, splitAt);
     const password = decoded.slice(splitAt + 1);
-    return username === ADMIN_USER && await sha256Hex(password) === env.ADMIN_PASSWORD_SHA256;
+    const configured=String(env.ADMIN_PASSWORD_SHA256||'');
+    if(!configured)return false;
+    const expected=/^[a-f0-9]{64}$/i.test(configured)?configured.toLowerCase():await sha256Hex(configured);
+    return username === String(env.ADMIN_USER_ID||ADMIN_USER) && await sha256Hex(password) === expected;
   } catch {
     return false;
   }
