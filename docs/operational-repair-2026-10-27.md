@@ -1,30 +1,53 @@
 # Obsidian Reign operational repair - October 27, 2026
 
-The business is not yet fully launch-ready. This continues the October 26 deployed release without changing the brand or using any Blush Havoc material. The latest merged pull request and its CI checks are the authoritative post-deploy evidence.
+The studio is not yet fully launch-ready. This continues the October 26 release without replacing its design or using any Blush Havoc material. The merged pull requests and their exact CI/deployment records supply the final release evidence.
 
-## Billing repairs
+## Billing repair: deployed PR #16
 
-Milestone advancement now retrieves the invoice and order from Square again rather than relying on a retained deposit flag. Accepted quote, exact total, original customer, location, payment-request terms, USD amounts and a paid deposit remain required. Provider outages revoke the retained deposit confidence and leave the milestone unchanged. Invoiced projects cannot be reassigned to a different client account.
+PR #16 merged as 9bd050ea0aee4c16604bc094856cfffe0f9bd29f. Cloudflare reported production version 0e1dbf18-9a52-4f62-85be-4ad9b7804a0f.
 
-Refund-created and refund-updated events retrieve the authoritative refund and its original payment before associating a project; a refund's separate order is never trusted as the original invoice order. Pending/completed refunds and payment failures put the invoice on an owner-review hold. A later delayed invoice event cannot automatically release that hold. Unknown invoice states and malformed paid amounts also fail closed. Valid review events are acknowledged to avoid pointless retry storms. No refund, payment, invoice or customer is created by these new reconciliation paths.
+Project advancement now retrieves the invoice and order from Square again rather than relying on a retained deposit flag. Accepted quote, exact total, original customer, location, payment-request terms, USD amounts and a paid deposit remain required. Provider outages revoke retained deposit confidence and leave the milestone unchanged. Invoiced projects cannot be reassigned to a different client account.
 
-A refund or payment-failure hold requires owner review. There is no automatic refund, automatic debt forgiveness or silent resumption. Refunded invoice terms are not overwritten; resolve the provider record and agree any replacement scope/invoice before creating a replacement project. Provider subscription coverage and actual sandbox transactions remain unverified.
+Refund-created and refund-updated events retrieve the authoritative refund and original payment to associate the project; the refund's separate order is not trusted as the original invoice order. Pending/completed refunds and payment failures put the invoice on an owner-review hold. A delayed invoice event cannot silently release that hold. Unknown invoice states and malformed paid amounts fail closed. Valid review events are acknowledged rather than repeatedly requesting a decision through delivery retries. The new reconciliation paths do not create customers, invoices, refunds or charges.
 
-Local validation: 120 repository tests passed and the integrated-agent deployment guard passed. New cases cover pending refund replays, unrelated merchants/locations, failed payments, unknown states, malformed money, provider outage, stale deposit state and client reassignment. Remote browser and deployment checks are required before publishing this candidate.
+A refund/payment-failure hold requires owner review. There is no automatic refund, debt forgiveness or resumption. Provider terms are not overwritten; resolve the provider record and agree any replacement scope/invoice before creating a replacement project. Actual sandbox transactions and subscription coverage still require verification.
 
-## Controlled email test
+The exact candidate passed 120 repository tests and 15 desktop/mobile browser checks. Post-merge checks verified 24 production sitemap URLs, 36 assets, private authorization, canonicals and redirects. The 25-page axe scan found no violations in the selected WCAG tags. Production Lighthouse mobile simulated lab: performance 63, accessibility 100, best practices 100, SEO 100. Loading speed remains incomplete. The final notification step failed on a real IndexNow 403, so the entire post-merge workflow was not green.
 
-Two owner-only messages in one thread reached Savannah's mailbox, including a matching In-Reply-To reference. The active webhook's test returned HTTP 202. The observed Cloudflare events showed the explicit test delivery, but the controlled real inbound messages had not produced an observed processing event or owner review receipt during the inspection window. This is an unresolved delivery/processing integration gap, not a passed autonomous-agent test.
+## Controlled email evidence: automatic inbound review works
 
-The existing webhook remains active with the same endpoint and secret. Its stale description was corrected to review mode. Anna and Savannah auto-send are both false; Vesper and paid Runway generation remain disabled with zero budgets. No prospects or customers were contacted. No ambiguous jobs were replayed.
+Four controlled owner-only messages reached Savannah: two from the connected custom-domain account and two in a Gmail thread from the configured owner account. Exactly one Savannah review notice for each unique test message was found in Sent, and all four notices were confirmed in the configured owner Gmail inbox. No prospects or customers were contacted.
 
-## Remaining access and production holds
+The first sender passed SPF/DKIM but had DMARC none; the existing preflight correctly held both messages for the owner. A later Gmail sender passed SPF, DKIM and DMARC. Savannah generated a routine qualification draft preserving the supplied Twitch platform and cyberpunk style. A follow-up retained the earlier details and the three specified emote expressions. Both drafts reached owner review with transparent AI signatures, without customer auto-replies.
 
-- Google Search Console is signed in as the owner's vaestrix account, but the Obsidian domain property is not verified. Google offers Cloudflare DNS authorization or manual verification. No broad Google DNS access was granted.
-- Square again returned 403 for the missing DEVELOPER_APPLICATION_WEBHOOKS_READ scope. A separately configured sandbox and event-coverage check are still required; production payment settings were not changed and no financial transactions were initiated.
-- GitHub's browser session is signed out, so the stale guild About description could not be edited there. The connected repository tools can update source but do not expose repository administration.
-- Vesper, its trusted Savannah handoff, private delivery storage integration, production output QA and the separate LydiaLuxe/Crimson Fox asset packs remain incomplete. No Blush Havoc files or imagery are used.
-- Prior loading-speed limitations and the remaining crawler/security dashboard checks still apply.
+Correction to the initial observation: searching only the separately connected Gmail account missed the notices because escalations go to the owner's other configured Gmail address. There was no demonstrated automatic-webhook failure in this test. The early dashboard view was not evidence of missing processing. Provider tests returned 202, and real inbox-to-owner review delivery was independently verified. No provider replay or live direct customer auto-reply test was performed, so neither is marked complete.
+
+## Private recovery control: PR #17 candidate
+
+The protected dashboard has an owner-only recovery control for future missed deliveries. A run checks at most 100 recent inbox metadata records, queues at most 20 unprocessed messages from the last 24 hours and reports truncation/remaining work. Existing Message-ID jobs, legacy UID jobs and ambiguous-send tombstones are skipped. Provider failures return a clear error; retries skip jobs already queued.
+
+Recovered jobs retain a trusted force-review flag through Message-ID resolution. They can send the existing owner review notice but never automatically reply to a customer, even if the normal sender is later enabled. Public webhooks cannot supply recovery actions or trusted flags. The endpoint requires existing owner admin authentication and same-origin POST. The scoped project agent gains no new access. No cron or automatic sender is enabled. Live recovery requires the owner to sign in to the existing studio admin page.
+
+All 132 local repository tests and the integrated-agent deployment guard pass. The earlier exact recovery candidate passed 129 tests, 18 desktop/mobile browser checks and the 25-page axe scan. The final search-key/robots changes require their own exact remote checks before merge. Private dashboard browser QA uses synthetic owner credentials and a synthetic recovery response; external email/payment requests are blocked.
+
+## Search crawler repair
+
+Cloudflare security events identified the actual Bing ownership-file GET blocked by the managed rule Block AI training crawlers - BOBA-199. The Search preset said Allow, but the Training Block preset also blocked mixed-purpose search crawlers. The OAI-SearchBot preference was already allowed.
+
+Updated content preferences: Search and Agent remain Allow; Training is Disallow with Bot Preference Sync enabled. Then restored targeted blocks for the 16 previously blocked crawlers categorized as AI Crawler, preserving the prior training-only restrictions while permitting Googlebot and Bingbot. Effective UI switches were verified: Googlebot, Bingbot and OAI-SearchBot unblocked; GPTBot and ClaudeBot blocked. The live robots response expresses search=yes, ai-train=no and use=reference and retains the studio sitemap. Browser Integrity Check, managed WAF protections, DDoS protection and application authentication were not disabled. No blanket security bypass was created.
+
+Earlier IndexNow 202 receipts did not prove successful ownership validation. Subsequent submissions returned 403 UserForbiddedToAccessSite. A fresh public ownership key is included to request a new validation after crawler access was repaired; its post-deploy status is recorded in PR #17. Neither notification receipt nor accepted ownership is proof of indexing or ranking.
+
+The old notification job used a shallow checkout without the merge parent's history, so it submitted even on backend-only changes. The new workflow fetches two commits, fails if change inspection is unavailable, ignores backend/private-dashboard-only changes, and separates search notification from browser QA. Actual provider rejections remain visible failures with a bounded error code. Production robots checks now evaluate the intended search groups instead of rejecting legitimate training-bot Disallow groups.
+
+## Remaining holds
+
+- Anna/Savannah customer auto-send remain false. Outreach postal authority and approval are still unverified. Old ambiguous records are not retried.
+- Google Search Console is signed in as the owner but the Obsidian domain property is not verified. No broad Google DNS access was granted. Bing Webmaster verification remains incomplete.
+- Square subscription inspection still returns 403 for missing DEVELOPER_APPLICATION_WEBHOOKS_READ. Separate sandbox payments, failures/refunds, duplicate events and invoice/receipt review remain incomplete. No financial transactions or real customer invoices were initiated.
+- The GitHub browser is signed out, so its stale guild About description remains. The source connector does not expose repository administration.
+- Vesper has no deployed production implementation. Trusted project handoff, private delivery storage, generation budget, output QA and the separate LydiaLuxe/Crimson Fox production kits remain incomplete. Vesper/paid Runway generation remain disabled with zero budgets.
+- Loading speed and a complete manual accessibility review remain open. Automated checks do not certify full accessibility or business readiness.
 
 ## References checked
 
@@ -32,19 +55,6 @@ The existing webhook remains active with the same endpoint and secret. Its stale
 - https://developer.squareup.com/reference/square/refunds-api/webhooks/refund.updated
 - https://developer.squareup.com/reference/square/invoices-api/webhooks/invoice.refunded
 - https://developer.squareup.com/docs/invoices-api/pay-refund-invoices
-
-
-## Manual inbox recovery candidate
-
-The protected studio dashboard now has an owner-only recovery control. It checks at most 100 recent inbox metadata records, queues at most 20 unprocessed messages from the last 24 hours per run and reports truncation or remaining candidates. Existing Message-ID jobs, legacy UID jobs and ambiguous-send tombstones are preserved and skipped. Provider failures report an error; retries skip jobs already queued.
-
-Recovered jobs retain a trusted force-review flag through Message-ID resolution. They can send only the existing owner review notice, even if normal customer auto-reply is later enabled. Public webhook data cannot supply recovery actions or trusted flags. The endpoint requires the existing owner admin session or admin authentication plus same-origin POST; the project agent credential gains no new access. No cron or automatic sender is enabled.
-
-All 128 local tests pass, including review-only processing, replay/unknown-send preservation, bounded history/batches, cross-origin/role protection and UI retry behavior. Remote QA includes a synthetic private-dashboard test at all three viewport sizes, with no external email or payment calls. Live recovery, owner review receipt and the remaining automatic webhook gap still require the owner to sign in to the existing studio admin page and complete the controlled test.
-
-
-## Search notification follow-up
-
-The payment release deployed successfully and passed 120 repository tests, 15 browser checks, 24 production sitemap URLs, 36 assets and the 25-page accessibility scan. Its final notification step failed because IndexNow returned HTTP 403 (UserForbiddedToAccessSite). Earlier HTTP 202 receipts did not establish ownership acceptance. The public key file is reachable and matches locally; the search provider's validation failure remains unresolved and no indexing success is claimed.
-
-The notification job had a shallow checkout without HEAD's parent, so it submitted even for backend-only changes. The recovery candidate fetches two commits, fails clearly if change inspection is unavailable, ignores private-dashboard/backend-only changes and separates search notification from browser QA. Actual search-provider rejections continue to fail the notification job with a bounded error code; they are not silently converted into success.
+- https://developers.cloudflare.com/bots/additional-configurations/block-ai-bots/
+- https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/
+- https://developers.cloudflare.com/ai-crawl-control/configuration/ai-crawl-control-with-waf/
